@@ -178,6 +178,26 @@ export const TOOLS = [
     },
   },
   {
+    name: "get_market_context",
+    description:
+      "Get live CoinGecko market data for the Frankencoin ecosystem — ZCHF peg health (deviation from 1 CHF), FPS 24h price change and volume, plus macro context (BTC, ETH, wstETH, WBTC prices and 24h changes). Useful for monitoring peg stability and market conditions.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "get_dune_stats",
+    description:
+      "Get on-chain analytics from Dune Analytics — ZCHF holder count, FPS holder count, historical minting volume, and savings TVL over time. Data may be slightly delayed vs real-time.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
     name: "query_ponder",
     description:
       "Execute a raw GraphQL query against the Frankencoin on-chain indexer at ponder.frankencoin.com. Use for advanced queries not covered by other tools. Available entities include: mintingHubV2PositionV2s, mintingHubV1PositionV1s, mintingHubV2ChallengeV2s, mintingHubV1ChallengeV1s, equityTrades, analyticDailyLogs, savingsActivity, savingsMappings, frankencoinMinters, eRC20Balances, eRC20TotalSupplys, leadrateRateChangeds, frankencoinProfitLosss, equityTradeCharts.",
