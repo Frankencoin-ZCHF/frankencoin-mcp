@@ -18,6 +18,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import http from "http";
+import { z } from "zod";
 import { TOOLS } from "./tools.js";
 import * as api from "./api.js";
 
@@ -33,11 +34,42 @@ function err(e) {
   return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true };
 }
 
+/**
+ * Convert a JSON Schema properties map to a Zod raw shape.
+ * The SDK's server.tool() accepts a Zod raw shape (object whose values are
+ * Zod schemas). Passing a plain JSON Schema object causes args to be silently
+ * dropped — this helper ensures every property becomes a properly typed Zod
+ * schema so the SDK can validate and forward arguments correctly.
+ */
+function jsonPropsToZodShape(properties = {}, required = []) {
+  const shape = {};
+  for (const [key, prop] of Object.entries(properties)) {
+    let schema;
+    switch (prop.type) {
+      case "number":  schema = z.number(); break;
+      case "boolean": schema = z.boolean(); break;
+      case "string":
+      default:        schema = z.string(); break;
+    }
+    if (prop.description) schema = schema.describe(prop.description);
+    shape[key] = required.includes(key) ? schema : schema.optional();
+  }
+  return shape;
+}
+
 function createServer() {
   const server = new McpServer({ name: "frankencoin", version: "1.0.0" });
 
   for (const tool of TOOLS) {
-    server.tool(tool.name, tool.description, tool.inputSchema.properties || {}, async (args) => {
+    // Convert JSON Schema properties to a Zod raw shape. Passing a plain
+    // JSON Schema (type/properties/required) to server.tool() causes the SDK
+    // to silently ignore it because it's not recognised as a Zod object —
+    // args then arrive as {} in the callback, breaking any tool with params.
+    const zodShape = jsonPropsToZodShape(
+      tool.inputSchema.properties || {},
+      tool.inputSchema.required || [],
+    );
+    server.tool(tool.name, tool.description, zodShape, async (args) => {
       try {
         switch (tool.name) {
           case "get_protocol_summary":    return ok(await api.getProtocolSummary());
@@ -66,6 +98,10 @@ function createServer() {
             return ok(await api.getEquityTrades({ limit: Math.min(args.limit ?? 20, 100) }));
           case "get_minters":
             return ok(await api.getMinters({ limit: args.limit ?? 20 }));
+          case "get_historical":
+            return ok(await api.getHistorical({ days: Math.min(args.days ?? 90, 365) }));
+          case "get_market_context":   return ok(await api.getMarketContext());
+          case "get_dune_stats":       return ok(await api.getDuneStats());
           case "query_ponder":
             if (!args.query) return err(new Error("query parameter required"));
             return ok(await api.runPonderQuery(args.query));
@@ -101,6 +137,20 @@ if (!useHttp) {
 
   // SSE sessions (legacy): keyed by a synthetic ID we manage
   const sseSessions = new Map();
+
+  // Init lock: prevents a burst of concurrent sessionless requests from each
+  // spawning their own (server, transport) pair before any one of them has
+  // finished the MCP initialize handshake. Without this, 14 simultaneous cold
+  // calls all "win" the new-session branch, the SDK sees multiple concurrent
+  // initialize calls on the same transport handle, and the server gets stuck
+  // in an uninitialized state.
+  //
+  // Strategy: only one request may run the initialize path at a time.
+  // All other concurrent sessionless requests wait for it to complete, then
+  // they re-check sessions for an active session to route to. If none exists
+  // (e.g. it was a stateless/single-request session), they respond with a
+  // 503 Retry-After so the client knows to re-issue the initialize.
+  let initLockPromise = null;
 
   const httpServer = http.createServer(async (req, res) => {
     // CORS — fully open, read-only public API
@@ -138,26 +188,82 @@ if (!useHttp) {
         if (req.method === "POST") {
           const sessionId = req.headers["mcp-session-id"];
 
-          // Existing session
+          // Existing known session
           if (sessionId && sessions.has(sessionId)) {
             const { transport } = sessions.get(sessionId);
             await transport.handleRequest(req, res);
             return;
           }
 
-          // New session — create server + transport pair
-          const transport = new StreamableHTTPServerTransport({
-            sessionIdGenerator: () => crypto.randomUUID(),
-            onsessioninitialized: (id) => {
-              sessions.set(id, { server: mcpServer, transport });
-            },
-          });
-          transport.onclose = () => {
-            if (transport.sessionId) sessions.delete(transport.sessionId);
-          };
-          const mcpServer = createServer();
-          await mcpServer.connect(transport);
-          await transport.handleRequest(req, res);
+          // Stale session ID (server restarted, session expired) — reject cleanly
+          // with 404 so the client knows to re-initialize rather than getting
+          // the confusing "Server not initialized" error from the SDK
+          if (sessionId && !sessions.has(sessionId)) {
+            res.writeHead(404, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({
+              jsonrpc: "2.0",
+              error: { code: -32001, message: "Session not found — please re-initialize" },
+              id: null,
+            }));
+            return;
+          }
+
+          // New session (no session ID = first request, must be initialize).
+          // Guard: only one initialization may run at a time. Concurrent
+          // sessionless requests queue behind the lock. After the lock resolves,
+          // they retry the session lookup — if a session was created they can
+          // use it; otherwise they return 503 so the client retries.
+          if (initLockPromise) {
+            // Another initialization is in flight — wait for it, then re-check
+            await initLockPromise.catch(() => {});
+            // If there's now at least one session, tell the client to re-init
+            // (they need to send a proper initialize with the new session ID)
+            if (sessions.size > 0) {
+              res.writeHead(503, {
+                "Content-Type": "application/json",
+                "Retry-After": "1",
+              });
+              res.end(JSON.stringify({
+                jsonrpc: "2.0",
+                error: {
+                  code: -32000,
+                  message: "Server initializing — please retry initialize",
+                },
+                id: null,
+              }));
+              return;
+            }
+            // No session yet (e.g. previous init failed) — fall through and try again
+          }
+
+          let resolveLock, rejectLock;
+          initLockPromise = new Promise((res, rej) => { resolveLock = res; rejectLock = rej; });
+
+          try {
+            const transport = new StreamableHTTPServerTransport({
+              sessionIdGenerator: () => crypto.randomUUID(),
+              onsessioninitialized: (id) => {
+                sessions.set(id, { server: mcpServer, transport });
+                console.error(`[session] new: ${id} (total: ${sessions.size})`);
+              },
+            });
+            transport.onclose = () => {
+              if (transport.sessionId) {
+                sessions.delete(transport.sessionId);
+                console.error(`[session] closed: ${transport.sessionId} (total: ${sessions.size})`);
+              }
+            };
+            const mcpServer = createServer();
+            await mcpServer.connect(transport);
+            await transport.handleRequest(req, res);
+            resolveLock();
+          } catch (initErr) {
+            rejectLock(initErr);
+            throw initErr;
+          } finally {
+            // Clear lock so future new-session requests don't queue indefinitely
+            initLockPromise = null;
+          }
           return;
         }
 

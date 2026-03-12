@@ -178,6 +178,41 @@ export const TOOLS = [
     },
   },
   {
+    name: "get_historical",
+    description:
+      "Get historical time-series data for the Frankencoin protocol. Returns daily snapshots with: FPS price and market cap in CHF, ZCHF total supply, equity reserve, savings TVL, interest rates (savings rate, V1 borrowing rate, V2 borrowing rate), annual earnings, and FPS earnings per share. Also includes the full rate change governance history. Note: V1 rate = CDP borrowing rate; V2 rate = effective savings/position rate; savings rate = what ZCHF depositors earn. Data available from October 2023.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        days: {
+          type: "number",
+          description: "Number of days of history to return (default: 90, max: 365)",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "get_market_context",
+    description:
+      "Get live CoinGecko market data for the Frankencoin ecosystem — ZCHF peg health (deviation from 1 CHF), FPS 24h price change and volume, plus macro context (BTC, ETH, wstETH, WBTC prices and 24h changes). Useful for monitoring peg stability and market conditions.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "get_dune_stats",
+    description:
+      "Get on-chain analytics from Dune Analytics — ZCHF holder count, FPS holder count, historical minting volume, and savings TVL over time. Data may be slightly delayed vs real-time.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
     name: "query_ponder",
     description:
       "Execute a raw GraphQL query against the Frankencoin on-chain indexer at ponder.frankencoin.com. Use for advanced queries not covered by other tools. Available entities include: mintingHubV2PositionV2s, mintingHubV1PositionV1s, mintingHubV2ChallengeV2s, mintingHubV1ChallengeV1s, equityTrades, analyticDailyLogs, savingsActivity, savingsMappings, frankencoinMinters, eRC20Balances, eRC20TotalSupplys, leadrateRateChangeds, frankencoinProfitLosss, equityTradeCharts.",
