@@ -428,8 +428,11 @@ export async function getPositions({ limit = 50 } = {}) {
 }
 
 export async function getPositionsDetail({ limit = 20, activeOnly = true, collateral = null } = {}) {
-  // Fetch positions + prices in parallel
-  const [pData, prices] = await Promise.all([
+  // Fetch positions, prices, and collateral list in parallel.
+  // The collateral list is the authoritative source for decimals — the position
+  // entity's collateralDecimals field can be stale/wrong for tokens with non-18
+  // decimals (e.g. LENDS shows 18 in position entity but 0 in collateral list).
+  const [pData, prices, collateralList] = await Promise.all([
     ponderQuery(`{
       mintingHubV2PositionV2s(limit: ${limit}${activeOnly ? ", where: {closed: false, denied: false" + (collateral ? `, collateral: "${collateral}"` : "") + "}" : collateral ? `, where: {collateral: "${collateral}"}` : ""}) {
         items {
@@ -442,10 +445,17 @@ export async function getPositionsDetail({ limit = 20, activeOnly = true, collat
       }
     }`),
     apiFetch("/prices/list"),
+    apiFetch("/ecosystem/collateral/list"),
   ]);
 
   const priceMap = {};
   for (const p of prices) priceMap[p.address.toLowerCase()] = p;
+
+  // Build authoritative decimals map from collateral list (keyed by lowercase address)
+  const decimalsMap = {};
+  for (const c of (collateralList.list || [])) {
+    decimalsMap[c.address.toLowerCase()] = c.decimals;
+  }
 
   // Enrich with CoinGecko data for all unique collaterals
   const collateralAddrs = [...new Set(
@@ -469,7 +479,9 @@ export async function getPositionsDetail({ limit = 20, activeOnly = true, collat
       const priceEntry = priceMap[collateralAddr];
       const cgId = COINGECKO_IDS[collateralAddr];
       const cg = cgId ? cgData[cgId] : null;
-      const decimals = p.collateralDecimals || 18;
+      // Use collateral list decimals as ground truth; fall back to position entity field.
+      // The position entity's collateralDecimals can be stale for non-18-decimal tokens.
+      const decimals = decimalsMap[collateralAddr] ?? p.collateralDecimals ?? 18;
 
       const collateralBalance = fromWei(p.collateralBalance, decimals);
       const minted = fromWei(p.minted);
@@ -480,9 +492,13 @@ export async function getPositionsDetail({ limit = 20, activeOnly = true, collat
       // Collateral value at current market price
       const collateralValueChf = currentPriceChf ? collateralBalance * currentPriceChf : null;
       // Collateral ratio = collateral value / minted ZCHF
-      const collateralRatio = collateralValueChf && minted > 0
-        ? Number(((collateralValueChf / minted) * 100).toFixed(1))
-        : null;
+      // When minted = 0 return "N/A" (position is empty/unfunded) rather than null
+      // to avoid NPE/type errors in downstream consumers (null is ambiguous).
+      const collateralRatio = collateralValueChf == null
+        ? null                          // price unknown → ratio unknown
+        : minted === 0
+          ? "N/A"                       // nothing minted → ratio is not meaningful
+          : Number(((collateralValueChf / minted) * 100).toFixed(1));
 
       return {
         address: p.position,
@@ -554,36 +570,49 @@ export async function getAnalytics({ days = 30 } = {}) {
 }
 
 export async function getEquityTrades({ limit = 20 } = {}) {
+  // Schema (2025): kind, count, trader, amount, shares, price, created, txHash
+  // No id/buyer/seller/totalprice/timestamp fields — removed in Ponder migration
   const data = await ponderQuery(`{
-    equityTrades(limit: ${limit}, orderBy: "timestamp", orderDirection: "desc") {
-      items { id buyer seller amount shares price totalprice timestamp txHash }
+    equityTrades(limit: ${limit}, orderBy: "created", orderDirection: "desc") {
+      items { kind count trader amount shares price created txHash }
     }
   }`);
   return (data.equityTrades?.items || []).map((t) => ({
-    id: t.id,
-    buyer: t.buyer,
-    seller: t.seller,
+    // count = sequential trade number; kind = "Invested" (buy) or "Redeemed" (sell)
+    count: Number(t.count),
+    kind: t.kind,
+    trader: t.trader,
     sharesTraded: fromWei(t.shares),
     priceChf: fromWei(t.price),
-    totalValueChf: fromWei(t.totalprice),
-    timestamp: new Date(Number(t.timestamp) * 1000).toISOString(),
+    // amount = ZCHF value of the trade
+    amountChf: fromWei(t.amount),
+    timestamp: new Date(Number(t.created) * 1000).toISOString(),
     txHash: t.txHash,
   }));
 }
 
 export async function getMinters({ limit = 20 } = {}) {
+  // Schema (2025): chainId, txHash, minter, applicationPeriod, applicationFee,
+  // applyMessage, applyDate, suggestor, denyMessage, denyDate, denyTxHash, vetor
+  // No id or isMinter fields — removed in Ponder migration
   const data = await ponderQuery(`{
     frankencoinMinters(limit: ${limit}) {
-      items { id minter applicationPeriod applicationFee applyDate suggestor denyDate isMinter }
+      items { chainId txHash minter applicationPeriod applicationFee applyMessage applyDate suggestor denyMessage denyDate denyTxHash vetor }
     }
   }`);
   return (data.frankencoinMinters?.items || []).map((m) => ({
     address: m.minter,
-    isActive: m.isMinter,
+    chainId: m.chainId,
+    // Active = applied but not denied (no denyDate set)
+    isActive: !m.denyDate,
     applicationFeeChf: fromWei(m.applicationFee),
     appliedAt: m.applyDate ? new Date(Number(m.applyDate) * 1000).toISOString() : null,
-    deniedAt: m.denyDate && m.denyDate !== "0" ? new Date(Number(m.denyDate) * 1000).toISOString() : null,
+    deniedAt: m.denyDate ? new Date(Number(m.denyDate) * 1000).toISOString() : null,
     suggestor: m.suggestor,
+    applyMessage: m.applyMessage || null,
+    denyMessage: m.denyMessage || null,
+    vetor: m.vetor || null,
+    txHash: m.txHash,
     applicationPeriodSeconds: Number(m.applicationPeriod),
   }));
 }
