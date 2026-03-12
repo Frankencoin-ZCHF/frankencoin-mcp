@@ -66,6 +66,8 @@ function createServer() {
             return ok(await api.getEquityTrades({ limit: Math.min(args.limit ?? 20, 100) }));
           case "get_minters":
             return ok(await api.getMinters({ limit: args.limit ?? 20 }));
+          case "get_historical":
+            return ok(await api.getHistorical({ days: Math.min(args.days ?? 90, 365) }));
           case "get_market_context":   return ok(await api.getMarketContext());
           case "get_dune_stats":       return ok(await api.getDuneStats());
           case "query_ponder":

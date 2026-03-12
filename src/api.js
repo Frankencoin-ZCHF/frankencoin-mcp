@@ -700,6 +700,96 @@ export async function getDuneStats() {
   };
 }
 
+export async function getHistorical({ days = 90, metric = "all" } = {}) {
+  // Daily analytics (FPS price, supply, rates) — data goes back to 2023-10-28
+  const analyticsData = await ponderQuery(`{
+    analyticDailyLogs(limit: ${Math.min(days, 365)}, orderBy: "timestamp", orderDirection: "desc") {
+      items {
+        date
+        totalSupply totalEquity totalSavings
+        fpsTotalSupply fpsPrice
+        currentLeadRate
+        annualV1BorrowRate
+        annualV2BorrowRate
+        projectedInterests annualNetEarnings realizedNetEarnings earningsPerFPS
+        totalMintedV1 totalMintedV2
+        totalInflow totalOutflow totalTradeFee
+      }
+    }
+  }`);
+
+  // Full rate change history (all governance votes)
+  const rateData = await ponderQuery(`{
+    leadrateRateChangeds(limit: 100, orderBy: "created", orderDirection: "desc") {
+      items { chainId module approvedRate created blockheight txHash }
+    }
+  }`);
+
+  const daily = (analyticsData.analyticDailyLogs?.items || []).map((d) => ({
+    date: d.date,
+    supply: {
+      total: fromWei(d.totalSupply),
+      mintedV1: fromWei(d.totalMintedV1),   // V1 = CDP borrowing positions
+      mintedV2: fromWei(d.totalMintedV2),   // V2 = newer positions
+    },
+    fps: {
+      supply: fromWei(d.fpsTotalSupply),
+      priceChf: fromWei(d.fpsPrice),
+      // Market cap = FPS supply × price (both in CHF units)
+      marketCapChf: fromWei(d.fpsTotalSupply) * fromWei(d.fpsPrice),
+      earningsPerFPS: fromWei(d.earningsPerFPS),
+    },
+    rates: {
+      // currentLeadRate = savings rate (what savers earn)
+      savingsRatePercent: fromWei(d.currentLeadRate) * 100,
+      // V1 = borrowing rate for V1 CDP positions (annualV1BorrowRate)
+      v1BorrowRatePercent: fromWei(d.annualV1BorrowRate) * 100,
+      // V2 = effective borrowing rate for V2 positions (annualV2BorrowRate)
+      v2BorrowRatePercent: fromWei(d.annualV2BorrowRate) * 100,
+    },
+    protocol: {
+      equity: fromWei(d.totalEquity),
+      savings: fromWei(d.totalSavings),
+      projectedAnnualInterestIncome: fromWei(d.projectedInterests),
+      annualNetEarnings: fromWei(d.annualNetEarnings),
+      realizedNetEarnings: fromWei(d.realizedNetEarnings),
+      cumulativeInflow: fromWei(d.totalInflow),
+      cumulativeOutflow: fromWei(d.totalOutflow),
+      cumulativeTradeFees: fromWei(d.totalTradeFee),
+    },
+  }));
+
+  // Rate change history — group by chain, show chronological governance timeline
+  const rateHistory = (rateData.leadrateRateChangeds?.items || []).map((r) => ({
+    date: new Date(Number(r.created) * 1000).toISOString().split("T")[0],
+    chainId: r.chainId,
+    chainName: CHAIN_NAMES[r.chainId] || `Chain ${r.chainId}`,
+    ratePercent: bpsToPercent(r.approvedRate),
+    module: r.module,
+    txHash: r.txHash,
+  }));
+
+  // Ethereum-only rate timeline (clearest governance signal)
+  const ethRateTimeline = rateHistory
+    .filter((r) => r.chainId === 1)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  return {
+    note: {
+      savingsRate: "currentLeadRate / savingsRatePercent = what ZCHF savers earn",
+      v1BorrowRate: "annualV1BorrowRate = interest rate for V1 (legacy CDP) borrowers",
+      v2BorrowRate: "annualV2BorrowRate = effective interest rate for V2 position borrowers",
+      dataRange: `${daily[daily.length - 1]?.date ?? "?"} → ${daily[0]?.date ?? "?"}`,
+      totalDays: daily.length,
+    },
+    daily,
+    rateHistory: {
+      ethereum: ethRateTimeline,
+      all: rateHistory,
+    },
+  };
+}
+
 export async function runPonderQuery(graphqlQuery) {
   return ponderQuery(graphqlQuery);
 }

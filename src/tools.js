@@ -178,6 +178,21 @@ export const TOOLS = [
     },
   },
   {
+    name: "get_historical",
+    description:
+      "Get historical time-series data for the Frankencoin protocol. Returns daily snapshots with: FPS price and market cap in CHF, ZCHF total supply, equity reserve, savings TVL, interest rates (savings rate, V1 borrowing rate, V2 borrowing rate), annual earnings, and FPS earnings per share. Also includes the full rate change governance history. Note: V1 rate = CDP borrowing rate; V2 rate = effective savings/position rate; savings rate = what ZCHF depositors earn. Data available from October 2023.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        days: {
+          type: "number",
+          description: "Number of days of history to return (default: 90, max: 365)",
+        },
+      },
+      required: [],
+    },
+  },
+  {
     name: "get_market_context",
     description:
       "Get live CoinGecko market data for the Frankencoin ecosystem — ZCHF peg health (deviation from 1 CHF), FPS 24h price change and volume, plus macro context (BTC, ETH, wstETH, WBTC prices and 24h changes). Useful for monitoring peg stability and market conditions.",
