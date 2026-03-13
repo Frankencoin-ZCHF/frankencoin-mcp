@@ -213,6 +213,52 @@ export const TOOLS = [
     },
   },
   {
+    name: "get_token_addresses",
+    description:
+      "Get the official contract addresses for all Frankencoin tokens across all supported chains — ZCHF (stablecoin), FPS (governance token), and svZCHF (savings vault). Includes explorer links. Sourced live from the Frankencoin website repository so always up to date.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "get_links",
+    description:
+      "Get all key Frankencoin links in one place — app sections (mint, savings, equity, governance, bridge), website, docs, whitepaper, GitHub, social channels (Telegram, Twitter, forum), exchanges and on-ramps, and use case highlights. Sourced live from the website repository.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "get_docs",
+    description:
+      "Fetch a section of the official Frankencoin documentation directly from the gitbook repository — always the latest version. Available sections: overview, savings, pool_shares, governance, reserve, risks, faq, minting, opening_positions, auctions, api.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        section: {
+          type: "string",
+          description:
+            "Which documentation section to fetch. One of: overview, savings, pool_shares, governance, reserve, risks, faq, minting, opening_positions, auctions, api. Defaults to overview.",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "get_media_and_use_cases",
+    description:
+      "Get Frankencoin media coverage (press articles and videos with titles, descriptions, dates, and sources) plus real-world use cases (retail, DeFi, business integrations) and ecosystem partners. Sourced live from the Frankencoin website repository.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
     name: "query_ponder",
     description:
       "Execute a raw GraphQL query against the Frankencoin on-chain indexer at ponder.frankencoin.com. Use for advanced queries not covered by other tools. Available entities include: mintingHubV2PositionV2s, mintingHubV1PositionV1s, mintingHubV2ChallengeV2s, mintingHubV1ChallengeV1s, equityTrades, analyticDailyLogs, savingsActivity, savingsMappings, frankencoinMinters, eRC20Balances, eRC20TotalSupplys, leadrateRateChangeds, frankencoinProfitLosss, equityTradeCharts.",
