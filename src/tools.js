@@ -48,7 +48,7 @@ export const TOOLS = [
   {
     name: "get_savings_rates",
     description:
-      "Get current approved savings/lead rates and any pending rate proposals across all chains. Ethereum has two modules: the savings rate module (~3.75%) and the base rate module (~1%). L2s have one module each.",
+      "Get current approved savings/lead rates and any pending rate proposals across all chains. Ethereum has two modules: the savings rate module (0x27d9ad987bde08a0d083ef7e0e4043c857a17b38, ~3.75% — this is the svZCHF savings rate that depositors earn) and the base rate module (0x3bf301b0e2003e75a3e86ab82bd1eff6a9dfb2ae, ~1% — the protocol base rate). L2s have one module each at 3.75%.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -165,7 +165,7 @@ export const TOOLS = [
   {
     name: "get_minters",
     description:
-      "List approved and historical minter contracts — addresses that are authorized to mint ZCHF. Includes application fee paid, application date, and whether the minter is currently active.",
+      "List approved and historical minter contracts — addresses that are authorized to mint ZCHF. Includes application fee paid, application date, and whether the minter is currently active. Key contracts on Ethereum: Minting Hub V1 (0x7546762fdb1a6d9146b33960545c3f6394265219, CDP minting for V1 positions) and Minting Hub V2 (0xde12b620a8a714476a97efd14e6f7180ca653557, CDP minting for V2 positions). Note: savings modules are separate contracts — see get_savings_rates.",
     inputSchema: {
       type: "object",
       properties: {
@@ -180,7 +180,7 @@ export const TOOLS = [
   {
     name: "get_historical",
     description:
-      "Get historical time-series data for the Frankencoin protocol. Returns daily snapshots with: FPS price and market cap in CHF, ZCHF total supply, equity reserve, savings TVL, interest rates (savings rate, V1 borrowing rate, V2 borrowing rate), annual earnings, and FPS earnings per share. Also includes the full rate change governance history. Note: V1 rate = CDP borrowing rate; V2 rate = effective savings/position rate; savings rate = what ZCHF depositors earn. Data available from October 2023.",
+      "Get historical time-series data for the Frankencoin protocol. Returns daily snapshots with: FPS price and market cap in CHF, ZCHF total supply, equity reserve, savings TVL, interest rates, annual earnings, and FPS earnings per share. Also includes the full rate change governance history. Note: Minting Hub V1 = CDP positions V1; Minting Hub V2 = CDP positions V2; savings rate (svZCHF, ~3.75%) and base rate (~1%) are governed by separate savings modules. Data available from October 2023.",
     inputSchema: {
       type: "object",
       properties: {
