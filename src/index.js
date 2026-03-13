@@ -100,8 +100,12 @@ function createServer() {
             return ok(await api.getMinters({ limit: args.limit ?? 20 }));
           case "get_historical":
             return ok(await api.getHistorical({ days: Math.min(args.days ?? 90, 365) }));
-          case "get_market_context":   return ok(await api.getMarketContext());
-          case "get_dune_stats":       return ok(await api.getDuneStats());
+          case "get_market_context":      return ok(await api.getMarketContext());
+          case "get_dune_stats":          return ok(await api.getDuneStats());
+          case "get_token_addresses":     return ok(await api.getTokenAddresses());
+          case "get_links":               return ok(await api.getLinks());
+          case "get_docs":                return ok(await api.getDocs({ section: args.section ?? "overview" }));
+          case "get_media_and_use_cases": return ok(await api.getMediaAndUseCases());
           case "query_ponder":
             if (!args.query) return err(new Error("query parameter required"));
             return ok(await api.runPonderQuery(args.query));
