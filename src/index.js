@@ -2,10 +2,13 @@
 /**
  * Frankencoin MCP Server
  *
- * Exposes Frankencoin (ZCHF) protocol data as MCP tools.
- * Supports two transports:
- *   - stdio (default): for local Claude Desktop / Cursor / CLI usage
- *   - HTTP (--http): for public deployment at mcp.frankencoin.com
+ * Exposes Frankencoin (ZCHF) protocol data via three interfaces:
+ *   - MCP stdio (default): for local Claude Desktop / Cursor / CLI usage
+ *   - MCP HTTP  (--http):  POST /mcp  — MCP protocol, for AI agents
+ *   - REST API  (--http):  GET  /tools/<tool>[?param=value]  — plain JSON, no handshake
+ *
+ * The REST /api layer is the lightweight "agentic shortcut" — any agent or
+ * script can call it with a single HTTP GET, no MCP session required.
  *
  * Usage:
  *   node src/index.js              # stdio mode
@@ -175,15 +178,158 @@ if (!useHttp) {
         status: "ok",
         server: "frankencoin-mcp",
         version: "1.0.0",
-        description: "MCP server for the Frankencoin (ZCHF) protocol",
-        transports: {
-          streamableHttp: `POST /mcp  (recommended — MCP spec 2024-11-05)`,
-          sse: `GET /sse  (legacy — Claude Desktop pre-Nov 2024)`,
+        description: "Frankencoin (ZCHF) protocol data server",
+        interfaces: {
+          mcp:  "POST /mcp  — MCP protocol (AI agents, Claude Desktop, Cursor)",
+          rest: "GET  /tools/<tool>  — plain JSON REST, no handshake (curl, fetch, scripts)",
+          sse:  "GET  /sse  — legacy SSE transport (older clients)",
         },
         tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),
         activeSessions: sessions.size,
         docs: "https://github.com/Frankencoin-ZCHF/frankencoin-mcp",
       }, null, 2));
+      return;
+    }
+
+    // ── REST API  (/tools/<tool>) ────────────────────────────────────────────
+    // Stateless, no handshake. Any GET returns JSON directly.
+    // Params passed as query string: /tools/get_challenges?limit=10&active_only=true
+    // POST also accepted: body is JSON object of params.
+    //
+    // GET /tools            → list all tools with descriptions and param schemas
+    // GET /tools/<tool>     → call tool with optional query params
+    // POST /tools/<tool>    → call tool with JSON body params
+    //
+    // Response: { ok: true, tool: "...", result: <data> }
+    //        or { ok: false, tool: "...", error: "..." }
+    if (url.pathname === "/tools" || url.pathname === "/tools/") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        description: "Frankencoin REST API — call any tool with a single GET, no MCP session required.",
+        usage: "GET https://mcp.frankencoin.com/tools/<tool>[?param=value&...]",
+        examples: [
+          "GET /tools/get_protocol_summary",
+          "GET /tools/get_prices",
+          "GET /tools/get_positions_detail?limit=10&active_only=true",
+          "GET /tools/get_challenges?active_only=true",
+          "GET /tools/get_historical?days=30",
+          "GET /tools/get_docs?section=savings",
+          "POST /tools/query_ponder  body: {\"query\": \"{ analyticDailyLogs(limit:3) { items { totalSupply date } } }\"}",
+        ],
+        tools: TOOLS.map((t) => ({
+          name: t.name,
+          description: t.description,
+          params: Object.entries(t.inputSchema.properties || {}).map(([k, v]) => ({
+            name: k,
+            type: v.type,
+            required: (t.inputSchema.required || []).includes(k),
+            description: v.description,
+          })),
+          url: `GET /tools/${t.name}`,
+        })),
+      }, null, 2));
+      return;
+    }
+
+    if (url.pathname.startsWith("/tools/")) {
+      const toolName = url.pathname.slice(7); // strip /tools/
+      const toolDef = TOOLS.find((t) => t.name === toolName);
+
+      if (!toolDef) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          ok: false,
+          error: `Unknown tool: ${toolName}`,
+          available: TOOLS.map((t) => t.name),
+        }));
+        return;
+      }
+
+      // Parse params: query string for GET, JSON body for POST
+      let params = {};
+      if (req.method === "POST" || req.method === "PUT") {
+        try {
+          const body = await new Promise((resolve, reject) => {
+            let buf = "";
+            req.on("data", (d) => { buf += d; });
+            req.on("end", () => resolve(buf));
+            req.on("error", reject);
+          });
+          if (body.trim()) params = JSON.parse(body);
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: false, tool: toolName, error: "Invalid JSON body" }));
+          return;
+        }
+      } else {
+        // GET: coerce query string values to the right types per tool schema
+        for (const [k, v] of url.searchParams.entries()) {
+          const propDef = toolDef.inputSchema.properties?.[k];
+          if (propDef?.type === "number") params[k] = Number(v);
+          else if (propDef?.type === "boolean") params[k] = v === "true" || v === "1";
+          else params[k] = v;
+        }
+      }
+
+      try {
+        let result;
+        switch (toolName) {
+          case "get_protocol_summary":    result = await api.getProtocolSummary(); break;
+          case "get_protocol_info":       result = await api.getProtocolInfo(); break;
+          case "get_fps_info":            result = await api.getFpsInfo(); break;
+          case "get_prices":              result = await api.getPrices(); break;
+          case "get_savings_rates":       result = await api.getSavingsRates(); break;
+          case "get_savings_stats":       result = await api.getSavingsStats(); break;
+          case "get_collaterals":         result = await api.getCollaterals(); break;
+          case "get_challenges":
+            result = await api.getChallenges({
+              limit: Math.min(params.limit ?? 20, 100),
+              activeOnly: params.active_only ?? false,
+            }); break;
+          case "get_positions":
+            result = await api.getPositions({ limit: params.limit ?? 50 }); break;
+          case "get_positions_detail":
+            result = await api.getPositionsDetail({
+              limit: Math.min(params.limit ?? 20, 100),
+              activeOnly: params.active_only ?? true,
+              collateral: params.collateral ?? null,
+            }); break;
+          case "get_analytics":
+            result = await api.getAnalytics({ days: Math.min(params.days ?? 30, 365) }); break;
+          case "get_equity_trades":
+            result = await api.getEquityTrades({ limit: Math.min(params.limit ?? 20, 100) }); break;
+          case "get_minters":
+            result = await api.getMinters({ limit: params.limit ?? 20 }); break;
+          case "get_historical":
+            result = await api.getHistorical({ days: Math.min(params.days ?? 90, 365) }); break;
+          case "get_market_context":      result = await api.getMarketContext(); break;
+          case "get_dune_stats":          result = await api.getDuneStats(); break;
+          case "get_merch":               result = await api.getMerch(); break;
+          case "get_token_addresses":     result = await api.getTokenAddresses(); break;
+          case "get_links":               result = await api.getLinks(); break;
+          case "get_docs":
+            result = await api.getDocs({ section: params.section ?? "overview" }); break;
+          case "get_media_and_use_cases": result = await api.getMediaAndUseCases(); break;
+          case "query_ponder":
+            if (!params.query) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ ok: false, tool: toolName, error: "query param required" }));
+              return;
+            }
+            result = await api.runPonderQuery(params.query); break;
+          default:
+            res.writeHead(404, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ ok: false, error: `No handler for tool: ${toolName}` }));
+            return;
+        }
+        console.error(`[/tools/${toolName}] ok`);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: true, tool: toolName, result }, null, 2));
+      } catch (e) {
+        console.error(`[/tools/${toolName}] error: ${e.message}`);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: false, tool: toolName, error: e.message }));
+      }
       return;
     }
 
@@ -342,12 +488,13 @@ if (!useHttp) {
 
     // ── 404 ───────────────────────────────────────────────────────────────
     res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Not found", endpoints: ["/mcp", "/sse", "/health"] }));
+    res.end(JSON.stringify({ error: "Not found", endpoints: ["/mcp", "/tools", "/sse", "/health"] }));
   });
 
   httpServer.listen(PORT, () => {
     console.error(`Frankencoin MCP server listening on port ${PORT}`);
-    console.error(`  Streamable HTTP : http://localhost:${PORT}/mcp`);
+    console.error(`  MCP (streamable): http://localhost:${PORT}/mcp`);
+    console.error(`  REST API        : http://localhost:${PORT}/tools/<tool>`);
     console.error(`  SSE (legacy)    : http://localhost:${PORT}/sse`);
     console.error(`  Health          : http://localhost:${PORT}/health`);
   });
