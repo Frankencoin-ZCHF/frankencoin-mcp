@@ -269,6 +269,16 @@ export const TOOLS = [
     },
   },
   {
+    name: "get_chf_stablecoins",
+    description:
+      "Compare all CHF-pegged stablecoins: ZCHF (Frankencoin), VCHF (VNX Swiss Franc), and CHFAU (AllUnity). Returns price vs CHF, peg deviation, market cap, 24h volume, and circulating supply for each. CHFAU supply sourced on-chain (no CoinGecko price feed yet). Use for competitive analysis, peg health monitoring, or market share comparisons.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
     name: "query_ponder",
     description:
       "Execute a raw GraphQL query against the Frankencoin on-chain indexer at ponder.frankencoin.com. Use for advanced queries not covered by other tools. Available entities include: mintingHubV2PositionV2s, mintingHubV1PositionV1s, mintingHubV2ChallengeV2s, mintingHubV1ChallengeV1s, equityTrades, analyticDailyLogs, savingsActivity, savingsMappings, frankencoinMinters, eRC20Balances, eRC20TotalSupplys, leadrateRateChangeds, frankencoinProfitLosss, equityTradeCharts.",

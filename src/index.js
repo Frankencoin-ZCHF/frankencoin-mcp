@@ -110,6 +110,7 @@ function createServer() {
           case "get_historical":
             return ok(await api.getHistorical({ days: Math.min(args.days ?? 90, 365) }));
           case "get_market_context":      return ok(await api.getMarketContext());
+          case "get_chf_stablecoins":     return ok(await api.getChfStablecoins());
           case "get_dune_stats":          return ok(await api.getDuneStats());
           case "get_merch":               return ok(await api.getMerch());
           case "get_token_addresses":     return ok(await api.getTokenAddresses());
@@ -345,6 +346,7 @@ if (!useHttp) {
           case "get_historical":
             result = await api.getHistorical({ days: Math.min(params.days ?? 90, 365) }); break;
           case "get_market_context":      result = await api.getMarketContext(); break;
+          case "get_chf_stablecoins":     result = await api.getChfStablecoins(); break;
           case "get_dune_stats":          result = await api.getDuneStats(); break;
           case "get_merch":               result = await api.getMerch(); break;
           case "get_token_addresses":     result = await api.getTokenAddresses(); break;
