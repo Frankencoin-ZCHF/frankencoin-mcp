@@ -1251,3 +1251,108 @@ export async function getProtocolSummary() {
     updatedAt: new Date().toISOString(),
   };
 }
+
+// ─── CHF Stablecoin Comparison ────────────────────────────────────────────────
+
+const CHFAU_CONTRACT = "0xbd4dfc058eb95b8de5ceaf39966a1a70f5556f78";
+const ETH_RPC = "https://eth.llamarpc.com";
+
+async function ethCall(contractAddress, data) {
+  const res = await fetch(ETH_RPC, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0", id: 1, method: "eth_call",
+      params: [{ to: contractAddress, data }, "latest"],
+    }),
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!res.ok) throw new Error(`ETH RPC error: ${res.status}`);
+  const json = await res.json();
+  if (json.error) throw new Error(`ETH RPC: ${json.error.message}`);
+  return json.result;
+}
+
+export async function getChfStablecoins() {
+  if (!CG_KEY) throw new Error("CoinGecko API key not configured on server");
+
+  // ZCHF + VCHF from CoinGecko; CHFAU via public ETH JSON-RPC (no CG price feed yet)
+  const [cgData, chfauSupplyHex] = await Promise.all([
+    cgFetch(`/coins/markets?vs_currency=chf&ids=frankencoin,vnx-swiss-franc&order=market_cap_desc&sparkline=false&price_change_percentage=24h`),
+    ethCall(CHFAU_CONTRACT, "0x18160ddd").catch(() => null),
+  ]);
+
+  const zchfCg = cgData.find(c => c.id === "frankencoin") || {};
+  const vchfCg = cgData.find(c => c.id === "vnx-swiss-franc") || {};
+
+  // CHFAU uses 6 decimals (like USDC)
+  let chfauSupply = null;
+  try {
+    if (chfauSupplyHex && chfauSupplyHex !== "0x") {
+      chfauSupply = Math.round(Number(BigInt(chfauSupplyHex)) / 1e6);
+    }
+  } catch { chfauSupply = null; }
+
+  function pegStatus(price) {
+    if (price == null) return "unknown";
+    const dev = Math.abs(price - 1) * 100;
+    return dev < 0.5 ? "healthy" : dev < 1.0 ? "warning" : "critical";
+  }
+
+  return {
+    stablecoins: [
+      {
+        name: "Frankencoin",
+        symbol: "ZCHF",
+        type: "CDP / overcollateralised",
+        issuer: "Frankencoin Association",
+        coingeckoId: "frankencoin",
+        priceChf: zchfCg.current_price ?? null,
+        pegDeviationPercent: zchfCg.current_price != null
+          ? Number(((zchfCg.current_price - 1) * 100).toFixed(4)) : null,
+        pegStatus: pegStatus(zchfCg.current_price),
+        marketCapChf: zchfCg.market_cap ?? null,
+        volume24hChf: zchfCg.total_volume ?? null,
+        change24hPercent: zchfCg.price_change_percentage_24h != null
+          ? Number(zchfCg.price_change_percentage_24h.toFixed(4)) : null,
+        circulatingSupply: zchfCg.circulating_supply ?? null,
+        dataSource: "CoinGecko",
+      },
+      {
+        name: "VNX Swiss Franc",
+        symbol: "VCHF",
+        type: "Fiat-backed",
+        issuer: "VNX",
+        coingeckoId: "vnx-swiss-franc",
+        priceChf: vchfCg.current_price ?? null,
+        pegDeviationPercent: vchfCg.current_price != null
+          ? Number(((vchfCg.current_price - 1) * 100).toFixed(4)) : null,
+        pegStatus: pegStatus(vchfCg.current_price),
+        marketCapChf: vchfCg.market_cap ?? null,
+        volume24hChf: vchfCg.total_volume ?? null,
+        change24hPercent: vchfCg.price_change_percentage_24h != null
+          ? Number(vchfCg.price_change_percentage_24h.toFixed(4)) : null,
+        circulatingSupply: vchfCg.circulating_supply ?? null,
+        dataSource: "CoinGecko",
+      },
+      {
+        name: "AllUnity CHF",
+        symbol: "CHFAU",
+        type: "Fiat-backed",
+        issuer: "AllUnity (DWS + Flow Traders + Galaxy)",
+        coingeckoId: "allunity-chf",
+        priceChf: null,
+        pegDeviationPercent: null,
+        pegStatus: "unknown",
+        marketCapChf: null,
+        volume24hChf: null,
+        change24hPercent: null,
+        circulatingSupply: chfauSupply,
+        contract: CHFAU_CONTRACT,
+        note: "No CoinGecko price feed yet — supply from on-chain (Ethereum, 6 decimals)",
+        dataSource: "Etherscan",
+      },
+    ],
+    updatedAt: new Date().toISOString(),
+  };
+}
