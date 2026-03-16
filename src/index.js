@@ -5,7 +5,7 @@
  * Exposes Frankencoin (ZCHF) protocol data via three interfaces:
  *   - MCP stdio (default): for local Claude Desktop / Cursor / CLI usage
  *   - MCP HTTP  (--http):  POST /mcp  — MCP protocol, for AI agents
- *   - REST API  (--http):  GET  /tools/<tool>[?param=value]  — plain JSON, no handshake
+ *   - REST API  (--http):  GET  /api/<tool>[?param=value]  — plain JSON, no handshake
  *
  * The REST /api layer is the lightweight "agentic shortcut" — any agent or
  * script can call it with a single HTTP GET, no MCP session required.
@@ -21,15 +21,9 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import http from "http";
-import { readFileSync } from "fs";
 import { z } from "zod";
 import { TOOLS } from "./tools.js";
 import * as api from "./api.js";
-
-// Read version from package.json — single source of truth
-const { version: VERSION } = JSON.parse(
-  readFileSync(new URL("../package.json", import.meta.url), "utf8")
-);
 
 // ─── Tool registration ────────────────────────────────────────────────────────
 // Each session gets its own McpServer instance (required by SDK — one server per transport).
@@ -67,7 +61,7 @@ function jsonPropsToZodShape(properties = {}, required = []) {
 }
 
 function createServer() {
-  const server = new McpServer({ name: "frankencoin", version: VERSION });
+  const server = new McpServer({ name: "frankencoin", version: "1.0.0" });
 
   for (const tool of TOOLS) {
     // Convert JSON Schema properties to a Zod raw shape. Passing a plain
@@ -110,6 +104,7 @@ function createServer() {
           case "get_historical":
             return ok(await api.getHistorical({ days: Math.min(args.days ?? 90, 365) }));
           case "get_market_context":      return ok(await api.getMarketContext());
+          case "get_chf_stablecoins":     return ok(await api.getChfStablecoins());
           case "get_dune_stats":          return ok(await api.getDuneStats());
           case "get_merch":               return ok(await api.getMerch());
           case "get_token_addresses":     return ok(await api.getTokenAddresses());
@@ -183,11 +178,11 @@ if (!useHttp) {
       res.end(JSON.stringify({
         status: "ok",
         server: "frankencoin-mcp",
-        version: VERSION,
+        version: "1.0.0",
         description: "Frankencoin (ZCHF) protocol data server",
         interfaces: {
           mcp:  "POST /mcp  — MCP protocol (AI agents, Claude Desktop, Cursor)",
-          rest: "GET  /tools/<tool>  — plain JSON REST, no handshake (curl, fetch, scripts)",
+          rest: "GET  /api/<tool>  — plain JSON REST, no handshake (curl, fetch, scripts)",
           sse:  "GET  /sse  — legacy SSE transport (older clients)",
         },
         tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),
@@ -197,84 +192,48 @@ if (!useHttp) {
       return;
     }
 
-    // ── REST API  (/tools/<tool>) ────────────────────────────────────────────
+    // ── REST API  (/api/<tool>) ────────────────────────────────────────────
     // Stateless, no handshake. Any GET returns JSON directly.
-    // Params passed as query string: /tools/get_challenges?limit=10&active_only=true
+    // Params passed as query string: /api/get_challenges?limit=10&active_only=true
     // POST also accepted: body is JSON object of params.
     //
-    // GET /tools                  → list all tools (= /tools/help)
-    // GET /tools/help             → same as above (alias)
-    // GET /tools/<tool>           → call tool with optional query params
-    // GET /tools/<tool>/help      → describe a single tool (params, example)
-    // POST /tools/<tool>          → call tool with JSON body params
+    // GET /api            → list all tools with descriptions and param schemas
+    // GET /api/<tool>     → call tool with optional query params
+    // POST /api/<tool>    → call tool with JSON body params
     //
     // Response: { ok: true, tool: "...", result: <data> }
     //        or { ok: false, tool: "...", error: "..." }
-
-    // ── Helper: build tool descriptor ─────────────────────────────────────
-    function toolDescriptor(t) {
-      const params = Object.entries(t.inputSchema.properties || {}).map(([k, v]) => ({
-        name: k,
-        type: v.type,
-        required: (t.inputSchema.required || []).includes(k),
-        description: v.description,
-        ...(v.enum ? { enum: v.enum } : {}),
-      }));
-      const qs = params
-        .filter((p) => p.type !== "object")
-        .map((p) => `${p.name}=${p.required ? `<${p.type}>` : `[${p.type}]`}`)
-        .join("&");
-      return {
-        name: t.name,
-        description: t.description,
-        method: t.name === "query_ponder" ? "POST" : "GET",
-        url: `https://mcp.frankencoin.com/tools/${t.name}${qs ? `?${qs}` : ""}`,
-        params,
-        example: t.name === "query_ponder"
-          ? `curl -X POST https://mcp.frankencoin.com/tools/query_ponder -H "Content-Type: application/json" -d '{"query":"{ analyticDailyLogs(limit:3) { items { date totalSupply } } }"}'`
-          : (() => {
-              // Only include required params in the example URL; skip optional ones
-              const reqParams = params.filter((p) => p.required);
-              const exQs = reqParams.map((p) => `${p.name}=<${p.type}>`).join("&");
-              return `curl "https://mcp.frankencoin.com/tools/${t.name}${exQs ? `?${exQs}` : ""}"`;
-            })(),
-      };
-    }
-
-    if (url.pathname === "/tools" || url.pathname === "/tools/" || url.pathname === "/tools/help") {
+    if (url.pathname === "/api" || url.pathname === "/api/") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({
-        description: "Frankencoin /tools — call any protocol tool with a single HTTP request. No MCP session required.",
-        usage: "GET  https://mcp.frankencoin.com/tools/<tool>[?param=value&...]",
-        help:  "GET  https://mcp.frankencoin.com/tools/<tool>/help  — per-tool docs",
-        interfaces: {
-          mcp:   "POST /mcp  — MCP protocol (Claude Desktop, Cursor, AI agents)",
-          tools: "GET  /tools/<tool>  — plain JSON REST (curl, fetch, scripts)",
-          sse:   "GET  /sse  — legacy SSE transport",
-        },
-        tools: TOOLS.map(toolDescriptor),
+        description: "Frankencoin REST API — call any tool with a single GET, no MCP session required.",
+        usage: "GET https://mcp.frankencoin.com/api/<tool>[?param=value&...]",
+        examples: [
+          "GET /api/get_protocol_summary",
+          "GET /api/get_prices",
+          "GET /api/get_positions_detail?limit=10&active_only=true",
+          "GET /api/get_challenges?active_only=true",
+          "GET /api/get_historical?days=30",
+          "GET /api/get_docs?section=savings",
+          "POST /api/query_ponder  body: {\"query\": \"{ analyticDailyLogs(limit:3) { items { totalSupply date } } }\"}",
+        ],
+        tools: TOOLS.map((t) => ({
+          name: t.name,
+          description: t.description,
+          params: Object.entries(t.inputSchema.properties || {}).map(([k, v]) => ({
+            name: k,
+            type: v.type,
+            required: (t.inputSchema.required || []).includes(k),
+            description: v.description,
+          })),
+          url: `GET /api/${t.name}`,
+        })),
       }, null, 2));
       return;
     }
 
-    if (url.pathname.startsWith("/tools/")) {
-      const rest = url.pathname.slice(7); // strip /tools/
-      // Per-tool help: GET /tools/<tool>/help
-      const helpMatch = rest.match(/^(.+)\/help$/);
-      if (helpMatch) {
-        const toolName = helpMatch[1];
-        const toolDef = TOOLS.find((t) => t.name === toolName);
-        if (!toolDef) {
-          res.writeHead(404, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ ok: false, error: `Unknown tool: ${toolName}`, available: TOOLS.map((t) => t.name) }));
-          return;
-        }
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(toolDescriptor(toolDef), null, 2));
-        return;
-      }
-
-      const toolName = rest;
+    if (url.pathname.startsWith("/api/")) {
+      const toolName = url.pathname.slice(5); // strip /api/
       const toolDef = TOOLS.find((t) => t.name === toolName);
 
       if (!toolDef) {
@@ -345,6 +304,7 @@ if (!useHttp) {
           case "get_historical":
             result = await api.getHistorical({ days: Math.min(params.days ?? 90, 365) }); break;
           case "get_market_context":      result = await api.getMarketContext(); break;
+          case "get_chf_stablecoins":     result = await api.getChfStablecoins(); break;
           case "get_dune_stats":          result = await api.getDuneStats(); break;
           case "get_merch":               result = await api.getMerch(); break;
           case "get_token_addresses":     result = await api.getTokenAddresses(); break;
@@ -364,11 +324,11 @@ if (!useHttp) {
             res.end(JSON.stringify({ ok: false, error: `No handler for tool: ${toolName}` }));
             return;
         }
-        console.error(`[/tools/${toolName}] ok`);
+        console.error(`[/api/${toolName}] ok`);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: true, tool: toolName, result }, null, 2));
       } catch (e) {
-        console.error(`[/tools/${toolName}] error: ${e.message}`);
+        console.error(`[/api/${toolName}] error: ${e.message}`);
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, tool: toolName, error: e.message }));
       }
@@ -530,13 +490,13 @@ if (!useHttp) {
 
     // ── 404 ───────────────────────────────────────────────────────────────
     res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Not found", endpoints: ["/mcp", "/tools", "/sse", "/health"] }));
+    res.end(JSON.stringify({ error: "Not found", endpoints: ["/mcp", "/api", "/sse", "/health"] }));
   });
 
   httpServer.listen(PORT, () => {
     console.error(`Frankencoin MCP server listening on port ${PORT}`);
     console.error(`  MCP (streamable): http://localhost:${PORT}/mcp`);
-    console.error(`  REST API        : http://localhost:${PORT}/tools/<tool>`);
+    console.error(`  REST API        : http://localhost:${PORT}/api/<tool>`);
     console.error(`  SSE (legacy)    : http://localhost:${PORT}/sse`);
     console.error(`  Health          : http://localhost:${PORT}/health`);
   });
