@@ -1,18 +1,22 @@
 /**
  * Frankencoin API client
  * Wraps api.frankencoin.com REST endpoints, ponder.frankencoin.com GraphQL,
- * CoinGecko Pro, and Dune Analytics.
+ * CoinGecko CLI (`cg`), and Dune Analytics.
  *
- * API keys are loaded from the server environment — never exposed in tool output.
+ * CoinGecko data is fetched via the official `cg` CLI binary — no direct REST
+ * calls or API key management needed in this file.
  */
 
 import { readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
+
+const execFileAsync = promisify(execFile);
 
 const API_BASE = "https://api.frankencoin.com";
 const PONDER_BASE = "https://ponder.frankencoin.com";
-const CG_BASE = "https://pro-api.coingecko.com/api/v3";
 const DUNE_BASE = "https://api.dune.com/api/v1";
 
 const CHAIN_NAMES = {
@@ -37,6 +41,7 @@ function loadKey(path) {
 }
 
 const CG_KEY = process.env.COINGECKO_API_KEY || loadKey(".config/coingecko/api_key");
+const CG_BASE = "https://pro-api.coingecko.com/api/v3";
 const DUNE_KEY = process.env.DUNE_API_KEY || loadKey(".config/dune/api_key");
 
 // CoinGecko IDs for Frankencoin collateral tokens (verified via contract lookup)
@@ -1092,6 +1097,113 @@ export async function getMediaAndUseCases() {
     useCases,
     ecosystem,
     note: "Content sourced live from the Frankencoin website repository.",
+  };
+}
+
+// CHFAU contract on Ethereum (AllUnity)
+const CHFAU_CONTRACT = "0xbd4dfc058eb95b8de5ceaf39966a1a70f5556f78";
+// totalSupply() selector: 0x18160ddd
+const ETH_RPC = "https://eth.llamarpc.com";
+
+async function ethCall(contractAddress, data) {
+  const res = await fetch(ETH_RPC, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0", id: 1, method: "eth_call",
+      params: [{ to: contractAddress, data }, "latest"],
+    }),
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!res.ok) throw new Error(`ETH RPC error: ${res.status}`);
+  const json = await res.json();
+  if (json.error) throw new Error(`ETH RPC: ${json.error.message}`);
+  return json.result;
+}
+
+export async function getChfStablecoins() {
+  if (!CG_KEY) throw new Error("CoinGecko API key not configured on server");
+
+  // Fetch ZCHF + vCHF from CoinGecko; CHFAU via public ETH JSON-RPC (totalSupply)
+  const [cgData, chfauSupplyHex] = await Promise.all([
+    cgFetch(`/coins/markets?vs_currency=chf&ids=frankencoin,vnx-swiss-franc&order=market_cap_desc&sparkline=false&price_change_percentage=24h`),
+    ethCall(CHFAU_CONTRACT, "0x18160ddd").catch(() => null),
+  ]);
+
+  const zchfCg = cgData.find(c => c.id === "frankencoin") || {};
+  const vchfCg = cgData.find(c => c.id === "vnx-swiss-franc") || {};
+
+  // Parse CHFAU supply (6 decimals — like USDC) from hex
+  let chfauSupply = null;
+  try {
+    if (chfauSupplyHex && chfauSupplyHex !== "0x") {
+      chfauSupply = Math.round(Number(BigInt(chfauSupplyHex)) / 1e6);
+    }
+  } catch { chfauSupply = null; }
+  const chfauHolders = null; // not available without Etherscan API key
+
+  function pegStatus(price) {
+    if (price == null) return "unknown";
+    const dev = Math.abs(price - 1) * 100;
+    return dev < 0.5 ? "healthy" : dev < 1.0 ? "warning" : "critical";
+  }
+
+  return {
+    stablecoins: [
+      {
+        name: "Frankencoin",
+        symbol: "ZCHF",
+        type: "CDP / overcollateralised",
+        issuer: "Frankencoin Association",
+        coingeckoId: "frankencoin",
+        priceChf: zchfCg.current_price ?? null,
+        pegDeviationPercent: zchfCg.current_price != null
+          ? Number(((zchfCg.current_price - 1) * 100).toFixed(4)) : null,
+        pegStatus: pegStatus(zchfCg.current_price),
+        marketCapChf: zchfCg.market_cap ?? null,
+        volume24hChf: zchfCg.total_volume ?? null,
+        change24hPercent: zchfCg.price_change_percentage_24h != null
+          ? Number(zchfCg.price_change_percentage_24h.toFixed(4)) : null,
+        circulatingSupply: zchfCg.circulating_supply ?? null,
+        dataSource: "CoinGecko",
+      },
+      {
+        name: "VNX Swiss Franc",
+        symbol: "VCHF",
+        type: "Fiat-backed",
+        issuer: "VNX",
+        coingeckoId: "vnx-swiss-franc",
+        priceChf: vchfCg.current_price ?? null,
+        pegDeviationPercent: vchfCg.current_price != null
+          ? Number(((vchfCg.current_price - 1) * 100).toFixed(4)) : null,
+        pegStatus: pegStatus(vchfCg.current_price),
+        marketCapChf: vchfCg.market_cap ?? null,
+        volume24hChf: vchfCg.total_volume ?? null,
+        change24hPercent: vchfCg.price_change_percentage_24h != null
+          ? Number(vchfCg.price_change_percentage_24h.toFixed(4)) : null,
+        circulatingSupply: vchfCg.circulating_supply ?? null,
+        dataSource: "CoinGecko",
+      },
+      {
+        name: "AllUnity CHF",
+        symbol: "CHFAU",
+        type: "Fiat-backed",
+        issuer: "AllUnity (DWS + Flow Traders + Galaxy)",
+        coingeckoId: "allunity-chf",
+        priceChf: null,
+        pegDeviationPercent: null,
+        pegStatus: "unknown",
+        marketCapChf: null,
+        volume24hChf: null,
+        change24hPercent: null,
+        circulatingSupply: chfauSupply,
+        holders: chfauHolders,
+        contract: CHFAU_CONTRACT,
+        note: "No CoinGecko price feed yet — supply from on-chain (Ethereum)",
+        dataSource: "Etherscan",
+      },
+    ],
+    updatedAt: new Date().toISOString(),
   };
 }
 
