@@ -259,6 +259,22 @@ export const TOOLS = [
     },
   },
   {
+    name: "get_website_content",
+    description:
+      "Fetch consumer-facing content from the Frankencoin website (frankencoin.com). Use for answering user questions, explaining concepts, or referencing official marketing content. Sections: faq (common questions and answers), governance (FPS token and governance mechanics), compliance (Swiss FINMA and EU MiCA regulatory classification), what_is (introduction, oracle problem, why Frankencoin), homepage (tagline, features, how it works, trust/security).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        section: {
+          type: "string",
+          description:
+            "Which website section to fetch. One of: faq, governance, compliance, what_is, homepage. Defaults to faq.",
+        },
+      },
+      required: [],
+    },
+  },
+  {
     name: "get_media_and_use_cases",
     description:
       "Get Frankencoin media coverage (press articles and videos with titles, descriptions, dates, and sources) plus real-world use cases (retail, DeFi, business integrations) and ecosystem partners. Sourced live from the Frankencoin website repository.",

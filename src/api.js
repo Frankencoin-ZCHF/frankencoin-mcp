@@ -15,5 +15,5 @@ export { getProtocolInfo, getFpsInfo, getPrices, getSavingsRates, getSavingsStat
 export { getPositions, getPositionsDetail, getChallenges } from "./api/positions.js";
 export { getAnalytics, getHistorical, getEquityTrades, getMinters, getDuneStats, runPonderQuery } from "./api/analytics.js";
 export { getMarketContext, getChfStablecoins } from "./api/market.js";
-export { getTokenAddresses, getLinks, getDocs, getMediaAndUseCases, getMerch } from "./api/content.js";
+export { getTokenAddresses, getLinks, getDocs, getMediaAndUseCases, getMerch, getWebsiteContent } from "./api/content.js";
 export { getProtocolSummary } from "./api/summary.js";

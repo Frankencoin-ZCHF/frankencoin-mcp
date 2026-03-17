@@ -115,6 +115,7 @@ function createServer() {
           case "get_token_addresses":     return ok(await api.getTokenAddresses());
           case "get_links":               return ok(await api.getLinks());
           case "get_docs":                return ok(await api.getDocs({ section: args.section ?? "overview" }));
+          case "get_website_content":     return ok(await api.getWebsiteContent({ section: args.section ?? "faq" }));
           case "get_media_and_use_cases": return ok(await api.getMediaAndUseCases());
           case "query_ponder":
             if (!args.query) return err(new Error("query parameter required"));
@@ -316,6 +317,8 @@ if (!useHttp) {
           case "get_links":               result = await api.getLinks(); break;
           case "get_docs":
             result = await api.getDocs({ section: params.section ?? "overview" }); break;
+          case "get_website_content":
+            result = await api.getWebsiteContent({ section: params.section ?? "faq" }); break;
           case "get_media_and_use_cases": result = await api.getMediaAndUseCases(); break;
           case "query_ponder":
             if (!params.query) {

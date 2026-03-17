@@ -1,8 +1,162 @@
 /**
- * Static content: docs, links, token addresses, media, merch.
+ * Static content: docs, links, token addresses, media, merch, website content.
  */
 
 import { githubFile, githubJson, SITE_REPO, DOCS_REPO } from "./helpers.js";
+
+// Strip HTML tags from strings
+const stripHtml = (str) => str?.replace(/<[^>]+>/g, "") ?? "";
+
+const WEBSITE_SECTIONS = {
+  faq: "src/content/en/faq.json",
+  governance: "src/content/en/governance.json",
+  compliance: "src/content/en/compliance.json",
+  what_is: "src/content/en/what-is-frankencoin.json",
+  homepage: "src/content/en/index.json",
+};
+
+export async function getWebsiteContent({ section = "faq" } = {}) {
+  const file = WEBSITE_SECTIONS[section];
+  if (!file) {
+    return {
+      error: `Unknown section: "${section}"`,
+      availableSections: Object.keys(WEBSITE_SECTIONS),
+    };
+  }
+
+  const data = await githubJson(SITE_REPO, file);
+
+  switch (section) {
+    case "faq":
+      return {
+        section,
+        title: data.title,
+        categories: data.categories.map((cat) => ({
+          category: cat.category,
+          questions: cat.questions.map((q) => ({
+            question: q.question,
+            answer: q.answer,
+          })),
+        })),
+        availableSections: Object.keys(WEBSITE_SECTIONS),
+        note: "FAQ content from frankencoin.com — use for answering common user questions.",
+      };
+
+    case "governance":
+      return {
+        section,
+        title: data.header?.title,
+        subtitle: data.header?.subtitle,
+        sections: data.sections.map((s) => ({
+          title: s.title,
+          description: stripHtml(s.description),
+        })),
+        availableSections: Object.keys(WEBSITE_SECTIONS),
+        note: "FPS governance content — how governance works, FPS token mechanics, proposal process.",
+      };
+
+    case "compliance":
+      return {
+        section,
+        title: data.title,
+        intro: data.intro,
+        swiss: {
+          title: data.swiss.title,
+          subtitle: data.swiss.subtitle,
+          description: data.swiss.description,
+          keyPoints: data.swiss.keyPoints,
+          fpsTitle: data.swiss.fpsTitle,
+          fpsDescription: data.swiss.fpsDescription,
+          documentLabel: data.swiss.documentLabel,
+          documentHref: data.swiss.documentHref,
+        },
+        eu: {
+          title: data.eu.title,
+          subtitle: data.eu.subtitle,
+          description: data.eu.description,
+          keyPoints: data.eu.keyPoints,
+          documentLabel: data.eu.documentLabel,
+          documentHref: data.eu.documentHref,
+        },
+        summary: data.summary,
+        disclaimer: data.disclaimer,
+        availableSections: Object.keys(WEBSITE_SECTIONS),
+        note: "Swiss FINMA and EU MiCA regulatory classification — use for compliance questions.",
+      };
+
+    case "what_is":
+      return {
+        section,
+        title: data.header?.title,
+        subtitle: data.header?.subtitle,
+        introduction: data.introduction.map((i) => ({
+          title: i.title,
+          description: i.description,
+        })),
+        availableSections: Object.keys(WEBSITE_SECTIONS),
+        note: "What is Frankencoin — history, oracle problem, why Frankencoin exists.",
+      };
+
+    case "homepage":
+      return {
+        section,
+        tagline: data.hero?.title,
+        subtitle: data.hero?.subtitle,
+        what_is: {
+          title: data.what_is?.title,
+          subtitle: data.what_is?.subtitle,
+          explanation: data.what_is?.explanation?.map((e) => ({
+            title: e.title,
+            description: e.description,
+          })),
+        },
+        core_features: {
+          title: data.core_features?.title,
+          features: data.core_features?.features?.map((f) => ({
+            title: f.title,
+            description: f.description,
+            examples: f.examples,
+          })),
+        },
+        how_it_works: {
+          title: data.how_it_works?.title,
+          subtitle: data.how_it_works?.subtitle,
+          steps: data.how_it_works?.steps?.map((step) => ({
+            title: step.title,
+            description: Array.isArray(step.description)
+              ? step.description.map((d) => `${d.step}: ${d.content}`).join(" ")
+              : step.description,
+          })),
+        },
+        how_does_it_work: {
+          title: data.how_does_it_work?.title,
+          explanation: data.how_does_it_work?.explanation?.map((e) => ({
+            title: e.title,
+            description: e.description,
+            link: e.link,
+            linkLabel: e.linkLabel,
+          })),
+        },
+        trust_security: {
+          regulatory: {
+            title: data.trust_security?.regulatory?.title,
+            description: data.trust_security?.regulatory?.description,
+          },
+          audits_description: data.trust_security?.audits?.description,
+        },
+        foundation: {
+          title: data.foundation?.title,
+          description: data.foundation?.description,
+          href: data.foundation?.href,
+        },
+        availableSections: Object.keys(WEBSITE_SECTIONS),
+        note: "Homepage content — tagline, features, how it works, trust/security, foundation.",
+      };
+
+    default:
+      return { error: `Unhandled section: ${section}` };
+  }
+}
 
 const DOC_FILES = {
   overview: "README.md",
