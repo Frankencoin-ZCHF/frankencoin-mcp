@@ -1,5 +1,8 @@
 /**
- * Analytics, historical data, equity trades, minters, Dune stats.
+ * get_analytics — historical time-series, trades, minters, rate history.
+ *
+ * Consolidates: get_analytics + get_historical + get_equity_trades + get_minters
+ * into one tool with a 'type' parameter.
  */
 
 import {
@@ -8,42 +11,7 @@ import {
   CHAIN_NAMES, DUNE_QUERIES, DUNE_KEY,
 } from "./helpers.js";
 
-export async function getAnalytics({ days = 30 } = {}) {
-  const data = await ponderQuery(`{
-    analyticDailyLogs(limit: ${days}, orderBy: "timestamp", orderDirection: "desc") {
-      items {
-        date timestamp totalSupply totalEquity totalSavings
-        fpsTotalSupply fpsPrice currentLeadRate projectedInterests
-        annualNetEarnings realizedNetEarnings earningsPerFPS
-        annualV2BorrowRate totalMintedV1 totalMintedV2
-      }
-    }
-  }`);
-  return (data.analyticDailyLogs?.items || []).map((d) => ({
-    date: d.date,
-    supply: fromWei(d.totalSupply),
-    equity: fromWei(d.totalEquity),
-    savings: fromWei(d.totalSavings),
-    fps: {
-      supply: fromWei(d.fpsTotalSupply),
-      priceChf: fromWei(d.fpsPrice),
-      earningsPerFPS: fromWei(d.earningsPerFPS),
-    },
-    rates: {
-      leadRatePercent: fromWei(d.currentLeadRate) * 100,
-      annualBorrowRatePercent: fromWei(d.annualV2BorrowRate) * 100,
-    },
-    earnings: {
-      projected: fromWei(d.projectedInterests),
-      annual: fromWei(d.annualNetEarnings),
-      realized: fromWei(d.realizedNetEarnings),
-    },
-    mintedV1: fromWei(d.totalMintedV1),
-    mintedV2: fromWei(d.totalMintedV2),
-  }));
-}
-
-export async function getHistorical({ days = 90 } = {}) {
+async function getTimeSeries({ days = 90 } = {}) {
   const [analyticsData, rateData] = await Promise.all([
     ponderQuery(`{
       analyticDailyLogs(limit: ${Math.min(days, 365)}, orderBy: "timestamp", orderDirection: "desc") {
@@ -126,9 +94,9 @@ export async function getHistorical({ days = 90 } = {}) {
   };
 }
 
-export async function getEquityTrades({ limit = 20 } = {}) {
+async function getTrades({ limit = 20 } = {}) {
   const data = await ponderQuery(`{
-    equityTrades(limit: ${limit}, orderBy: "created", orderDirection: "desc") {
+    equityTrades(limit: ${Math.min(limit, 100)}, orderBy: "created", orderDirection: "desc") {
       items { kind count trader amount shares price created txHash }
     }
   }`);
@@ -144,9 +112,9 @@ export async function getEquityTrades({ limit = 20 } = {}) {
   }));
 }
 
-export async function getMinters({ limit = 20 } = {}) {
+async function getMinters({ limit = 20 } = {}) {
   const data = await ponderQuery(`{
-    frankencoinMinters(limit: ${limit}) {
+    frankencoinMinters(limit: ${Math.min(limit, 100)}) {
       items { chainId txHash minter applicationPeriod applicationFee applyMessage applyDate suggestor denyMessage denyDate denyTxHash vetor }
     }
   }`);
@@ -166,6 +134,44 @@ export async function getMinters({ limit = 20 } = {}) {
   }));
 }
 
+async function getRateHistory({ days = 90 } = {}) {
+  const data = await ponderQuery(`{
+    leadrateRateChangeds(limit: 100, orderBy: "created", orderDirection: "desc") {
+      items { chainId module approvedRate created blockheight txHash }
+    }
+  }`);
+
+  const all = (data.leadrateRateChangeds?.items || []).map((r) => ({
+    date: new Date(Number(r.created) * 1000).toISOString().split("T")[0],
+    chainId: r.chainId,
+    chainName: CHAIN_NAMES[r.chainId] || `Chain ${r.chainId}`,
+    ratePercent: bpsToPercent(r.approvedRate),
+    module: r.module,
+    txHash: r.txHash,
+  }));
+
+  return {
+    ethereum: all.filter((r) => r.chainId === 1).sort((a, b) => a.date.localeCompare(b.date)),
+    all,
+  };
+}
+
+export async function getAnalytics({ type = "time_series", days = 90, limit = 20 } = {}) {
+  switch (type) {
+    case "time_series":
+      return getTimeSeries({ days });
+    case "trades":
+      return { trades: await getTrades({ limit }) };
+    case "minters":
+      return { minters: await getMinters({ limit }) };
+    case "rate_history":
+      return { rateHistory: await getRateHistory({ days }) };
+    default:
+      return { error: `Unknown analytics type: "${type}". Use: time_series, trades, minters, rate_history.` };
+  }
+}
+
+// Keep Dune stats as separate tool
 export async function getDuneStats() {
   if (!DUNE_KEY) throw new Error("Dune API key not configured on server");
 
@@ -189,6 +195,7 @@ export async function getDuneStats() {
   };
 }
 
+// Keep raw Ponder query
 export async function runPonderQuery(graphqlQuery) {
   return ponderQuery(graphqlQuery);
 }

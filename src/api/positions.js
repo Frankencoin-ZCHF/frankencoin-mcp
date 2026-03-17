@@ -1,31 +1,40 @@
 /**
- * Positions and challenges.
+ * get_positions (with detail param) + get_challenges.
+ *
+ * Consolidates: get_positions + get_positions_detail into one tool.
+ * get_challenges stays as its own tool.
  */
 
 import {
   apiFetch, ponderQuery, cgFetch,
   fromWei, ppmToPercent,
-  CHAIN_NAMES, COINGECKO_IDS, CG_KEY,
+  COINGECKO_IDS, CG_KEY,
 } from "./helpers.js";
 
-export async function getPositions({ limit = 50 } = {}) {
-  const data = await apiFetch("/positions/open");
-  return {
-    total: data.num,
-    returned: Math.min(limit, (data.addresses || []).length),
-    addresses: (data.addresses || []).slice(0, limit),
-    note: "Use get_positions_detail for full position data including collateral, amounts, and pricing",
-  };
-}
+export async function getPositions({ detail = false, limit, activeOnly, collateral = null } = {}) {
+  if (!detail) {
+    // Lightweight: address list only
+    const effectiveLimit = limit ?? 50;
+    const data = await apiFetch("/positions/open");
+    return {
+      total: data.num,
+      returned: Math.min(effectiveLimit, (data.addresses || []).length),
+      addresses: (data.addresses || []).slice(0, effectiveLimit),
+      note: "Set detail=true for full position data including collateral, amounts, and pricing.",
+    };
+  }
 
-export async function getPositionsDetail({ limit = 20, activeOnly = true, collateral = null } = {}) {
-  const whereClause = activeOnly
+  // Detailed: full on-chain data
+  const effectiveLimit = Math.min(limit ?? 20, 100);
+  const effectiveActiveOnly = activeOnly ?? true;
+
+  const whereClause = effectiveActiveOnly
     ? `, where: {closed: false, denied: false${collateral ? `, collateral: "${collateral}"` : ""}}`
     : collateral ? `, where: {collateral: "${collateral}"}` : "";
 
   const [pData, prices, collateralList] = await Promise.all([
     ponderQuery(`{
-      mintingHubV2PositionV2s(limit: ${limit}${whereClause}) {
+      mintingHubV2PositionV2s(limit: ${effectiveLimit}${whereClause}) {
         items {
           position owner collateral collateralSymbol collateralBalance collateralDecimals
           minted availableForMinting price cooldown expiration start
@@ -48,7 +57,7 @@ export async function getPositionsDetail({ limit = 20, activeOnly = true, collat
     decimalsMap[c.address.toLowerCase()] = c.decimals;
   }
 
-  // Enrich with CoinGecko data
+  // CoinGecko enrichment
   const collateralAddrs = [...new Set(
     (pData.mintingHubV2PositionV2s?.items || []).map(p => p.collateral?.toLowerCase()).filter(Boolean)
   )];
@@ -224,4 +233,17 @@ export async function getChallenges({ limit = 20, activeOnly = false } = {}) {
       };
     }),
   };
+}
+
+// getCollaterals stays unchanged
+export async function getCollaterals() {
+  const data = await apiFetch("/ecosystem/collateral/list");
+  return (data.list || []).map((c) => ({
+    chainId: c.chainId,
+    chainName: c.chainName || `Chain ${c.chainId}`,
+    address: c.address,
+    name: c.name,
+    symbol: c.symbol,
+    decimals: c.decimals,
+  }));
 }
