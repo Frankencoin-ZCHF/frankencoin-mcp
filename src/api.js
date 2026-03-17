@@ -1254,9 +1254,6 @@ export async function getProtocolSummary() {
 
 // ─── CHF Stablecoin Comparison ────────────────────────────────────────────────
 
-const CHFAU_CONTRACT = "0xbd4dfc058eb95b8de5ceaf39966a1a70f5556f78";
-const ETH_RPC = "https://eth.llamarpc.com";
-
 async function ethCall(contractAddress, data) {
   const res = await fetch(ETH_RPC, {
     method: "POST",
