@@ -7,9 +7,6 @@
  *   - MCP HTTP  (--http):  POST /mcp  — MCP protocol, for AI agents
  *   - REST API  (--http):  GET  /api/<tool>[?param=value]  — plain JSON, no handshake
  *
- * The REST /api layer is the lightweight "agentic shortcut" — any agent or
- * script can call it with a single HTTP GET, no MCP session required.
- *
  * Usage:
  *   node src/index.js              # stdio mode
  *   node src/index.js --http       # HTTP mode (default port 3000)
@@ -30,10 +27,6 @@ const { version: SERVER_VERSION } = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8")
 );
 
-// ─── Tool registration ────────────────────────────────────────────────────────
-// Each session gets its own McpServer instance (required by SDK — one server per transport).
-// Tool logic is shared via the api module.
-
 function ok(data) {
   return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
 }
@@ -43,11 +36,7 @@ function err(e) {
 }
 
 /**
- * Convert a JSON Schema properties map to a Zod raw shape.
- * The SDK's server.tool() accepts a Zod raw shape (object whose values are
- * Zod schemas). Passing a plain JSON Schema object causes args to be silently
- * dropped — this helper ensures every property becomes a properly typed Zod
- * schema so the SDK can validate and forward arguments correctly.
+ * Convert JSON Schema properties to Zod shape.
  */
 function jsonPropsToZodShape(properties = {}, required = []) {
   const shape = {};
@@ -69,10 +58,6 @@ function createServer() {
   const server = new McpServer({ name: "frankencoin", version: SERVER_VERSION });
 
   for (const tool of TOOLS) {
-    // Convert JSON Schema properties to a Zod raw shape. Passing a plain
-    // JSON Schema (type/properties/required) to server.tool() causes the SDK
-    // to silently ignore it because it's not recognised as a Zod object —
-    // args then arrive as {} in the callback, breaking any tool with params.
     const zodShape = jsonPropsToZodShape(
       tool.inputSchema.properties || {},
       tool.inputSchema.required || [],
@@ -80,43 +65,45 @@ function createServer() {
     server.tool(tool.name, tool.description, zodShape, async (args) => {
       try {
         switch (tool.name) {
-          case "get_protocol_summary":    return ok(await api.getProtocolSummary());
-          case "get_protocol_info":       return ok(await api.getProtocolInfo());
-          case "get_fps_info":            return ok(await api.getFpsInfo());
-          case "get_prices":              return ok(await api.getPrices());
-          case "get_savings_rates":       return ok(await api.getSavingsRates());
-          case "get_savings_stats":       return ok(await api.getSavingsStats());
-          case "get_collaterals":         return ok(await api.getCollaterals());
+          case "get_protocol_snapshot":
+            return ok(await api.getProtocolSnapshot());
+          case "get_market_data":
+            return ok(await api.getMarketData());
+          case "get_savings":
+            return ok(await api.getSavings());
+          case "get_governance":
+            return ok(await api.getGovernance({
+              type: args.type ?? "all",
+              status: args.status ?? "all",
+              limit: Math.min(args.limit ?? 20, 100),
+            }));
+          case "get_positions":
+            return ok(await api.getPositionsUnified({
+              detail: args.detail ?? false,
+              limit: args.limit,
+              activeOnly: args.active_only,
+              collateral: args.collateral ?? null,
+            }));
           case "get_challenges":
             return ok(await api.getChallenges({
               limit: Math.min(args.limit ?? 20, 100),
               activeOnly: args.active_only ?? false,
             }));
-          case "get_positions":
-            return ok(await api.getPositions({ limit: args.limit ?? 50 }));
-          case "get_positions_detail":
-            return ok(await api.getPositionsDetail({
-              limit: Math.min(args.limit ?? 20, 100),
-              activeOnly: args.active_only ?? true,
-              collateral: args.collateral ?? null,
-            }));
+          case "get_collaterals":
+            return ok(await api.getCollaterals());
           case "get_analytics":
-            return ok(await api.getAnalytics({ days: Math.min(args.days ?? 30, 365) }));
-          case "get_equity_trades":
-            return ok(await api.getEquityTrades({ limit: Math.min(args.limit ?? 20, 100) }));
-          case "get_minters":
-            return ok(await api.getMinters({ limit: args.limit ?? 20 }));
-          case "get_historical":
-            return ok(await api.getHistorical({ days: Math.min(args.days ?? 90, 365) }));
-          case "get_market_context":      return ok(await api.getMarketContext());
-          case "get_chf_stablecoins":     return ok(await api.getChfStablecoins());
-          case "get_dune_stats":          return ok(await api.getDuneStats());
-          case "get_merch":               return ok(await api.getMerch());
-          case "get_token_addresses":     return ok(await api.getTokenAddresses());
-          case "get_links":               return ok(await api.getLinks());
-          case "get_docs":                return ok(await api.getDocs({ section: args.section ?? "overview" }));
-          case "get_website_content":     return ok(await api.getWebsiteContent({ section: args.section ?? "faq" }));
-          case "get_media_and_use_cases": return ok(await api.getMediaAndUseCases());
+            return ok(await api.getAnalytics({
+              days: Math.min(args.days ?? 30, 365),
+              type: args.type ?? "summary",
+            }));
+          case "get_knowledge":
+            return ok(await api.getKnowledge({ topic: args.topic ?? "overview" }));
+          case "get_news":
+            return ok(await api.getNews());
+          case "get_merch":
+            return ok(await api.getMerch());
+          case "get_dune_stats":
+            return ok(await api.getDuneStats());
           case "query_ponder":
             if (!args.query) return err(new Error("query parameter required"));
             return ok(await api.runPonderQuery(args.query));
@@ -138,37 +125,19 @@ const useHttp = process.argv.includes("--http");
 const PORT = parseInt(process.env.PORT || "3000", 10);
 
 if (!useHttp) {
-  // ── stdio mode — Claude Desktop / Cursor / CLI ──
+  // ── stdio mode ──
   const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Frankencoin MCP server running on stdio");
 
 } else {
-  // ── HTTP mode — public deployment ──
-  // Each session gets its own (server, transport) pair.
-  // Map: sessionId → { server, transport }
+  // ── HTTP mode ──
   const sessions = new Map();
-
-  // SSE sessions (legacy): keyed by a synthetic ID we manage
   const sseSessions = new Map();
-
-  // Init lock: prevents a burst of concurrent sessionless requests from each
-  // spawning their own (server, transport) pair before any one of them has
-  // finished the MCP initialize handshake. Without this, 14 simultaneous cold
-  // calls all "win" the new-session branch, the SDK sees multiple concurrent
-  // initialize calls on the same transport handle, and the server gets stuck
-  // in an uninitialized state.
-  //
-  // Strategy: only one request may run the initialize path at a time.
-  // All other concurrent sessionless requests wait for it to complete, then
-  // they re-check sessions for an active session to route to. If none exists
-  // (e.g. it was a stateless/single-request session), they respond with a
-  // 503 Retry-After so the client knows to re-issue the initialize.
   let initLockPromise = null;
 
   const httpServer = http.createServer(async (req, res) => {
-    // CORS — fully open, read-only public API
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, mcp-session-id");
@@ -178,7 +147,7 @@ if (!useHttp) {
 
     const url = new URL(req.url, `http://localhost:${PORT}`);
 
-    // ── Health / root ──────────────────────────────────────────────────────
+    // ── Health / root ──
     if (url.pathname === "/" || url.pathname === "/health") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({
@@ -199,28 +168,18 @@ if (!useHttp) {
     }
 
     // ── REST API  (/api/<tool>) ────────────────────────────────────────────
-    // Stateless, no handshake. Any GET returns JSON directly.
-    // Params passed as query string: /api/get_challenges?limit=10&active_only=true
-    // POST also accepted: body is JSON object of params.
-    //
-    // GET /api            → list all tools with descriptions and param schemas
-    // GET /api/<tool>     → call tool with optional query params
-    // POST /api/<tool>    → call tool with JSON body params
-    //
-    // Response: { ok: true, tool: "...", result: <data> }
-    //        or { ok: false, tool: "...", error: "..." }
     if (url.pathname === "/api" || url.pathname === "/api/") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({
         description: "Frankencoin REST API — call any tool with a single GET, no MCP session required.",
         usage: "GET https://mcp.frankencoin.com/api/<tool>[?param=value&...]",
         examples: [
-          "GET /api/get_protocol_summary",
-          "GET /api/get_prices",
-          "GET /api/get_positions_detail?limit=10&active_only=true",
+          "GET /api/get_protocol_snapshot",
+          "GET /api/get_market_data",
+          "GET /api/get_positions?detail=true&limit=10",
           "GET /api/get_challenges?active_only=true",
-          "GET /api/get_historical?days=30",
-          "GET /api/get_docs?section=savings",
+          "GET /api/get_analytics?days=30&type=summary",
+          "GET /api/get_knowledge?topic=faq",
           "POST /api/query_ponder  body: {\"query\": \"{ analyticDailyLogs(limit:3) { items { totalSupply date } } }\"}",
         ],
         tools: TOOLS.map((t) => ({
@@ -232,14 +191,13 @@ if (!useHttp) {
             required: (t.inputSchema.required || []).includes(k),
             description: v.description,
           })),
-          url: `GET /api/${t.name}`,
         })),
       }, null, 2));
       return;
     }
 
     if (url.pathname.startsWith("/api/")) {
-      const toolName = url.pathname.slice(5); // strip /api/
+      const toolName = url.pathname.slice(5);
       const toolDef = TOOLS.find((t) => t.name === toolName);
 
       if (!toolDef) {
@@ -252,7 +210,6 @@ if (!useHttp) {
         return;
       }
 
-      // Parse params: query string for GET, JSON body for POST
       let params = {};
       if (req.method === "POST" || req.method === "PUT") {
         try {
@@ -269,7 +226,6 @@ if (!useHttp) {
           return;
         }
       } else {
-        // GET: coerce query string values to the right types per tool schema
         for (const [k, v] of url.searchParams.entries()) {
           const propDef = toolDef.inputSchema.properties?.[k];
           if (propDef?.type === "number") params[k] = Number(v);
@@ -281,45 +237,45 @@ if (!useHttp) {
       try {
         let result;
         switch (toolName) {
-          case "get_protocol_summary":    result = await api.getProtocolSummary(); break;
-          case "get_protocol_info":       result = await api.getProtocolInfo(); break;
-          case "get_fps_info":            result = await api.getFpsInfo(); break;
-          case "get_prices":              result = await api.getPrices(); break;
-          case "get_savings_rates":       result = await api.getSavingsRates(); break;
-          case "get_savings_stats":       result = await api.getSavingsStats(); break;
-          case "get_collaterals":         result = await api.getCollaterals(); break;
+          case "get_protocol_snapshot":
+            result = await api.getProtocolSnapshot(); break;
+          case "get_market_data":
+            result = await api.getMarketData(); break;
+          case "get_savings":
+            result = await api.getSavings(); break;
+          case "get_governance":
+            result = await api.getGovernance({
+              type: params.type ?? "all",
+              status: params.status ?? "all",
+              limit: Math.min(params.limit ?? 20, 100),
+            }); break;
+          case "get_positions":
+            result = await api.getPositionsUnified({
+              detail: params.detail ?? false,
+              limit: params.limit,
+              activeOnly: params.active_only,
+              collateral: params.collateral ?? null,
+            }); break;
           case "get_challenges":
             result = await api.getChallenges({
               limit: Math.min(params.limit ?? 20, 100),
               activeOnly: params.active_only ?? false,
             }); break;
-          case "get_positions":
-            result = await api.getPositions({ limit: params.limit ?? 50 }); break;
-          case "get_positions_detail":
-            result = await api.getPositionsDetail({
-              limit: Math.min(params.limit ?? 20, 100),
-              activeOnly: params.active_only ?? true,
-              collateral: params.collateral ?? null,
-            }); break;
+          case "get_collaterals":
+            result = await api.getCollaterals(); break;
           case "get_analytics":
-            result = await api.getAnalytics({ days: Math.min(params.days ?? 30, 365) }); break;
-          case "get_equity_trades":
-            result = await api.getEquityTrades({ limit: Math.min(params.limit ?? 20, 100) }); break;
-          case "get_minters":
-            result = await api.getMinters({ limit: params.limit ?? 20 }); break;
-          case "get_historical":
-            result = await api.getHistorical({ days: Math.min(params.days ?? 90, 365) }); break;
-          case "get_market_context":      result = await api.getMarketContext(); break;
-          case "get_chf_stablecoins":     result = await api.getChfStablecoins(); break;
-          case "get_dune_stats":          result = await api.getDuneStats(); break;
-          case "get_merch":               result = await api.getMerch(); break;
-          case "get_token_addresses":     result = await api.getTokenAddresses(); break;
-          case "get_links":               result = await api.getLinks(); break;
-          case "get_docs":
-            result = await api.getDocs({ section: params.section ?? "overview" }); break;
-          case "get_website_content":
-            result = await api.getWebsiteContent({ section: params.section ?? "faq" }); break;
-          case "get_media_and_use_cases": result = await api.getMediaAndUseCases(); break;
+            result = await api.getAnalytics({
+              days: Math.min(params.days ?? 30, 365),
+              type: params.type ?? "summary",
+            }); break;
+          case "get_knowledge":
+            result = await api.getKnowledge({ topic: params.topic ?? "overview" }); break;
+          case "get_news":
+            result = await api.getNews(); break;
+          case "get_merch":
+            result = await api.getMerch(); break;
+          case "get_dune_stats":
+            result = await api.getDuneStats(); break;
           case "query_ponder":
             if (!params.query) {
               res.writeHead(400, { "Content-Type": "application/json" });
@@ -349,16 +305,12 @@ if (!useHttp) {
         if (req.method === "POST") {
           const sessionId = req.headers["mcp-session-id"];
 
-          // Existing known session
           if (sessionId && sessions.has(sessionId)) {
             const { transport } = sessions.get(sessionId);
             await transport.handleRequest(req, res);
             return;
           }
 
-          // Stale session ID (server restarted, session expired) — reject cleanly
-          // with 404 so the client knows to re-initialize rather than getting
-          // the confusing "Server not initialized" error from the SDK
           if (sessionId && !sessions.has(sessionId)) {
             res.writeHead(404, { "Content-Type": "application/json" });
             res.end(JSON.stringify({
@@ -369,16 +321,8 @@ if (!useHttp) {
             return;
           }
 
-          // New session (no session ID = first request, must be initialize).
-          // Guard: only one initialization may run at a time. Concurrent
-          // sessionless requests queue behind the lock. After the lock resolves,
-          // they retry the session lookup — if a session was created they can
-          // use it; otherwise they return 503 so the client retries.
           if (initLockPromise) {
-            // Another initialization is in flight — wait for it, then re-check
             await initLockPromise.catch(() => {});
-            // If there's now at least one session, tell the client to re-init
-            // (they need to send a proper initialize with the new session ID)
             if (sessions.size > 0) {
               res.writeHead(503, {
                 "Content-Type": "application/json",
@@ -394,7 +338,6 @@ if (!useHttp) {
               }));
               return;
             }
-            // No session yet (e.g. previous init failed) — fall through and try again
           }
 
           let resolveLock, rejectLock;
@@ -422,7 +365,6 @@ if (!useHttp) {
             rejectLock(initErr);
             throw initErr;
           } finally {
-            // Clear lock so future new-session requests don't queue indefinitely
             initLockPromise = null;
           }
           return;
@@ -466,7 +408,6 @@ if (!useHttp) {
     }
 
     // ── SSE  (/sse + /messages) ────────────────────────────────────────────
-    // Legacy transport for older clients. Each GET /sse creates a session.
     if (url.pathname === "/sse") {
       if (req.method !== "GET") {
         res.writeHead(405); res.end(); return;
@@ -477,7 +418,6 @@ if (!useHttp) {
       sseSessions.set(sseId, { server: mcpServer, transport });
       transport.onclose = () => sseSessions.delete(sseId);
       await mcpServer.connect(transport);
-      // res stays open (SSE stream)
       return;
     }
 
@@ -496,7 +436,6 @@ if (!useHttp) {
       return;
     }
 
-    // ── 404 ───────────────────────────────────────────────────────────────
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Not found", endpoints: ["/mcp", "/api", "/sse", "/health"] }));
   });

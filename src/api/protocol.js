@@ -129,6 +129,30 @@ export async function getSavingsStats() {
   return stats;
 }
 
+// ─── Consolidated: getSavings ─────────────────────────────────────────────────
+
+export async function getSavings() {
+  const [rates, stats] = await Promise.all([
+    getSavingsRates(),
+    getSavingsStats(),
+  ]);
+
+  // Total TVL across all modules
+  const totalBalanceChf = stats.reduce((sum, s) => sum + s.balanceChf, 0);
+  const totalInterestPaidChf = stats.reduce((sum, s) => sum + s.totalInterestPaidChf, 0);
+
+  return {
+    rates: rates.approved,
+    pendingProposals: rates.proposed,
+    modules: stats,
+    totals: {
+      tvlChf: Number(totalBalanceChf.toFixed(2)),
+      totalInterestPaidChf: Number(totalInterestPaidChf.toFixed(2)),
+    },
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export async function getCollaterals() {
   const data = await apiFetch("/ecosystem/collateral/list");
   return (data.list || []).map((c) => ({

@@ -1,5 +1,6 @@
 /**
  * Analytics, historical data, equity trades, minters, Dune stats.
+ * Consolidated: getGovernance (minters + rates + trades).
  */
 
 import {
@@ -7,8 +8,14 @@ import {
   fromWei, bpsToPercent, ppmToPercent,
   CHAIN_NAMES, DUNE_QUERIES, DUNE_KEY,
 } from "./helpers.js";
+import { getSavingsRates } from "./protocol.js";
 
-export async function getAnalytics({ days = 30 } = {}) {
+export async function getAnalytics({ days = 30, type = "summary" } = {}) {
+  if (type === "full") {
+    return getHistorical({ days });
+  }
+
+  // summary mode: daily snapshots only
   const data = await ponderQuery(`{
     analyticDailyLogs(limit: ${days}, orderBy: "timestamp", orderDirection: "desc") {
       items {
@@ -191,4 +198,95 @@ export async function getDuneStats() {
 
 export async function runPonderQuery(graphqlQuery) {
   return ponderQuery(graphqlQuery);
+}
+
+// ─── Consolidated: getGovernance ──────────────────────────────────────────────
+
+export async function getGovernance({ type = "all", status = "all", limit = 20 } = {}) {
+  const result = {};
+
+  // minters
+  if (type === "all" || type === "minters") {
+    const data = await ponderQuery(`{
+      frankencoinMinters(limit: ${limit}) {
+        items { chainId txHash minter applicationPeriod applicationFee applyMessage applyDate suggestor denyMessage denyDate denyTxHash vetor }
+      }
+    }`);
+    let minters = (data.frankencoinMinters?.items || []).map((m) => ({
+      address: m.minter,
+      chainId: m.chainId,
+      status: m.denyDate ? "denied" : (m.applicationPeriod && Number(m.applicationPeriod) > 0 ? "pending" : "approved"),
+      applicationFeeChf: fromWei(m.applicationFee),
+      appliedAt: m.applyDate ? new Date(Number(m.applyDate) * 1000).toISOString() : null,
+      deniedAt: m.denyDate ? new Date(Number(m.denyDate) * 1000).toISOString() : null,
+      suggestor: m.suggestor,
+      applyMessage: m.applyMessage || null,
+      denyMessage: m.denyMessage || null,
+      vetor: m.vetor || null,
+      txHash: m.txHash,
+      applicationPeriodSeconds: Number(m.applicationPeriod),
+    }));
+    if (status === "pending") minters = minters.filter((m) => m.status === "pending");
+    else if (status === "past") minters = minters.filter((m) => m.status !== "pending");
+    result.minters = minters;
+  }
+
+  // rates
+  if (type === "all" || type === "rates") {
+    const [rateData, savingsData] = await Promise.all([
+      ponderQuery(`{
+        leadrateRateChangeds(limit: ${limit}, orderBy: "created", orderDirection: "desc") {
+          items { chainId module approvedRate created blockheight txHash }
+        }
+      }`),
+      getSavingsRates(),
+    ]);
+
+    const rateHistory = (rateData.leadrateRateChangeds?.items || []).map((r) => ({
+      date: new Date(Number(r.created) * 1000).toISOString().split("T")[0],
+      chainId: r.chainId,
+      chainName: CHAIN_NAMES[r.chainId] || `Chain ${r.chainId}`,
+      ratePercent: bpsToPercent(r.approvedRate),
+      module: r.module,
+      txHash: r.txHash,
+      status: "approved",
+    }));
+
+    const pending = (savingsData.proposed || []).map((p) => ({
+      date: p.proposedAt,
+      chainId: p.chainId,
+      chainName: p.chainName,
+      ratePercent: p.proposedRatePercent,
+      module: p.module,
+      proposer: p.proposer,
+      effectiveAt: p.effectiveAt,
+      status: "pending",
+    }));
+
+    let rates = [...pending, ...rateHistory];
+    if (status === "pending") rates = rates.filter((r) => r.status === "pending");
+    else if (status === "past") rates = rates.filter((r) => r.status !== "pending");
+    result.rates = rates;
+  }
+
+  // trades
+  if (type === "all" || type === "trades") {
+    const data = await ponderQuery(`{
+      equityTrades(limit: ${limit}, orderBy: "created", orderDirection: "desc") {
+        items { kind count trader amount shares price created txHash }
+      }
+    }`);
+    result.trades = (data.equityTrades?.items || []).map((t) => ({
+      count: Number(t.count),
+      kind: t.kind,
+      trader: t.trader,
+      sharesTraded: fromWei(t.shares),
+      priceChf: fromWei(t.price),
+      amountChf: fromWei(t.amount),
+      timestamp: new Date(Number(t.created) * 1000).toISOString(),
+      txHash: t.txHash,
+    }));
+  }
+
+  return result;
 }

@@ -1,5 +1,6 @@
 /**
  * Static content: docs, links, token addresses, media, merch, website content.
+ * Consolidated: getKnowledge (routing layer), getNews.
  */
 
 import { githubFile, githubJson, SITE_REPO, DOCS_REPO } from "./helpers.js";
@@ -337,6 +338,88 @@ export async function getMediaAndUseCases() {
     note: "Content sourced live from the Frankencoin website repository.",
   };
 }
+
+// ─── Consolidated: getKnowledge ───────────────────────────────────────────────
+
+const KNOWLEDGE_TOPICS = {
+  overview:         { type: "gitbook", sections: ["overview"] },
+  what_is:          { type: "website", section: "what_is" },
+  faq:              { type: "website", section: "faq" },
+  how_it_works:     { type: "gitbook", sections: ["minting", "opening_positions"] },
+  savings_guide:    { type: "gitbook", sections: ["savings"] },
+  governance_guide: { type: "combined", gitbook: ["pool_shares", "governance"], website: "governance" },
+  compliance:       { type: "website", section: "compliance" },
+  risks:            { type: "gitbook", sections: ["risks"] },
+  reserve:          { type: "gitbook", sections: ["reserve"] },
+  auctions:         { type: "gitbook", sections: ["auctions"] },
+  token_addresses:  { type: "custom", fn: "tokenAddresses" },
+  links:            { type: "custom", fn: "links" },
+  api_reference:    { type: "gitbook", sections: ["api"] },
+};
+
+export async function getKnowledge({ topic = "overview" } = {}) {
+  const def = KNOWLEDGE_TOPICS[topic];
+  if (!def) {
+    return {
+      error: `Unknown topic: "${topic}"`,
+      availableTopics: Object.keys(KNOWLEDGE_TOPICS),
+    };
+  }
+
+  switch (def.type) {
+    case "gitbook": {
+      const results = await Promise.all(
+        def.sections.map((s) => getDocs({ section: s }))
+      );
+      return {
+        topic,
+        sections: results,
+        availableTopics: Object.keys(KNOWLEDGE_TOPICS),
+      };
+    }
+    case "website": {
+      const data = await getWebsiteContent({ section: def.section });
+      return {
+        topic,
+        ...data,
+        availableTopics: Object.keys(KNOWLEDGE_TOPICS),
+      };
+    }
+    case "combined": {
+      const [gitbookResults, websiteData] = await Promise.all([
+        Promise.all(def.gitbook.map((s) => getDocs({ section: s }))),
+        getWebsiteContent({ section: def.website }),
+      ]);
+      return {
+        topic,
+        documentation: gitbookResults,
+        websiteContent: websiteData,
+        availableTopics: Object.keys(KNOWLEDGE_TOPICS),
+      };
+    }
+    case "custom": {
+      if (def.fn === "tokenAddresses") {
+        const data = await getTokenAddresses();
+        return { topic, ...data, availableTopics: Object.keys(KNOWLEDGE_TOPICS) };
+      }
+      if (def.fn === "links") {
+        const data = await getLinks();
+        return { topic, ...data, availableTopics: Object.keys(KNOWLEDGE_TOPICS) };
+      }
+      return { error: `Unknown custom handler: ${def.fn}` };
+    }
+    default:
+      return { error: `Unknown topic type: ${def.type}` };
+  }
+}
+
+// ─── Consolidated: getNews ────────────────────────────────────────────────────
+
+export async function getNews() {
+  return getMediaAndUseCases();
+}
+
+// ─── Merch ────────────────────────────────────────────────────────────────────
 
 export async function getMerch() {
   const res = await fetch("https://merch.frankencoin.com/products.json?limit=250", {

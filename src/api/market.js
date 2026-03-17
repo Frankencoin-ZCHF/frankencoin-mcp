@@ -1,5 +1,6 @@
 /**
  * Market context: ZCHF peg health, macro assets, CHF stablecoin comparison.
+ * Consolidated: getMarketData (prices + market context + CHF stablecoins).
  */
 
 import {
@@ -7,6 +8,7 @@ import {
   fromWei,
   COINGECKO_IDS, CHFAU_CONTRACT, CG_KEY,
 } from "./helpers.js";
+import { getPrices } from "./protocol.js";
 
 function pegStatus(price) {
   if (price == null) return "unknown";
@@ -162,5 +164,26 @@ export async function getChfStablecoins() {
       },
     ],
     updatedAt: new Date().toISOString(),
+  };
+}
+
+// ─── Consolidated: getMarketData ──────────────────────────────────────────────
+
+export async function getMarketData() {
+  const [prices, context, chfStablecoins] = await Promise.all([
+    getPrices(),
+    getMarketContext(),
+    getChfStablecoins().catch(() => null),
+  ]);
+
+  return {
+    ecosystemPrices: prices,
+    zchf: context.zchf,
+    fps: context.fps,
+    macro: context.macro,
+    collateral: context.collateral,
+    chfStablecoins: chfStablecoins?.stablecoins ?? null,
+    defiTotalMarketCapUsd: context.defiTotalMarketCapUsd,
+    updatedAt: context.updatedAt,
   };
 }

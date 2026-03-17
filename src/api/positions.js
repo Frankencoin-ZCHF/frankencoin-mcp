@@ -8,17 +8,26 @@ import {
   CHAIN_NAMES, COINGECKO_IDS, CG_KEY,
 } from "./helpers.js";
 
-export async function getPositions({ limit = 50 } = {}) {
-  const data = await apiFetch("/positions/open");
-  return {
-    total: data.num,
-    returned: Math.min(limit, (data.addresses || []).length),
-    addresses: (data.addresses || []).slice(0, limit),
-    note: "Use get_positions_detail for full position data including collateral, amounts, and pricing",
-  };
+export async function getPositions({ detail = false, limit, activeOnly, active_only, collateral } = {}) {
+  // Normalize: accept both camelCase and snake_case
+  const isDetail = detail === true || detail === "true";
+  const effectiveActiveOnly = activeOnly ?? active_only ?? (isDetail ? true : undefined);
+  const effectiveLimit = limit ?? (isDetail ? 20 : 50);
+
+  if (!isDetail) {
+    const data = await apiFetch("/positions/open");
+    return {
+      total: data.num,
+      returned: Math.min(effectiveLimit, (data.addresses || []).length),
+      addresses: (data.addresses || []).slice(0, effectiveLimit),
+      note: "Set detail=true for full position data including collateral, amounts, and pricing",
+    };
+  }
+
+  return getPositionsDetail({ limit: effectiveLimit, activeOnly: effectiveActiveOnly ?? true, collateral });
 }
 
-export async function getPositionsDetail({ limit = 20, activeOnly = true, collateral = null } = {}) {
+async function getPositionsDetail({ limit = 20, activeOnly = true, collateral = null } = {}) {
   const whereClause = activeOnly
     ? `, where: {closed: false, denied: false${collateral ? `, collateral: "${collateral}"` : ""}}`
     : collateral ? `, where: {collateral: "${collateral}"}` : "";
@@ -224,4 +233,29 @@ export async function getChallenges({ limit = 20, activeOnly = false } = {}) {
       };
     }),
   };
+}
+
+
+
+/**
+ * Unified position access: addresses-only or full detail.
+ */
+export async function getPositionsUnified({ detail = false, limit, activeOnly, collateral } = {}) {
+  if (!detail) {
+    // Simple addresses-only mode
+    const data = await apiFetch("/positions/open");
+    return {
+      total: data.num,
+      returned: Math.min(limit ?? 50, (data.addresses || []).length),
+      addresses: (data.addresses || []).slice(0, limit ?? 50),
+      note: "Set detail=true for full position data including collateral, amounts, and pricing",
+    };
+  }
+  
+  // Full detail mode
+  return getPositionsDetail({
+    limit: Math.min(limit ?? 20, 100),
+    activeOnly: activeOnly ?? true,
+    collateral: collateral ?? null,
+  });
 }
