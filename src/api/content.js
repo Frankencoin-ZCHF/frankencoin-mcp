@@ -1,11 +1,20 @@
 /**
- * Static content: docs, links, token addresses, media, merch.
+ * get_knowledge — all explanatory content via topic param.
+ * get_news — press, videos, ecosystem.
+ * get_merch — merch store.
+ *
+ * Consolidates: get_docs + get_token_addresses + get_links into get_knowledge.
+ * get_media_and_use_cases becomes get_news.
+ * get_merch stays.
  */
 
 import { githubFile, githubJson, SITE_REPO, DOCS_REPO } from "./helpers.js";
 
+// ─── Documentation section mapping ───────────────────────────────────────────
+
 const DOC_FILES = {
   overview: "README.md",
+  what_is: "README.md",
   savings: "savings.md",
   pool_shares: "pool-shares.md",
   governance: "governance.md",
@@ -18,10 +27,52 @@ const DOC_FILES = {
   api: "api-docs/README.md",
 };
 
-export async function getTokenAddresses() {
+// ─── get_knowledge ───────────────────────────────────────────────────────────
+
+export async function getKnowledge({ topic = "overview" } = {}) {
+  // Special non-docs topics
+  if (topic === "token_addresses") {
+    return getTokenAddresses();
+  }
+  if (topic === "links" || topic === "compliance") {
+    return getLinks();
+  }
+
+  // Documentation topics
+  const file = DOC_FILES[topic];
+  if (!file) {
+    return {
+      error: `Unknown topic: "${topic}"`,
+      availableTopics: [
+        "overview", "what_is", "faq", "savings", "governance", "minting",
+        "opening_positions", "auctions", "risks", "reserve", "pool_shares",
+        "api", "compliance", "token_addresses", "links",
+      ],
+    };
+  }
+
+  const content = await githubFile(DOCS_REPO, file);
+  return {
+    topic,
+    file,
+    source: `https://github.com/${DOCS_REPO}/blob/main/${file}`,
+    docsUrl: `https://docs.frankencoin.com/${file.replace(/\.md$/, "").replace(/\/README$/, "")}`,
+    content,
+    availableTopics: [
+      "overview", "what_is", "faq", "savings", "governance", "minting",
+      "opening_positions", "auctions", "risks", "reserve", "pool_shares",
+      "api", "compliance", "token_addresses", "links",
+    ],
+  };
+}
+
+// ─── Token addresses (used by get_knowledge topic=token_addresses) ────────────
+
+async function getTokenAddresses() {
   const data = await githubJson(SITE_REPO, "src/content/en/token.json");
 
   return {
+    topic: "token_addresses",
     zchf: {
       name: "Frankencoin",
       symbol: "ZCHF",
@@ -54,7 +105,9 @@ export async function getTokenAddresses() {
   };
 }
 
-export async function getLinks() {
+// ─── Links (used by get_knowledge topic=links/compliance) ─────────────────────
+
+async function getLinks() {
   const [footerData, exchangeData, useCaseData] = await Promise.all([
     githubJson(SITE_REPO, "src/content/en/shared/footer.json"),
     githubJson(SITE_REPO, "src/content/en/exchanges.json"),
@@ -79,6 +132,7 @@ export async function getLinks() {
   const findUrl = (label) => communityLinks.find((l) => l.label.toLowerCase().includes(label.toLowerCase()))?.url ?? null;
 
   return {
+    topic: "links",
     app: {
       main: "https://app.frankencoin.com",
       mint: "https://app.frankencoin.com/mint",
@@ -130,27 +184,9 @@ export async function getLinks() {
   };
 }
 
-export async function getDocs({ section = "overview" } = {}) {
-  const file = DOC_FILES[section];
-  if (!file) {
-    return {
-      error: `Unknown section: "${section}"`,
-      availableSections: Object.keys(DOC_FILES),
-    };
-  }
+// ─── get_news ─────────────────────────────────────────────────────────────────
 
-  const content = await githubFile(DOCS_REPO, file);
-  return {
-    section,
-    file,
-    source: `https://github.com/${DOCS_REPO}/blob/main/${file}`,
-    docsUrl: `https://docs.frankencoin.com/${file.replace(/\.md$/, "").replace(/\/README$/, "")}`,
-    content,
-    availableSections: Object.keys(DOC_FILES),
-  };
-}
-
-export async function getMediaAndUseCases() {
+export async function getNews() {
   const [mediaData, useCaseData, ecosystemData] = await Promise.all([
     githubJson(SITE_REPO, "src/content/shared/media.json"),
     githubJson(SITE_REPO, "src/content/en/use-cases.json"),
@@ -159,30 +195,47 @@ export async function getMediaAndUseCases() {
 
   const articles = (mediaData.articles ?? []).map((url) => {
     const meta = mediaData.articleMetadata?.[url] ?? {};
-    return { url, title: meta.title ?? null, description: meta.description ?? null,
-      siteName: meta.siteName ?? null, publishedDate: meta.publishedDate ?? null, image: meta.image ?? null };
+    return {
+      url,
+      title: meta.title ?? null,
+      description: meta.description ?? null,
+      siteName: meta.siteName ?? null,
+      publishedDate: meta.publishedDate ?? null,
+      image: meta.image ?? null,
+    };
   });
 
   const videos = (mediaData.videos ?? []).map((url) => {
     const meta = mediaData.videoMetadata?.[url] ?? {};
-    return { url, title: meta.title ?? null, description: meta.description ?? null,
-      author: meta.author ?? null, publishedDate: meta.publishedDate ?? null };
+    return {
+      url,
+      title: meta.title ?? null,
+      description: meta.description ?? null,
+      author: meta.author ?? null,
+      publishedDate: meta.publishedDate ?? null,
+    };
   });
 
   return {
-    media: {
-      articles,
-      videos,
-    },
+    media: { articles, videos },
     useCases: (useCaseData.cases ?? []).map((c) => ({
-      title: c.title, partner: c.partner, category: c.category, description: c.description, url: c.link,
+      title: c.title,
+      partner: c.partner,
+      category: c.category,
+      description: c.description,
+      url: c.link,
     })),
     ecosystem: (ecosystemData.tabs ?? []).map((t) => ({
-      name: t.name, category: t.category ?? t.badge, description: t.description, url: t.href,
+      name: t.name,
+      category: t.category ?? t.badge,
+      description: t.description,
+      url: t.href,
     })),
     note: "Content sourced live from the Frankencoin website repository.",
   };
 }
+
+// ─── get_merch ────────────────────────────────────────────────────────────────
 
 export async function getMerch() {
   const res = await fetch("https://merch.frankencoin.com/products.json?limit=250", {
@@ -205,8 +258,11 @@ export async function getMerch() {
       images: p.images.map((i) => i.src),
       options: p.options.map((o) => ({ name: o.name, values: o.values })),
       variants: p.variants.map((v) => ({
-        title: v.title, price: v.price, compareAtPrice: v.compare_at_price || null,
-        available: v.available, sku: v.sku || null,
+        title: v.title,
+        price: v.price,
+        compareAtPrice: v.compare_at_price || null,
+        available: v.available,
+        sku: v.sku || null,
       })),
       minPrice: p.variants.reduce((min, v) => Math.min(min, parseFloat(v.price)), Infinity).toFixed(2),
       maxPrice: p.variants.reduce((max, v) => Math.max(max, parseFloat(v.price)), 0).toFixed(2),
