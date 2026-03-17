@@ -5,7 +5,7 @@ Real-time Frankencoin (ZCHF) protocol data via three interfaces — pick whateve
 | Interface | Endpoint | Best for |
 |-----------|----------|----------|
 | **MCP** | `POST https://mcp.frankencoin.com/mcp` | Claude Desktop, Cursor, any MCP-compatible agent |
-| **REST API** | `GET https://mcp.frankencoin.com/tools/<tool>` | Agents, scripts, curl — single request, no handshake |
+| **REST API** | `GET https://mcp.frankencoin.com/api/<tool>` | Agents, scripts, curl — single request, no handshake |
 | **CLI** | `frankencoin <command>` | Humans at the terminal |
 
 **Public endpoint:** `https://mcp.frankencoin.com`
@@ -37,40 +37,41 @@ Real-time Frankencoin (ZCHF) protocol data via three interfaces — pick whateve
 | `get_docs` | Official documentation sections (overview, savings, governance, etc.) |
 | `get_merch` | Merch store products, prices, availability |
 | `get_media_and_use_cases` | Media coverage, use cases, ecosystem partners |
+| `get_chf_stablecoins` | Compare CHF stablecoins — ZCHF, VCHF, CHFAU peg health, market cap, volume |
 | `query_ponder` | Raw GraphQL against `ponder.frankencoin.com` for advanced queries |
 
 ---
 
 ## REST API — no handshake, agent-friendly
 
-The `/tools` layer lets any agent or script call tools with a single HTTP request — no MCP session, no protocol overhead.
+The `/api` layer lets any agent or script call tools with a single HTTP request — no MCP session, no protocol overhead.
 
 ```bash
 # Protocol snapshot
-curl https://mcp.frankencoin.com/tools/get_protocol_summary
+curl https://mcp.frankencoin.com/api/get_protocol_summary
 
 # Prices
-curl https://mcp.frankencoin.com/tools/get_prices
+curl https://mcp.frankencoin.com/api/get_prices
 
 # Positions with params
-curl "https://mcp.frankencoin.com/tools/get_positions_detail?limit=10&active_only=true"
+curl "https://mcp.frankencoin.com/api/get_positions_detail?limit=10&active_only=true"
 
 # Active challenges only
-curl "https://mcp.frankencoin.com/tools/get_challenges?active_only=true"
+curl "https://mcp.frankencoin.com/api/get_challenges?active_only=true"
 
 # Historical data (30 days)
-curl "https://mcp.frankencoin.com/tools/get_historical?days=30"
+curl "https://mcp.frankencoin.com/api/get_historical?days=30"
 
 # Documentation section
-curl "https://mcp.frankencoin.com/tools/get_docs?section=savings"
+curl "https://mcp.frankencoin.com/api/get_docs?section=savings"
 
 # Raw GraphQL (POST)
-curl -X POST https://mcp.frankencoin.com/tools/query_ponder \
+curl -X POST https://mcp.frankencoin.com/api/query_ponder \
   -H "Content-Type: application/json" \
   -d '{"query":"{ analyticDailyLogs(limit:3, orderBy:\"timestamp\", orderDirection:\"desc\") { items { date totalSupply fpsPrice } } }"}'
 
 # List all tools with descriptions and params
-curl https://mcp.frankencoin.com/tools
+curl https://mcp.frankencoin.com/api
 ```
 
 **Response format:**
@@ -193,9 +194,9 @@ PORT=8080 node src/index.js --http
 | Endpoint | Description |
 |----------|-------------|
 | `POST /mcp` | MCP Streamable HTTP (recommended) |
-| `GET /tools/<tool>` | REST API — plain JSON, no handshake |
-| `POST /tools/<tool>` | REST API with JSON body params |
-| `GET /tools` | Tool index — all tools with descriptions and param schemas |
+| `GET /api/<tool>` | REST API — plain JSON, no handshake |
+| `POST /api/<tool>` | REST API with JSON body params |
+| `GET /api` | Tool index — all tools with descriptions and param schemas |
 | `GET /sse` | Legacy SSE transport (older clients) |
 | `GET /health` | Health check + tool listing |
 
@@ -240,6 +241,24 @@ server {
 
 ---
 
+## Architecture
+
+```
+src/
+  index.js        — Server, transports (stdio/HTTP/SSE), unified tool dispatch
+  tools.js        — MCP tool definitions (name, description, inputSchema)
+  api/
+    index.js      — Barrel re-export
+    helpers.js    — Shared constants, fetch wrappers, number utils
+    protocol.js   — Core protocol: info, FPS, prices, savings, collaterals, summary
+    positions.js  — Positions and liquidation challenges
+    analytics.js  — Daily analytics, historical, equity trades, minters
+    market.js     — CoinGecko market context, CHF stablecoin comparison, Dune stats
+    content.js    — GitHub-sourced docs, links, token addresses, media, merch store
+```
+
+---
+
 ## Data Sources
 
 | Source | URL | Data |
@@ -269,7 +288,7 @@ eRC20TotalSupplys         leadrateRateChangeds
 
 Via REST:
 ```bash
-curl -X POST https://mcp.frankencoin.com/tools/query_ponder \
+curl -X POST https://mcp.frankencoin.com/api/query_ponder \
   -H "Content-Type: application/json" \
   -d '{"query":"{ mintingHubV2PositionV2s(limit:5) { items { position owner minted } } }"}'
 ```

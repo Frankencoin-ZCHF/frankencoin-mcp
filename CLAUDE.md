@@ -4,9 +4,9 @@
 
 This is the Frankencoin MCP server — a Model Context Protocol server that exposes real-time Frankencoin (ZCHF) protocol data as tools for AI assistants and developer tools.
 
-**Stack:** Node.js ESM, `@modelcontextprotocol/sdk`, no build step (runs directly)  
-**Entrypoint:** `src/index.js`  
-**Data layer:** `src/api.js`  
+**Stack:** Node.js ESM, `@modelcontextprotocol/sdk`, no build step (runs directly)
+**Entrypoint:** `src/index.js`
+**Data layer:** `src/api/` (modular)
 **Tool definitions:** `src/tools.js`
 
 ---
@@ -15,9 +15,16 @@ This is the Frankencoin MCP server — a Model Context Protocol server that expo
 
 ```
 src/
-  index.js   — HTTP server + stdio transport, session management, tool dispatch
-  api.js     — All data fetching: REST (api.frankencoin.com) + GraphQL (ponder.frankencoin.com)
-  tools.js   — MCP tool definitions (name, description, inputSchema)
+  index.js        — HTTP server + stdio transport, session management, tool dispatch
+  tools.js        — MCP tool definitions (name, description, inputSchema)
+  api/
+    index.js      — Barrel re-export (import * as api from './api/index.js')
+    helpers.js    — Constants, fetch wrappers (REST, GraphQL, CoinGecko, Dune, GitHub, ETH RPC), number utils
+    protocol.js   — Core protocol: info, FPS, prices, savings, collaterals, summary
+    positions.js  — Positions and liquidation challenges
+    analytics.js  — Daily analytics, historical, equity trades, minters, raw Ponder queries
+    market.js     — CoinGecko market context, CHF stablecoin comparison, Dune stats
+    content.js    — GitHub-sourced content (docs, links, token addresses, media) + merch store
 ```
 
 ### Key design decisions
@@ -57,16 +64,16 @@ Health check: `curl http://localhost:3000/health`
 
 No auth. All endpoints return JSON.
 
-| Endpoint | Function in api.js |
-|----------|-------------------|
-| `/ecosystem/frankencoin/info` | `getProtocolInfo()` |
-| `/ecosystem/fps/info` | `getFpsInfo()` |
-| `/prices/list` | `getPrices()` |
-| `/savings/leadrate/info` | `getSavingsRates()` |
-| `/savings/core/info` | `getSavingsStats()` |
-| `/ecosystem/collateral/list` | `getCollaterals()` |
-| `/challenges/list` | `getChallenges()` |
-| `/positions/open` | `getPositions()` |
+| Endpoint | Function | Module |
+|----------|----------|--------|
+| `/ecosystem/frankencoin/info` | `getProtocolInfo()` | `api/protocol.js` |
+| `/ecosystem/fps/info` | `getFpsInfo()` | `api/protocol.js` |
+| `/prices/list` | `getPrices()` | `api/protocol.js` |
+| `/savings/leadrate/info` | `getSavingsRates()` | `api/protocol.js` |
+| `/savings/core/info` | `getSavingsStats()` | `api/protocol.js` |
+| `/ecosystem/collateral/list` | `getCollaterals()` | `api/protocol.js` |
+| `/challenges/list` | `getChallenges()` | `api/positions.js` |
+| `/positions/open` | `getPositions()` | `api/positions.js` |
 
 ### GraphQL: `ponder.frankencoin.com`
 
@@ -92,7 +99,7 @@ Key entities and their primary keys:
 ### Number encoding
 
 - All token amounts from Ponder come as BigInt strings (e.g. `"27195555478609416088678148"`)
-- Use `fromWei(val, decimals)` in `api.js` to convert to float
+- Use `fromWei(val, decimals)` in `api/helpers.js` to convert to float
 - Savings rates: stored as basis points × 10 (37500 = 3.75%) — use `bpsToPercent()`
 - Risk premiums: stored in PPM (parts per million) — use `ppmToPercent()`
 
@@ -101,8 +108,9 @@ Key entities and their primary keys:
 ## Adding a new tool
 
 1. Add the tool definition to `src/tools.js` (name, description, inputSchema)
-2. Add the API function to `src/api.js`
-3. Add the case to the switch in `createServer()` in `src/index.js`
+2. Add the API function to the appropriate module in `src/api/` (protocol, positions, analytics, market, or content)
+3. Re-export from `src/api/index.js`
+4. Add the case to the `callTool()` switch in `src/index.js`
 
 That's it. No registration elsewhere needed.
 
