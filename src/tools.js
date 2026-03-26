@@ -225,4 +225,60 @@ export const TOOLS = [
       required: ["query"],
     },
   },
+
+  // ─── 14. Subscribe Events ─────────────────────────────────────────────────
+  {
+    name: "subscribe_events",
+    description:
+      "Subscribe to Frankencoin protocol events via webhook. Events are delivered as HTTP POST to your URL with HMAC-SHA256 signing. Supported events: mint, burn, large_transfer, challenge_start, challenge_bid, challenge_end, depeg, depeg_resolved, fps_large_trade, minter_proposed, minter_approved, rate_change, supply_change.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "HTTPS URL to receive webhook payloads." },
+        secret: { type: "string", description: "HMAC secret for payload signing (min 32 chars). Store securely — not returned in responses." },
+        events: { type: "string", description: "Comma-separated event types to subscribe to. Use '*' for all." },
+        min_amount: { type: "number", description: "Minimum ZCHF amount filter (for amount-based events like mint, burn, fps_large_trade, supply_change)." },
+        chain_id: { type: "number", description: "Filter events to a specific chain (1=Ethereum, 8453=Base, 42161=Arbitrum, etc.)." },
+        address: { type: "string", description: "Filter by position/owner/trader address." },
+      },
+      required: ["url", "secret", "events"],
+    },
+  },
+
+  // ─── 15. Unsubscribe Events ───────────────────────────────────────────────
+  {
+    name: "unsubscribe_events",
+    description: "Remove a webhook subscription by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        subscription_id: { type: "string", description: "Subscription ID (e.g. sub_a1b2c3d4e5f6)." },
+      },
+      required: ["subscription_id"],
+    },
+  },
+
+  // ─── 16. List Subscriptions ───────────────────────────────────────────────
+  {
+    name: "list_subscriptions",
+    description: "List all active webhook subscriptions. Optionally filter by URL.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "Filter subscriptions by URL (exact match)." },
+      },
+      required: [],
+    },
+  },
+
+  // ─── 17. Get Webhook Status ───────────────────────────────────────────────
+  {
+    name: "get_webhook_status",
+    description: "Health status of the webhook/event system: poller state, subscription counts, delivery stats, error counters.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
 ];
