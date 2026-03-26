@@ -195,8 +195,24 @@ async function pollPonder() {
 
       const prev = state.lastPositionMintedMap.get(addr);
       if (prev == null) {
-        // New position
-        if (minted > 0) {
+        // New position — determine if it's a proposal (minted=0, start in future)
+        // or an immediate mint (minted>0)
+        const startSec = pos.start ? Number(pos.start) : 0;
+        const nowSec = Date.now() / 1000;
+        if (minted === 0 && startSec > nowSec && !pos.closed && !pos.denied) {
+          // Position is in its proposal/challenge window
+          events.push(buildEvent("position_proposed", {
+            chain_id: 1,
+            chain_name: "Ethereum",
+            position: addr,
+            owner: pos.owner,
+            collateral: pos.collateral,
+            collateral_symbol: pos.collateralSymbol || "Unknown",
+            start: new Date(startSec * 1000).toISOString(),
+            challenge_window_ends: new Date(startSec * 1000).toISOString(),
+            tx_hash: null,
+          }, "ponder", serverVersion));
+        } else if (minted > 0) {
           events.push(buildEvent("mint", {
             chain_id: 1,
             chain_name: "Ethereum",
