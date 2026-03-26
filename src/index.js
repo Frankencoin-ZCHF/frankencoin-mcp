@@ -22,6 +22,14 @@ import { readFileSync } from "fs";
 import { z } from "zod";
 import { TOOLS } from "./tools.js";
 import * as api from "./api.js";
+import {
+  SubscriptionStore,
+  startPoller,
+  stopPoller,
+  handleWebhookRequest,
+  getPollerStatus,
+  getPendingRetryCount,
+} from "./webhooks/index.js";
 
 const { version: SERVER_VERSION } = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8")
@@ -29,6 +37,9 @@ const { version: SERVER_VERSION } = JSON.parse(
 
 // ─── Tool dispatch ────────────────────────────────────────────────────────────
 // Single dispatch function used by both MCP and REST layers.
+
+// Webhook store — instantiated once, shared across all interfaces
+let webhookStore = null;
 
 async function dispatchTool(toolName, args) {
   switch (toolName) {
@@ -75,6 +86,63 @@ async function dispatchTool(toolName, args) {
     case "query_ponder":
       if (!args.query) throw new Error("query parameter required");
       return api.runPonderQuery(args.query);
+
+    // ── Webhook tools ──────────────────────────────────────────────────────
+    case "subscribe_events": {
+      if (!webhookStore) throw new Error("Webhooks only available in HTTP mode");
+      const events = typeof args.events === "string"
+        ? args.events.split(",").map((s) => s.trim()).filter(Boolean)
+        : args.events;
+      const filters = {};
+      if (args.min_amount != null) filters.min_amount = args.min_amount;
+      if (args.chain_id != null) filters.chain_id = args.chain_id;
+      if (args.address != null) filters.address = args.address;
+      const result = webhookStore.create({
+        url: args.url,
+        secret: args.secret,
+        events,
+        filters,
+      });
+      if (!result.ok) throw new Error(result.error);
+      return result;
+    }
+    case "unsubscribe_events": {
+      if (!webhookStore) throw new Error("Webhooks only available in HTTP mode");
+      const result = webhookStore.delete(args.subscription_id);
+      if (!result.ok) throw new Error(result.error);
+      return result;
+    }
+    case "list_subscriptions": {
+      if (!webhookStore) throw new Error("Webhooks only available in HTTP mode");
+      return webhookStore.list(args.url || undefined);
+    }
+    case "get_webhook_status": {
+      if (!webhookStore) throw new Error("Webhooks only available in HTTP mode");
+      const pollerStatus = getPollerStatus();
+      const deliveryStats = webhookStore.getDeliveryStats();
+      const eventCounts = webhookStore.getEventCounts();
+      return {
+        poller: {
+          running: pollerStatus.running,
+          initialized: pollerStatus.initialized,
+          last_poll_at: pollerStatus.lastPollAt
+            ? new Date(pollerStatus.lastPollAt).toISOString()
+            : null,
+          poll_interval_ms: 60_000,
+          consecutive_errors: pollerStatus.consecutiveErrors,
+        },
+        subscriptions: {
+          total: webhookStore.subs.size,
+          by_event: eventCounts,
+        },
+        delivery: {
+          total_delivered: deliveryStats.totalDelivered,
+          total_failed: deliveryStats.totalFailed,
+          pending_retries: getPendingRetryCount(),
+        },
+      };
+    }
+
     default:
       throw new Error(`Unknown tool: ${toolName}`);
   }
@@ -147,6 +215,40 @@ if (!useHttp) {
   const sseSessions = new Map();
   let initLockPromise = null;
 
+  // ── Rate limiter (in-memory, per-IP) ───────────────────────────────────────
+  const WINDOW_MS     = parseInt(process.env.RATE_LIMIT_WINDOW_MS   || "60000",  10); // 1 min
+  const MAX_GENERAL   = parseInt(process.env.RATE_LIMIT_MAX         || "120",    10); // 120 req/min general
+  const MAX_WEBHOOK   = parseInt(process.env.RATE_LIMIT_WEBHOOK_MAX || "10",     10); // 10 sub mutations/min
+  const MAX_BODY_BYTES = 64 * 1024; // 64 KB max request body
+
+  const rateBuckets = new Map(); // ip → { count, resetAt }
+
+  // Prune stale buckets every 5 minutes
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, bucket] of rateBuckets) {
+      if (bucket.resetAt < now) rateBuckets.delete(ip);
+    }
+  }, 5 * 60_000).unref();
+
+  function getClientIp(req) {
+    // Railway / reverse proxy: trust X-Forwarded-For
+    const forwarded = req.headers["x-forwarded-for"];
+    if (forwarded) return forwarded.split(",")[0].trim();
+    return req.socket.remoteAddress || "unknown";
+  }
+
+  function checkRateLimit(ip, limit) {
+    const now = Date.now();
+    let bucket = rateBuckets.get(ip);
+    if (!bucket || bucket.resetAt < now) {
+      bucket = { count: 0, resetAt: now + WINDOW_MS };
+      rateBuckets.set(ip, bucket);
+    }
+    bucket.count++;
+    return { allowed: bucket.count <= limit, count: bucket.count, resetAt: bucket.resetAt };
+  }
+
   const httpServer = http.createServer(async (req, res) => {
     // CORS
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -157,6 +259,27 @@ if (!useHttp) {
     if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
     const url = new URL(req.url, `http://localhost:${PORT}`);
+    const ip = getClientIp(req);
+
+    // ── Rate limiting ──────────────────────────────────────────────────────
+    // Webhook mutations (POST /webhooks/subscribe, DELETE) get a tighter limit
+    const isWebhookMutation = url.pathname.startsWith("/webhooks/") &&
+      (req.method === "POST" || req.method === "DELETE") &&
+      !url.pathname.endsWith("/test"); // test endpoint uses general limit
+
+    const limit = isWebhookMutation ? MAX_WEBHOOK : MAX_GENERAL;
+    const rl = checkRateLimit(ip + (isWebhookMutation ? ":wh" : ""), limit);
+
+    res.setHeader("X-RateLimit-Limit", limit);
+    res.setHeader("X-RateLimit-Remaining", Math.max(0, limit - rl.count));
+    res.setHeader("X-RateLimit-Reset", Math.ceil(rl.resetAt / 1000));
+
+    if (!rl.allowed) {
+      res.setHeader("Retry-After", Math.ceil((rl.resetAt - Date.now()) / 1000));
+      res.writeHead(429, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: false, error: "Rate limit exceeded. Please slow down." }));
+      return;
+    }
 
     // ── Health / root ──────────────────────────────────────────────────────
     if (url.pathname === "/" || url.pathname === "/health") {
@@ -165,11 +288,12 @@ if (!useHttp) {
         status: "ok",
         server: "frankencoin-mcp",
         version: SERVER_VERSION,
-        description: "Frankencoin (ZCHF) protocol data server — 13 consolidated tools",
+        description: "Frankencoin (ZCHF) protocol data server — 17 tools (13 data + 4 webhook)",
         interfaces: {
           mcp:  "POST /mcp  — MCP protocol (AI agents, Claude Desktop, Cursor)",
           rest: "GET  /api/<tool>  — plain JSON REST, no handshake (curl, fetch, scripts)",
           sse:  "GET  /sse  — legacy SSE transport (older clients)",
+          webhooks: "/webhooks/*  — event subscription and webhook delivery",
         },
         tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),
         activeSessions: sessions.size,
@@ -210,6 +334,11 @@ if (!useHttp) {
       return;
     }
 
+    // ── Webhooks (/webhooks/*) ──────────────────────────────────────────────
+    if (url.pathname.startsWith("/webhooks/")) {
+      return handleWebhookRequest(req, res, url, webhookStore, SERVER_VERSION);
+    }
+
     if (url.pathname.startsWith("/api/")) {
       const toolName = url.pathname.slice(5); // strip /api/
       const toolDef = TOOLS.find((t) => t.name === toolName);
@@ -230,14 +359,24 @@ if (!useHttp) {
         try {
           const body = await new Promise((resolve, reject) => {
             let buf = "";
-            req.on("data", (d) => { buf += d; });
+            let size = 0;
+            req.on("data", (d) => {
+              size += d.length;
+              if (size > MAX_BODY_BYTES) {
+                req.destroy();
+                reject(new Error("Request body too large"));
+                return;
+              }
+              buf += d;
+            });
             req.on("end", () => resolve(buf));
             req.on("error", reject);
           });
           if (body.trim()) params = JSON.parse(body);
-        } catch {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ ok: false, tool: toolName, error: "Invalid JSON body" }));
+        } catch (e) {
+          const tooLarge = e.message?.includes("too large");
+          res.writeHead(tooLarge ? 413 : 400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: false, tool: toolName, error: tooLarge ? "Request body too large (max 64 KB)" : "Invalid JSON body" }));
           return;
         }
       } else {
@@ -398,11 +537,37 @@ if (!useHttp) {
     res.end(JSON.stringify({ error: "Not found", endpoints: ["/mcp", "/api", "/sse", "/health"] }));
   });
 
+  // Instantiate webhook store before server starts
+  webhookStore = new SubscriptionStore();
+
   httpServer.listen(PORT, () => {
     console.error(`Frankencoin MCP server listening on port ${PORT}`);
     console.error(`  MCP (streamable): http://localhost:${PORT}/mcp`);
     console.error(`  REST API        : http://localhost:${PORT}/api/<tool>`);
     console.error(`  SSE (legacy)    : http://localhost:${PORT}/sse`);
+    console.error(`  Webhooks        : http://localhost:${PORT}/webhooks/`);
     console.error(`  Health          : http://localhost:${PORT}/health`);
+
+    // Start the event poller (HTTP mode only)
+    startPoller(webhookStore, SERVER_VERSION);
   });
+
+  // ── Graceful shutdown ──────────────────────────────────────────────────────
+  async function gracefulShutdown(signal) {
+    console.error(`\n[shutdown] ${signal} received — shutting down...`);
+    stopPoller();
+    httpServer.close(() => {
+      console.error("[shutdown] HTTP server closed");
+      if (webhookStore) webhookStore.destroy();
+      process.exit(0);
+    });
+    // Force exit after 10s if in-flight requests hang
+    setTimeout(() => {
+      console.error("[shutdown] Force exit after 10s timeout");
+      process.exit(1);
+    }, 10_000).unref();
+  }
+
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 }
