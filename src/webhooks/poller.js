@@ -23,6 +23,11 @@ const state = {
   lastMinterAddresses: new Set(),
   lastMinterDeniedMap: new Map(),    // address → isDenied
   approvedEmitted: new Set(),        // minters already emitted as approved
+  deniedEmitted: new Set(),          // minters already emitted as denied
+  lastPositionStateMap: new Map(),   // position_address → { denied, closed, active }
+  activeEmitted: new Set(),          // positions already emitted as active
+  positionDeniedEmitted: new Set(),  // positions already emitted as denied
+  positionClosedEmitted: new Set(),  // positions already emitted as closed
   lastRateMap: new Map(),            // chainId:module → approvedRate
   lastRateCreated: null,
 
@@ -188,24 +193,35 @@ async function pollPonder() {
   // Note: Ponder v2 positions don't have chainId — they're Ethereum mainnet (chain 1)
   if (data.positions?.items) {
     const currentMap = new Map();
+    const nowSec = Date.now() / 1000;
     for (const pos of data.positions.items) {
       const addr = pos.position;
       const minted = fromWei(pos.minted);
       currentMap.set(addr, { ...pos, mintedFloat: minted });
 
       const prev = state.lastPositionMintedMap.get(addr);
+      const startSec = pos.start ? Number(pos.start) : 0;
+
       if (prev == null) {
-        // New position — determine if it's a proposal (minted=0, start in future)
-        // or an immediate mint (minted>0)
-        const startSec = pos.start ? Number(pos.start) : 0;
-        const nowSec = Date.now() / 1000;
-        if (minted === 0 && startSec > nowSec && !pos.closed && !pos.denied) {
-          // Position is in its proposal/challenge window
+        // New position — classify on first sight
+        if (pos.denied) {
+          // Appeared already denied (edge case — denied before we saw it)
+          events.push(buildEvent("position_denied", {
+            chain_id: 1, chain_name: "Ethereum",
+            position: addr, owner: pos.owner,
+            collateral: pos.collateral,
+            collateral_symbol: pos.collateralSymbol || "Unknown",
+          }, "ponder", serverVersion));
+          state.positionDeniedEmitted.add(addr);
+        } else if (pos.closed) {
+          // Appeared already closed — skip, was active before we started
+          state.positionClosedEmitted.add(addr);
+          state.activeEmitted.add(addr);
+        } else if (minted === 0 && startSec > nowSec) {
+          // In proposal/challenge window
           events.push(buildEvent("position_proposed", {
-            chain_id: 1,
-            chain_name: "Ethereum",
-            position: addr,
-            owner: pos.owner,
+            chain_id: 1, chain_name: "Ethereum",
+            position: addr, owner: pos.owner,
             collateral: pos.collateral,
             collateral_symbol: pos.collateralSymbol || "Unknown",
             start: new Date(startSec * 1000).toISOString(),
@@ -214,15 +230,12 @@ async function pollPonder() {
           }, "ponder", serverVersion));
         } else if (minted > 0) {
           events.push(buildEvent("mint", {
-            chain_id: 1,
-            chain_name: "Ethereum",
-            position: addr,
-            owner: pos.owner,
+            chain_id: 1, chain_name: "Ethereum",
+            position: addr, owner: pos.owner,
             collateral_symbol: pos.collateralSymbol || "Unknown",
-            minted_zchf: minted,
-            minted_raw: pos.minted,
-            tx_hash: null,
+            minted_zchf: minted, minted_raw: pos.minted, tx_hash: null,
           }, "ponder", serverVersion));
+          state.activeEmitted.add(addr);
         }
       } else if (minted > prev) {
         // Minted more
@@ -250,6 +263,48 @@ async function pollPonder() {
           burned_raw: pos.minted,
           tx_hash: null,
         }, "ponder", serverVersion));
+      }
+    }
+
+    // ── Position lifecycle transitions (for all known positions) ──────────
+    for (const [addr, pos] of currentMap) {
+      // Denied: position vetoed during challenge window
+      if (pos.denied && !state.positionDeniedEmitted.has(addr)) {
+        events.push(buildEvent("position_denied", {
+          chain_id: 1, chain_name: "Ethereum",
+          position: addr, owner: pos.owner,
+          collateral: pos.collateral,
+          collateral_symbol: pos.collateralSymbol || "Unknown",
+        }, "ponder", serverVersion));
+        state.positionDeniedEmitted.add(addr);
+      }
+
+      // Closed: position owner closed it
+      if (pos.closed && !state.positionClosedEmitted.has(addr)) {
+        events.push(buildEvent("position_closed", {
+          chain_id: 1, chain_name: "Ethereum",
+          position: addr, owner: pos.owner,
+          collateral_symbol: pos.collateralSymbol || "Unknown",
+          minted_zchf: pos.mintedFloat,
+        }, "ponder", serverVersion));
+        state.positionClosedEmitted.add(addr);
+      }
+
+      // Active: challenge window ended, position is now live (not denied, not closed)
+      if (
+        !pos.denied && !pos.closed &&
+        startSec > 0 && nowSec >= startSec &&
+        !state.activeEmitted.has(addr) &&
+        state.lastPositionMintedMap.has(addr) // was previously seen in proposal state
+      ) {
+        events.push(buildEvent("position_active", {
+          chain_id: 1, chain_name: "Ethereum",
+          position: addr, owner: pos.owner,
+          collateral: pos.collateral,
+          collateral_symbol: pos.collateralSymbol || "Unknown",
+          start: new Date(startSec * 1000).toISOString(),
+        }, "ponder", serverVersion));
+        state.activeEmitted.add(addr);
       }
     }
 
@@ -394,6 +449,19 @@ async function pollPonder() {
           }, "ponder", serverVersion));
           state.approvedEmitted.add(addr);
         }
+      }
+
+      // Denial detection: denyDate appeared and not yet emitted
+      if (isDenied && !state.deniedEmitted.has(addr) && state.lastMinterAddresses.has(addr)) {
+        events.push(buildEvent("minter_denied", {
+          chain_id: chainId,
+          chain_name: CHAIN_NAMES[chainId] || `Chain ${chainId}`,
+          minter_address: addr,
+          suggestor: m.suggestor,
+          deny_message: m.denyMessage || "",
+          tx_hash: m.txHash,
+        }, "ponder", serverVersion));
+        state.deniedEmitted.add(addr);
       }
 
       state.lastMinterDeniedMap.set(addr, isDenied);

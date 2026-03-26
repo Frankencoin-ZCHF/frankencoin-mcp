@@ -83,7 +83,7 @@ describe("Webhook Routes Integration", () => {
       });
 
       assert.equal(status, 201);
-      assert.equal(json.subscription.events.length, 14);
+      assert.equal(json.subscription.events.length, 18);
     });
 
     it("should accept comma-separated events string", async () => {
@@ -312,11 +312,11 @@ describe("Webhook Routes Integration", () => {
   // ─── GET /webhooks/events ───────────────────────────────────────────────
 
   describe("GET /webhooks/events", () => {
-    it("should list all 14 event types", async () => {
+    it("should list all 18 event types", async () => {
       const { status, json } = await request("GET", "/webhooks/events");
       assert.equal(status, 200);
       assert.equal(json.ok, true);
-      assert.equal(json.event_types.length, 14);
+      assert.equal(json.event_types.length, 18);
     });
 
     it("each event type should have correct schema shape", async () => {
