@@ -145,7 +145,13 @@ function getAddressesForEvent(eventType, data) {
       return [data.trader].filter(Boolean);
     case "minter_proposed":
     case "minter_approved":
+    case "minter_denied":
       return [data.minter_address, data.suggestor].filter(Boolean);
+    case "position_proposed":
+    case "position_active":
+    case "position_denied":
+    case "position_closed":
+      return [data.position, data.owner].filter(Boolean);
     default:
       return [];
   }

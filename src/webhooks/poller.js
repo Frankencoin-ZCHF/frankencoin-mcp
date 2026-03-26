@@ -268,6 +268,8 @@ async function pollPonder() {
 
     // ── Position lifecycle transitions (for all known positions) ──────────
     for (const [addr, pos] of currentMap) {
+      const posStartSec = pos.start ? Number(pos.start) : 0;
+
       // Denied: position vetoed during challenge window
       if (pos.denied && !state.positionDeniedEmitted.has(addr)) {
         events.push(buildEvent("position_denied", {
@@ -293,7 +295,7 @@ async function pollPonder() {
       // Active: challenge window ended, position is now live (not denied, not closed)
       if (
         !pos.denied && !pos.closed &&
-        startSec > 0 && nowSec >= startSec &&
+        posStartSec > 0 && nowSec >= posStartSec &&
         !state.activeEmitted.has(addr) &&
         state.lastPositionMintedMap.has(addr) // was previously seen in proposal state
       ) {
@@ -302,7 +304,7 @@ async function pollPonder() {
           position: addr, owner: pos.owner,
           collateral: pos.collateral,
           collateral_symbol: pos.collateralSymbol || "Unknown",
-          start: new Date(startSec * 1000).toISOString(),
+          start: new Date(posStartSec * 1000).toISOString(),
         }, "ponder", serverVersion));
         state.activeEmitted.add(addr);
       }

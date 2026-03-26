@@ -6,8 +6,15 @@
 import { describe, it, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { SubscriptionStore } from "../subscriptions.js";
 import { handleWebhookRequest } from "../routes.js";
+
+// Isolate test persistence
+const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "fc-route-test-"));
+process.env.WEBHOOK_DATA_DIR = TEST_DATA_DIR;
 
 const PORT = 2000;
 const RECEIVER_PORT = 2001;
