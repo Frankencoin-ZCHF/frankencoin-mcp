@@ -230,7 +230,7 @@ export const TOOLS = [
   {
     name: "subscribe_events",
     description:
-      "Subscribe to Frankencoin protocol events via webhook. Events are delivered as HTTP POST to your URL with HMAC-SHA256 signing. Supported events: mint, burn, large_transfer, challenge_start, challenge_bid, challenge_end, depeg, depeg_resolved, fps_large_trade, minter_proposed, minter_approved, position_proposed, rate_change, supply_change.",
+      "Subscribe to Frankencoin protocol events via webhook. Events are delivered as HTTP POST to your URL with HMAC-SHA256 signing. Supported events: mint, burn, large_transfer, challenge_start, challenge_bid, challenge_end, depeg, depeg_resolved, fps_large_trade, minter_proposed, minter_approved, minter_denied, position_proposed, position_active, position_denied, position_closed, rate_change, supply_change.",
     inputSchema: {
       type: "object",
       properties: {

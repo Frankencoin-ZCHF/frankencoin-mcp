@@ -18,7 +18,11 @@ export const EVENT_TYPES = new Set([
   "fps_large_trade",
   "minter_proposed",
   "minter_approved",
+  "minter_denied",
   "position_proposed",
+  "position_active",
+  "position_denied",
+  "position_closed",
   "rate_change",
   "supply_change",
 ]);
@@ -43,11 +47,13 @@ export const FILTER_APPLICABILITY = {
   chain_id: new Set([
     "mint", "burn", "large_transfer", "challenge_start", "challenge_bid",
     "challenge_end", "fps_large_trade", "minter_proposed", "minter_approved",
-    "position_proposed", "rate_change", "supply_change",
+    "minter_denied", "position_proposed", "position_active", "position_denied",
+    "position_closed", "rate_change", "supply_change",
   ]),
   address: new Set([
     "mint", "burn", "challenge_start", "challenge_bid", "challenge_end",
-    "fps_large_trade", "minter_proposed", "minter_approved", "position_proposed",
+    "fps_large_trade", "minter_proposed", "minter_approved", "minter_denied",
+    "position_proposed", "position_active", "position_denied", "position_closed",
   ]),
 };
 
@@ -139,7 +145,13 @@ function getAddressesForEvent(eventType, data) {
       return [data.trader].filter(Boolean);
     case "minter_proposed":
     case "minter_approved":
+    case "minter_denied":
       return [data.minter_address, data.suggestor].filter(Boolean);
+    case "position_proposed":
+    case "position_active":
+    case "position_denied":
+    case "position_closed":
+      return [data.position, data.owner].filter(Boolean);
     default:
       return [];
   }

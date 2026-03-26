@@ -6,8 +6,15 @@
 import { describe, it, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { SubscriptionStore } from "../subscriptions.js";
 import { handleWebhookRequest } from "../routes.js";
+
+// Isolate test persistence
+const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "fc-route-test-"));
+process.env.WEBHOOK_DATA_DIR = TEST_DATA_DIR;
 
 const PORT = 2000;
 const RECEIVER_PORT = 2001;
@@ -83,7 +90,7 @@ describe("Webhook Routes Integration", () => {
       });
 
       assert.equal(status, 201);
-      assert.equal(json.subscription.events.length, 14);
+      assert.equal(json.subscription.events.length, 18);
     });
 
     it("should accept comma-separated events string", async () => {
@@ -312,11 +319,11 @@ describe("Webhook Routes Integration", () => {
   // ─── GET /webhooks/events ───────────────────────────────────────────────
 
   describe("GET /webhooks/events", () => {
-    it("should list all 14 event types", async () => {
+    it("should list all 18 event types", async () => {
       const { status, json } = await request("GET", "/webhooks/events");
       assert.equal(status, 200);
       assert.equal(json.ok, true);
-      assert.equal(json.event_types.length, 14);
+      assert.equal(json.event_types.length, 18);
     });
 
     it("each event type should have correct schema shape", async () => {
