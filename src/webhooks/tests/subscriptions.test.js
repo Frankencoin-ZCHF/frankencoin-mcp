@@ -176,7 +176,7 @@ describe("SubscriptionStore", () => {
       const result = store.create(validPayload({ events: ["*"] }));
       assert.equal(result.ok, true);
       assert.equal(result.status, 201);
-      assert.equal(result.subscription.events.length, 13);
+      assert.equal(result.subscription.events.length, 14);
     });
   });
 
