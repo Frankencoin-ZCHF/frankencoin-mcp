@@ -258,7 +258,14 @@ if (!useHttp) {
 
     if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
-    const url = new URL(req.url, `http://localhost:${PORT}`);
+    let url;
+    try {
+      url = new URL(req.url, `http://localhost:${PORT}`);
+    } catch {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Invalid request URL" }));
+      return;
+    }
     const ip = getClientIp(req);
 
     // ── Rate limiting ──────────────────────────────────────────────────────
