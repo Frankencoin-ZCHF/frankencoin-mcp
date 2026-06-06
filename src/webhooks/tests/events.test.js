@@ -26,8 +26,8 @@ describe("EVENT_TYPES", () => {
     "rate_change", "supply_change",
   ];
 
-  it("should contain exactly 14 event types", () => {
-    assert.equal(EVENT_TYPES.size, 14, `Expected 14 event types, got ${EVENT_TYPES.size}`);
+  it("should contain exactly 18 event types", () => {
+    assert.equal(EVENT_TYPES.size, 18, `Expected 18 event types, got ${EVENT_TYPES.size}`);
   });
 
   for (const type of EXPECTED) {
@@ -304,7 +304,7 @@ describe("FILTER_APPLICABILITY", () => {
 describe("getEventTypeSchemas", () => {
   it("should return an array of 13 schemas", () => {
     const schemas = getEventTypeSchemas();
-    assert.equal(schemas.length, 14);
+    assert.equal(schemas.length, 18);
   });
 
   it("each schema should have event_type, applicable_filters, default_threshold", () => {

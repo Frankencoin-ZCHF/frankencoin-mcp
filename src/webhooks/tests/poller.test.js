@@ -10,8 +10,15 @@
 
 import { describe, it, before, after, beforeEach, afterEach, mock } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { SubscriptionStore } from "../subscriptions.js";
 import { buildEvent } from "../events.js";
+
+// Isolate test persistence so tests don't load production subscriptions
+const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "fc-poll-test-"));
+process.env.WEBHOOK_DATA_DIR = TEST_DATA_DIR;
 
 // We need to test the poller's internal logic. Since the poller module has
 // module-level state, we'll re-import it fresh for each test group.
@@ -122,6 +129,9 @@ describe("Poller — Event Detection Logic", () => {
   // we test the components it uses.
 
   beforeEach(() => {
+    // Clear persisted data between tests to avoid cross-contamination
+    const persistPath = path.join(TEST_DATA_DIR, "subscriptions.json");
+    try { fs.unlinkSync(persistPath); } catch {}
     store = new SubscriptionStore();
     capturedEvents = [];
   });
@@ -584,6 +594,611 @@ describe("Poller — State Diffing Simulation", () => {
 
     assert.equal(consecutiveErrors, 1);
     assert.equal(lastSupplyByChain.get(1), 1000000, "State should be unchanged after error");
+  });
+});
+
+// ─── Position & Minter Lifecycle Simulation ───────────────────────────────────
+
+describe("Poller — Position Lifecycle Events (simulated)", () => {
+  // Simulate the poller's position lifecycle detection logic exactly as in poller.js.
+  // This mirrors pollPonder()'s position handling.
+
+  function simulatePositionPoll(positions, prevState) {
+    const events = [];
+    const nowSec = Date.now() / 1000;
+    const currentMap = new Map();
+
+    const lastPositionMintedMap = prevState.lastPositionMintedMap || new Map();
+    const positionDeniedEmitted = prevState.positionDeniedEmitted || new Set();
+    const positionClosedEmitted = prevState.positionClosedEmitted || new Set();
+    const activeEmitted = prevState.activeEmitted || new Set();
+
+    for (const pos of positions) {
+      const addr = pos.position;
+      const minted = pos.mintedFloat ?? 0;
+      currentMap.set(addr, { ...pos, mintedFloat: minted });
+
+      const prev = lastPositionMintedMap.get(addr);
+      const startSec = pos.start ? Number(pos.start) : 0;
+
+      if (prev == null) {
+        // New position — classify on first sight
+        if (pos.denied) {
+          events.push({ type: "position_denied", position: addr });
+          positionDeniedEmitted.add(addr);
+        } else if (pos.closed) {
+          positionClosedEmitted.add(addr);
+          activeEmitted.add(addr);
+        } else if (minted === 0 && startSec > nowSec) {
+          events.push({ type: "position_proposed", position: addr, start: startSec });
+        } else if (minted > 0) {
+          events.push({ type: "mint", position: addr, minted });
+          activeEmitted.add(addr);
+        }
+        // else: existing active position with minted=0, already past start → silent baseline
+      } else if (minted > prev) {
+        events.push({ type: "mint", position: addr, delta: minted - prev });
+      } else if (minted < prev) {
+        events.push({ type: "burn", position: addr, delta: prev - minted });
+      }
+    }
+
+    // Lifecycle transitions
+    for (const [addr, pos] of currentMap) {
+      const posStartSec = pos.start ? Number(pos.start) : 0;
+
+      if (pos.denied && !positionDeniedEmitted.has(addr)) {
+        events.push({ type: "position_denied", position: addr });
+        positionDeniedEmitted.add(addr);
+      }
+
+      if (pos.closed && !positionClosedEmitted.has(addr)) {
+        events.push({ type: "position_closed", position: addr, minted_zchf: pos.mintedFloat });
+        positionClosedEmitted.add(addr);
+      }
+
+      if (
+        !pos.denied && !pos.closed &&
+        posStartSec > 0 && nowSec >= posStartSec &&
+        !activeEmitted.has(addr) &&
+        lastPositionMintedMap.has(addr) // was previously seen
+      ) {
+        events.push({ type: "position_active", position: addr });
+        activeEmitted.add(addr);
+      }
+    }
+
+    // Update state for next round
+    const newMintedMap = new Map();
+    for (const [addr, pos] of currentMap) {
+      newMintedMap.set(addr, pos.mintedFloat);
+    }
+
+    return {
+      events,
+      newState: {
+        lastPositionMintedMap: newMintedMap,
+        positionDeniedEmitted,
+        positionClosedEmitted,
+        activeEmitted,
+      },
+    };
+  }
+
+  it("new position with minted=0, start in future → position_proposed", () => {
+    const futureStart = Math.floor(Date.now() / 1000) + 86400; // 24h from now
+    const positions = [{
+      position: "0xNewPos",
+      owner: "0xOwner",
+      collateral: "0xWETH",
+      collateralSymbol: "WETH",
+      mintedFloat: 0,
+      start: futureStart.toString(),
+      closed: false,
+      denied: false,
+    }];
+
+    const result = simulatePositionPoll(positions, {});
+
+    assert.equal(result.events.length, 1);
+    assert.equal(result.events[0].type, "position_proposed");
+    assert.equal(result.events[0].position, "0xNewPos");
+    assert.equal(result.events[0].start, futureStart);
+  });
+
+  it("position transitions from proposed to active when start passes", () => {
+    const pastStart = Math.floor(Date.now() / 1000) - 3600; // 1h ago
+    const positions = [{
+      position: "0xProposed",
+      owner: "0xOwner",
+      collateral: "0xWETH",
+      collateralSymbol: "WETH",
+      mintedFloat: 0,
+      start: pastStart.toString(),
+      closed: false,
+      denied: false,
+    }];
+
+    // Simulate first poll (baseline) — position was seen in proposal state
+    // We pre-populate state as if first poll happened when start was still in future
+    const initialState = {
+      lastPositionMintedMap: new Map([["0xProposed", 0]]), // already tracked
+      positionDeniedEmitted: new Set(),
+      positionClosedEmitted: new Set(),
+      activeEmitted: new Set(),
+    };
+
+    const result = simulatePositionPoll(positions, initialState);
+
+    // Should detect position_active since start <= now and was previously seen
+    const activeEvents = result.events.filter(e => e.type === "position_active");
+    assert.equal(activeEvents.length, 1);
+    assert.equal(activeEvents[0].position, "0xProposed");
+  });
+
+  it("position_active should NOT fire for positions already marked active", () => {
+    const pastStart = Math.floor(Date.now() / 1000) - 3600;
+    const positions = [{
+      position: "0xAlreadyActive",
+      owner: "0xOwner",
+      collateral: "0xWETH",
+      collateralSymbol: "WETH",
+      mintedFloat: 5000,
+      start: pastStart.toString(),
+      closed: false,
+      denied: false,
+    }];
+
+    const initialState = {
+      lastPositionMintedMap: new Map([["0xAlreadyActive", 5000]]),
+      positionDeniedEmitted: new Set(),
+      positionClosedEmitted: new Set(),
+      activeEmitted: new Set(["0xAlreadyActive"]),
+    };
+
+    const result = simulatePositionPoll(positions, initialState);
+
+    const activeEvents = result.events.filter(e => e.type === "position_active");
+    assert.equal(activeEvents.length, 0, "Should not re-emit position_active");
+  });
+
+  it("position gets denied → position_denied", () => {
+    const positions = [{
+      position: "0xDeniedPos",
+      owner: "0xOwner",
+      collateral: "0xWETH",
+      collateralSymbol: "WETH",
+      mintedFloat: 0,
+      start: (Math.floor(Date.now() / 1000) + 86400).toString(),
+      closed: false,
+      denied: true, // now denied
+    }];
+
+    // Was previously tracked (seen as proposal)
+    const initialState = {
+      lastPositionMintedMap: new Map([["0xDeniedPos", 0]]),
+      positionDeniedEmitted: new Set(),
+      positionClosedEmitted: new Set(),
+      activeEmitted: new Set(),
+    };
+
+    const result = simulatePositionPoll(positions, initialState);
+
+    const deniedEvents = result.events.filter(e => e.type === "position_denied");
+    assert.equal(deniedEvents.length, 1);
+    assert.equal(deniedEvents[0].position, "0xDeniedPos");
+  });
+
+  it("new position appears already denied → position_denied on first sight", () => {
+    const positions = [{
+      position: "0xNewDenied",
+      owner: "0xOwner",
+      collateral: "0xWETH",
+      collateralSymbol: "WETH",
+      mintedFloat: 0,
+      start: (Math.floor(Date.now() / 1000) + 86400).toString(),
+      closed: false,
+      denied: true,
+    }];
+
+    const result = simulatePositionPoll(positions, {});
+
+    const deniedEvents = result.events.filter(e => e.type === "position_denied");
+    assert.equal(deniedEvents.length, 1);
+    assert.equal(deniedEvents[0].position, "0xNewDenied");
+  });
+
+  it("position_denied should NOT fire twice for same position", () => {
+    const positions = [{
+      position: "0xDeniedPos2",
+      owner: "0xOwner",
+      collateral: "0xWETH",
+      collateralSymbol: "WETH",
+      mintedFloat: 0,
+      start: (Math.floor(Date.now() / 1000) + 86400).toString(),
+      closed: false,
+      denied: true,
+    }];
+
+    const initialState = {
+      lastPositionMintedMap: new Map([["0xDeniedPos2", 0]]),
+      positionDeniedEmitted: new Set(["0xDeniedPos2"]),
+      positionClosedEmitted: new Set(),
+      activeEmitted: new Set(),
+    };
+
+    const result = simulatePositionPoll(positions, initialState);
+
+    const deniedEvents = result.events.filter(e => e.type === "position_denied");
+    assert.equal(deniedEvents.length, 0, "Should not re-emit position_denied");
+  });
+
+  it("position gets closed → position_closed", () => {
+    const positions = [{
+      position: "0xClosedPos",
+      owner: "0xOwner",
+      collateral: "0xWETH",
+      collateralSymbol: "WETH",
+      mintedFloat: 2500,
+      start: (Math.floor(Date.now() / 1000) - 86400).toString(),
+      closed: true,
+      denied: false,
+    }];
+
+    // Was active previously
+    const initialState = {
+      lastPositionMintedMap: new Map([["0xClosedPos", 2500]]),
+      positionDeniedEmitted: new Set(),
+      positionClosedEmitted: new Set(),
+      activeEmitted: new Set(["0xClosedPos"]),
+    };
+
+    const result = simulatePositionPoll(positions, initialState);
+
+    const closedEvents = result.events.filter(e => e.type === "position_closed");
+    assert.equal(closedEvents.length, 1);
+    assert.equal(closedEvents[0].position, "0xClosedPos");
+    assert.equal(closedEvents[0].minted_zchf, 2500);
+  });
+
+  it("new position appears already closed → no proposal or closed event (silent baseline)", () => {
+    const positions = [{
+      position: "0xOldClosed",
+      owner: "0xOwner",
+      collateral: "0xWETH",
+      collateralSymbol: "WETH",
+      mintedFloat: 0,
+      start: (Math.floor(Date.now() / 1000) - 86400 * 30).toString(),
+      closed: true,
+      denied: false,
+    }];
+
+    const result = simulatePositionPoll(positions, {});
+
+    // Should not fire position_proposed, position_closed, or any event
+    // (it's a historical closed position seen for the first time)
+    const proposedEvents = result.events.filter(e => e.type === "position_proposed");
+    const closedEvents = result.events.filter(e => e.type === "position_closed");
+    assert.equal(proposedEvents.length, 0, "Should not emit position_proposed for already-closed");
+    assert.equal(closedEvents.length, 0, "Should not emit position_closed for already-closed on first sight");
+  });
+
+  it("existing active position with minted > 0 on first sight → mint (not proposal)", () => {
+    const positions = [{
+      position: "0xActiveMinting",
+      owner: "0xOwner",
+      collateral: "0xWETH",
+      collateralSymbol: "WETH",
+      mintedFloat: 10000,
+      start: (Math.floor(Date.now() / 1000) - 86400).toString(),
+      closed: false,
+      denied: false,
+    }];
+
+    const result = simulatePositionPoll(positions, {});
+
+    const proposedEvents = result.events.filter(e => e.type === "position_proposed");
+    const mintEvents = result.events.filter(e => e.type === "mint");
+    assert.equal(proposedEvents.length, 0, "Active minting position should not be proposed");
+    assert.equal(mintEvents.length, 1, "Should detect as mint");
+    assert.equal(mintEvents[0].minted, 10000);
+  });
+
+  it("existing position with minted=0, start in past → silent baseline (no events)", () => {
+    const positions = [{
+      position: "0xReadyButIdle",
+      owner: "0xOwner",
+      collateral: "0xWETH",
+      collateralSymbol: "WETH",
+      mintedFloat: 0,
+      start: (Math.floor(Date.now() / 1000) - 86400).toString(),
+      closed: false,
+      denied: false,
+    }];
+
+    const result = simulatePositionPoll(positions, {});
+
+    // Position is past start, minted=0, not closed, not denied → already active but idle
+    // On first sight, this shouldn't fire as proposed (start is in the past)
+    // and shouldn't fire as active (no previous state to transition from)
+    assert.equal(result.events.length, 0, "Idle existing position should be silent on first sight");
+  });
+});
+
+describe("Poller — Minter Lifecycle Events (simulated)", () => {
+  function simulateMinterPoll(minters, prevState) {
+    const events = [];
+    const now = Date.now() / 1000;
+
+    const lastMinterAddresses = prevState.lastMinterAddresses || new Set();
+    const approvedEmitted = prevState.approvedEmitted || new Set();
+    const deniedEmitted = prevState.deniedEmitted || new Set();
+
+    for (const m of minters) {
+      const addr = m.minter;
+      const chainId = m.chainId || 1;
+      const isDenied = !!m.denyDate;
+
+      if (!lastMinterAddresses.has(addr)) {
+        // New minter application
+        if (!isDenied) {
+          events.push({ type: "minter_proposed", minter: addr, chainId });
+        }
+        lastMinterAddresses.add(addr);
+      }
+
+      // Approval detection
+      if (
+        !isDenied &&
+        m.applyDate &&
+        m.applicationPeriod &&
+        !approvedEmitted.has(addr)
+      ) {
+        const applyTime = Number(m.applyDate);
+        const period = Number(m.applicationPeriod);
+        if (now > applyTime + period) {
+          events.push({ type: "minter_approved", minter: addr, chainId });
+          approvedEmitted.add(addr);
+        }
+      }
+
+      // Denial detection
+      if (isDenied && !deniedEmitted.has(addr) && lastMinterAddresses.has(addr)) {
+        events.push({ type: "minter_denied", minter: addr, chainId });
+        deniedEmitted.add(addr);
+      }
+    }
+
+    return {
+      events,
+      newState: { lastMinterAddresses, approvedEmitted, deniedEmitted },
+    };
+  }
+
+  it("new minter application → minter_proposed", () => {
+    const minters = [{
+      minter: "0xNewMinter",
+      chainId: 1,
+      suggestor: "0xSuggestor",
+      applicationFee: "1000000000000000000000",
+      applyMessage: "Adding WETH collateral",
+      applicationPeriod: "86400",
+      applyDate: Math.floor(Date.now() / 1000).toString(),
+      denyDate: null,
+      txHash: "0xTx1",
+    }];
+
+    const result = simulateMinterPoll(minters, {});
+
+    assert.equal(result.events.length, 1);
+    assert.equal(result.events[0].type, "minter_proposed");
+    assert.equal(result.events[0].minter, "0xNewMinter");
+  });
+
+  it("minter gets denied → minter_denied", () => {
+    const minters = [{
+      minter: "0xDeniedMinter",
+      chainId: 1,
+      suggestor: "0xSuggestor",
+      applicationFee: "1000000000000000000000",
+      applyMessage: "Suspicious collateral",
+      applicationPeriod: "86400",
+      applyDate: Math.floor(Date.now() / 1000 - 3600).toString(),
+      denyDate: Math.floor(Date.now() / 1000).toString(),
+      denyMessage: "Rejected by governance",
+      txHash: "0xTx2",
+    }];
+
+    // Previously seen as proposed
+    const initialState = {
+      lastMinterAddresses: new Set(["0xDeniedMinter"]),
+      approvedEmitted: new Set(),
+      deniedEmitted: new Set(),
+    };
+
+    const result = simulateMinterPoll(minters, initialState);
+
+    const deniedEvents = result.events.filter(e => e.type === "minter_denied");
+    assert.equal(deniedEvents.length, 1);
+    assert.equal(deniedEvents[0].minter, "0xDeniedMinter");
+  });
+
+  it("minter approved after application period → minter_approved", () => {
+    const applyDate = Math.floor(Date.now() / 1000) - 172800; // 2 days ago
+    const minters = [{
+      minter: "0xApprovedMinter",
+      chainId: 1,
+      suggestor: "0xSuggestor",
+      applicationFee: "1000000000000000000000",
+      applyMessage: "Good collateral",
+      applicationPeriod: "86400", // 1 day
+      applyDate: applyDate.toString(),
+      denyDate: null,
+      txHash: "0xTx3",
+    }];
+
+    const initialState = {
+      lastMinterAddresses: new Set(["0xApprovedMinter"]),
+      approvedEmitted: new Set(),
+      deniedEmitted: new Set(),
+    };
+
+    const result = simulateMinterPoll(minters, initialState);
+
+    const approvedEvents = result.events.filter(e => e.type === "minter_approved");
+    assert.equal(approvedEvents.length, 1);
+    assert.equal(approvedEvents[0].minter, "0xApprovedMinter");
+  });
+
+  it("minter still in application period → NO minter_approved", () => {
+    const applyDate = Math.floor(Date.now() / 1000) - 3600; // 1h ago
+    const minters = [{
+      minter: "0xPendingMinter",
+      chainId: 1,
+      suggestor: "0xSuggestor",
+      applicationFee: "1000000000000000000000",
+      applyMessage: "New collateral",
+      applicationPeriod: "86400", // 1 day (not elapsed yet)
+      applyDate: applyDate.toString(),
+      denyDate: null,
+      txHash: "0xTx4",
+    }];
+
+    const initialState = {
+      lastMinterAddresses: new Set(["0xPendingMinter"]),
+      approvedEmitted: new Set(),
+      deniedEmitted: new Set(),
+    };
+
+    const result = simulateMinterPoll(minters, initialState);
+
+    const approvedEvents = result.events.filter(e => e.type === "minter_approved");
+    assert.equal(approvedEvents.length, 0, "Should not approve before period ends");
+  });
+
+  it("new minter that appeared already denied → NO minter_proposed, YES minter_denied", () => {
+    const minters = [{
+      minter: "0xPreDenied",
+      chainId: 1,
+      suggestor: "0xSuggestor",
+      applicationFee: "1000000000000000000000",
+      applyMessage: "Bad collateral",
+      applicationPeriod: "86400",
+      applyDate: Math.floor(Date.now() / 1000 - 7200).toString(),
+      denyDate: Math.floor(Date.now() / 1000 - 3600).toString(),
+      denyMessage: "Rejected",
+      txHash: "0xTx5",
+    }];
+
+    const result = simulateMinterPoll(minters, {});
+
+    const proposedEvents = result.events.filter(e => e.type === "minter_proposed");
+    const deniedEvents = result.events.filter(e => e.type === "minter_denied");
+    assert.equal(proposedEvents.length, 0, "Should not emit proposed for already-denied minter");
+    assert.equal(deniedEvents.length, 1, "Should emit denied for newly seen denied minter");
+    assert.equal(deniedEvents[0].minter, "0xPreDenied");
+  });
+
+  it("minter_denied should NOT fire twice", () => {
+    const minters = [{
+      minter: "0xDeniedAgain",
+      chainId: 1,
+      denyDate: Math.floor(Date.now() / 1000).toString(),
+      applyDate: Math.floor(Date.now() / 1000 - 3600).toString(),
+      applicationPeriod: "86400",
+    }];
+
+    const initialState = {
+      lastMinterAddresses: new Set(["0xDeniedAgain"]),
+      approvedEmitted: new Set(),
+      deniedEmitted: new Set(["0xDeniedAgain"]),
+    };
+
+    const result = simulateMinterPoll(minters, initialState);
+
+    const deniedEvents = result.events.filter(e => e.type === "minter_denied");
+    assert.equal(deniedEvents.length, 0, "Should not re-emit minter_denied");
+  });
+});
+
+// ─── Event building for lifecycle events ──────────────────────────────────────
+
+describe("Poller — Lifecycle Event Building", () => {
+  it("should build position_proposed event with correct data shape", () => {
+    const event = buildEvent("position_proposed", {
+      chain_id: 1,
+      chain_name: "Ethereum",
+      position: "0xPos1",
+      owner: "0xOwner1",
+      collateral: "0xWETH",
+      collateral_symbol: "WETH",
+      start: "2026-04-01T00:00:00.000Z",
+      challenge_window_ends: "2026-04-01T00:00:00.000Z",
+      tx_hash: null,
+    }, "ponder", "2.0.0");
+
+    assert.equal(event.event_type, "position_proposed");
+    assert.equal(event.data.position, "0xPos1");
+    assert.equal(event.data.collateral_symbol, "WETH");
+    assert.ok(event.data.start);
+    assert.equal(event.source, "ponder");
+  });
+
+  it("should build position_active event with correct data shape", () => {
+    const event = buildEvent("position_active", {
+      chain_id: 1,
+      chain_name: "Ethereum",
+      position: "0xPos1",
+      owner: "0xOwner1",
+      collateral: "0xWETH",
+      collateral_symbol: "WETH",
+      start: "2026-03-15T00:00:00.000Z",
+    }, "ponder", "2.0.0");
+
+    assert.equal(event.event_type, "position_active");
+    assert.equal(event.data.position, "0xPos1");
+  });
+
+  it("should build position_denied event with correct data shape", () => {
+    const event = buildEvent("position_denied", {
+      chain_id: 1,
+      chain_name: "Ethereum",
+      position: "0xPos1",
+      owner: "0xOwner1",
+      collateral: "0xWETH",
+      collateral_symbol: "WETH",
+    }, "ponder", "2.0.0");
+
+    assert.equal(event.event_type, "position_denied");
+    assert.equal(event.data.position, "0xPos1");
+  });
+
+  it("should build position_closed event with minted_zchf", () => {
+    const event = buildEvent("position_closed", {
+      chain_id: 1,
+      chain_name: "Ethereum",
+      position: "0xPos1",
+      owner: "0xOwner1",
+      collateral_symbol: "WETH",
+      minted_zchf: 5000,
+    }, "ponder", "2.0.0");
+
+    assert.equal(event.event_type, "position_closed");
+    assert.equal(event.data.minted_zchf, 5000);
+  });
+
+  it("should build minter_denied event with deny_message", () => {
+    const event = buildEvent("minter_denied", {
+      chain_id: 1,
+      chain_name: "Ethereum",
+      minter_address: "0xMinter1",
+      suggestor: "0xSuggestor",
+      deny_message: "Rejected by governance vote",
+      tx_hash: "0xTx1",
+    }, "ponder", "2.0.0");
+
+    assert.equal(event.event_type, "minter_denied");
+    assert.equal(event.data.deny_message, "Rejected by governance vote");
   });
 });
 

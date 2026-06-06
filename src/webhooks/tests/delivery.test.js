@@ -2,12 +2,20 @@
  * Unit tests for src/webhooks/delivery.js
  */
 
-import { describe, it, beforeEach, afterEach } from "node:test";
+import { describe, it, before, after, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { signPayload, deliverEvent, getPendingRetryCount } from "../delivery.js";
 import { buildEvent } from "../events.js";
 import { SubscriptionStore } from "../subscriptions.js";
+
+// Isolate test persistence
+const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "fc-del-test-"));
+const _origEnv = process.env.WEBHOOK_DATA_DIR;
+process.env.WEBHOOK_DATA_DIR = TEST_DATA_DIR;
 
 const SECRET = "test-secret-that-is-at-least-32-characters-long";
 

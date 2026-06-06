@@ -2,13 +2,19 @@
  * Unit tests for src/webhooks/subscriptions.js
  */
 
-import { describe, it, beforeEach, afterEach } from "node:test";
+import { describe, it, before, after, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { SubscriptionStore } from "../subscriptions.js";
 
 const VALID_SECRET = "a".repeat(32);
 const VALID_URL = "https://example.com/webhook";
+
+// Use an isolated temp dir for persistence so tests don't load production data
+const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "fc-sub-test-"));
 
 function validPayload(overrides = {}) {
   return {
@@ -22,8 +28,27 @@ function validPayload(overrides = {}) {
 
 describe("SubscriptionStore", () => {
   let store;
+  let originalEnv;
+
+  before(() => {
+    originalEnv = process.env.WEBHOOK_DATA_DIR;
+    process.env.WEBHOOK_DATA_DIR = TEST_DATA_DIR;
+  });
+
+  after(() => {
+    if (originalEnv !== undefined) {
+      process.env.WEBHOOK_DATA_DIR = originalEnv;
+    } else {
+      delete process.env.WEBHOOK_DATA_DIR;
+    }
+    // Clean up temp dir
+    try { fs.rmSync(TEST_DATA_DIR, { recursive: true }); } catch {}
+  });
 
   beforeEach(() => {
+    // Clear any persisted data between tests
+    const persistPath = path.join(TEST_DATA_DIR, "subscriptions.json");
+    try { fs.unlinkSync(persistPath); } catch {}
     store = new SubscriptionStore();
   });
 
@@ -176,7 +201,7 @@ describe("SubscriptionStore", () => {
       const result = store.create(validPayload({ events: ["*"] }));
       assert.equal(result.ok, true);
       assert.equal(result.status, 201);
-      assert.equal(result.subscription.events.length, 14);
+      assert.equal(result.subscription.events.length, 18);
     });
   });
 
