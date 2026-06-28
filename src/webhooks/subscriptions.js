@@ -10,6 +10,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { EVENT_TYPES, matchesFilters } from "./events.js";
+import { assertSafeWebhookUrlSync } from "./urlSafety.js";
 
 const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const MAX_SUBSCRIPTIONS = 100;
@@ -72,6 +73,7 @@ export class SubscriptionStore {
           url: sub.url,
           secretHash: sub.secretHash,
           secretRaw: sub.secretRaw,
+          managementTokenHash: sub.managementTokenHash,
           events: [...sub.events],
           filters: sub.filters,
           createdAt: sub.createdAt,
@@ -114,21 +116,13 @@ export class SubscriptionStore {
    * @returns {{ ok: boolean, subscription?: object, error?: string, status?: number }}
    */
   create({ url, secret, events, filters }) {
-    // Validate URL
-    if (!url || typeof url !== "string") {
-      return { ok: false, error: "url is required", status: 400 };
-    }
-    if (url.length > 2048) {
-      return { ok: false, error: "url exceeds 2048 characters", status: 400 };
-    }
+    // Validate URL and block SSRF targets. Webhook URLs must be public HTTPS
+    // endpoints unless an exact hostname is explicitly allowlisted via
+    // WEBHOOK_ALLOWED_HOSTS for operational receivers.
     try {
-      const parsed = new URL(url);
-      const isLocalhost = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
-      if (parsed.protocol !== "https:" && !isLocalhost) {
-        return { ok: false, error: "url must be HTTPS (HTTP allowed only for localhost)", status: 400 };
-      }
-    } catch {
-      return { ok: false, error: "url is not a valid URL", status: 400 };
+      assertSafeWebhookUrlSync(url);
+    } catch (err) {
+      return { ok: false, error: err.message, status: 400 };
     }
 
     // Validate secret
@@ -162,11 +156,13 @@ export class SubscriptionStore {
 
     const now = Date.now();
     const id = "sub_" + crypto.randomBytes(6).toString("hex");
+    const managementToken = "whsec_" + crypto.randomBytes(24).toString("hex");
     const sub = {
       id,
       url,
       secretHash: crypto.createHash("sha256").update(secret).digest("hex"),
       secretRaw: secret,
+      managementTokenHash: hashSecret(managementToken),
       events: new Set(resolvedEvents),
       filters: filters || {},
       createdAt: now,
@@ -185,9 +181,15 @@ export class SubscriptionStore {
 
     return {
       ok: true,
-      subscription: this._toPublic(sub),
+      subscription: this._toPublic(sub, { includeManagementToken: true, managementToken }),
       status: 201,
     };
+  }
+
+  hasManagementToken(id, token) {
+    const sub = this.get(id);
+    if (!sub || !sub.managementTokenHash || !token) return false;
+    return timingSafeEqual(hashSecret(String(token).trim()), sub.managementTokenHash);
   }
 
   /**
@@ -324,8 +326,8 @@ export class SubscriptionStore {
     return count;
   }
 
-  _toPublic(sub) {
-    return {
+  _toPublic(sub, opts = {}) {
+    const out = {
       id: sub.id,
       url: sub.url,
       events: [...sub.events],
@@ -342,5 +344,20 @@ export class SubscriptionStore {
         consecutive_failures: sub.deliveryStats.consecutiveFailures,
       },
     };
+    if (opts.includeManagementToken) {
+      out.management_token = opts.managementToken;
+      out.management_token_note = "Store this token securely. It is shown only once and is required to test or delete this subscription.";
+    }
+    return out;
   }
+}
+
+function hashSecret(value) {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function timingSafeEqual(a, b) {
+  const left = Buffer.from(String(a || ""));
+  const right = Buffer.from(String(b || ""));
+  return left.length === right.length && crypto.timingSafeEqual(left, right);
 }

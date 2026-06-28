@@ -30,6 +30,7 @@ import {
   getPollerStatus,
   getPendingRetryCount,
 } from "./webhooks/index.js";
+import { requireWebhookAdminToken } from "./webhooks/auth.js";
 
 const { version: SERVER_VERSION } = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8")
@@ -108,15 +109,21 @@ async function dispatchTool(toolName, args) {
     }
     case "unsubscribe_events": {
       if (!webhookStore) throw new Error("Webhooks only available in HTTP mode");
+      const isAdmin = (() => { try { requireWebhookAdminToken(args.admin_token); return true; } catch { return false; } })();
+      if (!isAdmin && !webhookStore.hasManagementToken(args.subscription_id, args.management_token)) {
+        throw new Error("unauthorized");
+      }
       const result = webhookStore.delete(args.subscription_id);
       if (!result.ok) throw new Error(result.error);
       return result;
     }
     case "list_subscriptions": {
+      requireWebhookAdminToken(args.admin_token);
       if (!webhookStore) throw new Error("Webhooks only available in HTTP mode");
       return webhookStore.list(args.url || undefined);
     }
     case "get_webhook_status": {
+      requireWebhookAdminToken(args.admin_token);
       if (!webhookStore) throw new Error("Webhooks only available in HTTP mode");
       const pollerStatus = getPollerStatus();
       const deliveryStats = webhookStore.getDeliveryStats();
@@ -201,6 +208,12 @@ function createServer() {
 
 const useHttp = process.argv.includes("--http");
 const PORT = parseInt(process.env.PORT || "3000", 10);
+const WEBHOOK_TOOL_NAMES = new Set([
+  "subscribe_events",
+  "unsubscribe_events",
+  "list_subscriptions",
+  "get_webhook_status",
+]);
 
 if (!useHttp) {
   // ── stdio mode — Claude Desktop / Cursor / CLI ──
@@ -253,7 +266,7 @@ if (!useHttp) {
     // CORS
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, mcp-session-id");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, mcp-session-id, Authorization, X-Webhook-Admin-Token");
     res.setHeader("Access-Control-Expose-Headers", "mcp-session-id");
 
     if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
@@ -269,10 +282,13 @@ if (!useHttp) {
     const ip = getClientIp(req);
 
     // ── Rate limiting ──────────────────────────────────────────────────────
-    // Webhook mutations (POST /webhooks/subscribe, DELETE) get a tighter limit
-    const isWebhookMutation = url.pathname.startsWith("/webhooks/") &&
-      (req.method === "POST" || req.method === "DELETE") &&
-      !url.pathname.endsWith("/test"); // test endpoint uses general limit
+    // Webhook mutations and webhook-management tools get a tighter limit.
+    const apiToolName = url.pathname.startsWith("/api/") ? url.pathname.slice(5) : "";
+    const isWebhookManagementTool = WEBHOOK_TOOL_NAMES.has(apiToolName);
+    const isWebhookMutation = (
+      url.pathname.startsWith("/webhooks/") &&
+      (req.method === "POST" || req.method === "DELETE")
+    ) || isWebhookManagementTool;
 
     const limit = isWebhookMutation ? MAX_WEBHOOK : MAX_GENERAL;
     const rl = checkRateLimit(ip + (isWebhookMutation ? ":wh" : ""), limit);
@@ -360,6 +376,14 @@ if (!useHttp) {
         return;
       }
 
+      // Admin-token-bearing webhook management tools must not be invoked via
+      // query strings; URLs leak into logs, browser history, and referrers.
+      if (WEBHOOK_TOOL_NAMES.has(toolName) && req.method !== "POST" && req.method !== "PUT") {
+        res.writeHead(405, { "Content-Type": "application/json", "Allow": "POST, PUT" });
+        res.end(JSON.stringify({ ok: false, tool: toolName, error: "Webhook management tools require POST with token in body or Authorization/X-Webhook-Admin-Token header" }));
+        return;
+      }
+
       // Parse params: query string for GET, JSON body for POST
       let params = {};
       if (req.method === "POST" || req.method === "PUT") {
@@ -395,6 +419,15 @@ if (!useHttp) {
         }
       }
 
+      if (WEBHOOK_TOOL_NAMES.has(toolName) && !params.admin_token) {
+        const authorization = req.headers.authorization || "";
+        const bearer = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+        params.admin_token = bearer || (req.headers["x-webhook-admin-token"] || "").trim();
+      }
+      if (WEBHOOK_TOOL_NAMES.has(toolName) && !params.management_token) {
+        params.management_token = (req.headers["x-webhook-management-token"] || "").trim();
+      }
+
       try {
         const result = await dispatchTool(toolName, params);
         console.error(`[/api/${toolName}] ok`);
@@ -402,7 +435,7 @@ if (!useHttp) {
         res.end(JSON.stringify({ ok: true, tool: toolName, result }, null, 2));
       } catch (e) {
         console.error(`[/api/${toolName}] error: ${e.message}`);
-        const status = e.message.includes("required") ? 400 : 500;
+        const status = e.message.includes("required") ? 400 : e.message === "unauthorized" ? 401 : 500;
         res.writeHead(status, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, tool: toolName, error: e.message }));
       }

@@ -3,6 +3,9 @@
  */
 
 import crypto from "crypto";
+import http from "node:http";
+import https from "node:https";
+import { resolveSafeWebhookTarget } from "./urlSafety.js";
 
 const RETRY_DELAYS = [10_000, 30_000, 90_000]; // 10s, 30s, 90s
 const DELIVERY_TIMEOUT = 5_000; // 5s per attempt
@@ -32,6 +35,17 @@ export function signPayload(secret, bodyString) {
  * @returns {Promise<{delivered: boolean, statusCode?: number, error?: string, responseTimeMs?: number}>}
  */
 export async function deliverEvent(sub, event, store, serverVersion, isTest = false) {
+  let target;
+  try {
+    target = await resolveSafeWebhookTarget(sub.url);
+  } catch (err) {
+    const errorMsg = `blocked unsafe webhook URL: ${err.message}`;
+    console.error(`[webhook:delivery] ${sub.url} ${errorMsg}`);
+    if (!isTest) store.recordFailure(sub.id, null);
+    logDeadLetter(event, sub, errorMsg);
+    return { delivered: false, error: errorMsg };
+  }
+
   const bodyString = JSON.stringify(event);
   const signature = signPayload(sub.secretRaw, bodyString);
   const timestamp = Math.floor(Date.now() / 1000).toString();
@@ -45,8 +59,11 @@ export async function deliverEvent(sub, event, store, serverVersion, isTest = fa
     "X-Frankencoin-Timestamp": timestamp,
   };
 
-  // Attempt delivery with retries
-  for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+  const maxRetries = isTest ? 0 : RETRY_DELAYS.length;
+
+  // Attempt delivery with retries. Test deliveries are single-shot so callers
+  // get fast feedback and cannot use the test endpoint as retry amplification.
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     if (attempt > 0) {
       pendingRetries++;
       await sleep(RETRY_DELAYS[attempt - 1]);
@@ -55,35 +72,28 @@ export async function deliverEvent(sub, event, store, serverVersion, isTest = fa
 
     const start = Date.now();
     try {
-      const res = await fetch(sub.url, {
-        method: "POST",
-        headers,
-        body: bodyString,
-        redirect: "manual", // Don't follow redirects per spec
-        signal: AbortSignal.timeout(DELIVERY_TIMEOUT),
-      });
-
+      const res = await postJsonPinned(target, headers, bodyString);
       const responseTimeMs = Date.now() - start;
 
-      if (res.status >= 200 && res.status < 300) {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
         if (!isTest) {
-          store.recordSuccess(sub.id, res.status);
+          store.recordSuccess(sub.id, res.statusCode);
         }
-        return { delivered: true, statusCode: res.status, responseTimeMs };
+        return { delivered: true, statusCode: res.statusCode, responseTimeMs };
       }
 
       // Non-2xx: log and retry
       console.error(
-        `[webhook:delivery] ${sub.url} returned ${res.status} (attempt ${attempt + 1}/${RETRY_DELAYS.length + 1})`
+        `[webhook:delivery] ${sub.url} returned ${res.statusCode} (attempt ${attempt + 1}/${maxRetries + 1})`
       );
 
-      if (attempt === RETRY_DELAYS.length) {
+      if (attempt === maxRetries) {
         // All retries exhausted
         if (!isTest) {
-          store.recordFailure(sub.id, res.status);
+          store.recordFailure(sub.id, res.statusCode);
         }
-        logDeadLetter(event, sub, `HTTP ${res.status}`);
-        return { delivered: false, statusCode: res.status, error: `HTTP ${res.status}`, responseTimeMs };
+        logDeadLetter(event, sub, `HTTP ${res.statusCode}`);
+        return { delivered: false, statusCode: res.statusCode, error: `HTTP ${res.statusCode}`, responseTimeMs };
       }
     } catch (e) {
       const responseTimeMs = Date.now() - start;
@@ -92,10 +102,10 @@ export async function deliverEvent(sub, event, store, serverVersion, isTest = fa
         : e.message;
 
       console.error(
-        `[webhook:delivery] ${sub.url} error: ${errorMsg} (attempt ${attempt + 1}/${RETRY_DELAYS.length + 1})`
+        `[webhook:delivery] ${sub.url} error: ${errorMsg} (attempt ${attempt + 1}/${maxRetries + 1})`
       );
 
-      if (attempt === RETRY_DELAYS.length) {
+      if (attempt === maxRetries) {
         // All retries exhausted
         if (!isTest) {
           store.recordFailure(sub.id, null);
@@ -129,6 +139,44 @@ export async function dispatchToSubscribers(store, event) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function postJsonPinned(target, headers, bodyString) {
+  return new Promise((resolve, reject) => {
+    const { parsed, safeAddress } = target;
+    const client = parsed.protocol === "http:" ? http : https;
+    const options = {
+      protocol: parsed.protocol,
+      hostname: parsed.hostname,
+      port: parsed.port || (parsed.protocol === "https:" ? 443 : 80),
+      path: `${parsed.pathname}${parsed.search}`,
+      method: "POST",
+      headers: {
+        ...headers,
+        "Content-Length": Buffer.byteLength(bodyString),
+      },
+      timeout: DELIVERY_TIMEOUT,
+      agent: false,
+    };
+
+    if (safeAddress) {
+      options.lookup = (_hostname, _opts, cb) => cb(null, safeAddress.address, safeAddress.family);
+    }
+
+    const req = client.request(options, (res) => {
+      // Drain body so the socket can close cleanly. Redirects are deliberately
+      // not followed; the status is returned exactly as received.
+      res.resume();
+      res.on("end", () => resolve({ statusCode: res.statusCode || 0 }));
+    });
+
+    req.on("timeout", () => {
+      req.destroy(Object.assign(new Error(`timeout after ${DELIVERY_TIMEOUT}ms`), { name: "TimeoutError" }));
+    });
+    req.on("error", reject);
+    req.write(bodyString);
+    req.end();
+  });
+}
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));

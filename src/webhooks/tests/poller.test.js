@@ -24,6 +24,7 @@ import { buildEvent } from "../events.js";
 const PONDER_URL = "https://ponder.frankencoin.com";
 const API_URL = "https://api.frankencoin.com";
 const CG_URL = "https://pro-api.coingecko.com/api/v3";
+process.env.WEBHOOK_DATA_DIR = `/tmp/frankencoin-mcp-poller-test-${process.pid}`;
 
 // ─── Mock data templates ──────────────────────────────────────────────────────
 
@@ -123,6 +124,8 @@ describe("Poller — Event Detection Logic", () => {
 
   beforeEach(() => {
     store = new SubscriptionStore();
+    store.subs.clear();
+    store._save();
     capturedEvents = [];
   });
 

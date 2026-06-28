@@ -253,6 +253,8 @@ export const TOOLS = [
       type: "object",
       properties: {
         subscription_id: { type: "string", description: "Subscription ID (e.g. sub_a1b2c3d4e5f6)." },
+        management_token: { type: "string", description: "Per-subscription management token returned once by subscribe_events. Required unless using admin_token." },
+        admin_token: { type: "string", description: "Server admin token (optional alternative to management_token)." },
       },
       required: ["subscription_id"],
     },
@@ -266,8 +268,9 @@ export const TOOLS = [
       type: "object",
       properties: {
         url: { type: "string", description: "Filter subscriptions by URL (exact match)." },
+        admin_token: { type: "string", description: "Admin token required for webhook management (WEBHOOK_ADMIN_TOKEN)." },
       },
-      required: [],
+      required: ["admin_token"],
     },
   },
 
@@ -277,8 +280,10 @@ export const TOOLS = [
     description: "Health status of the webhook/event system: poller state, subscription counts, delivery stats, error counters.",
     inputSchema: {
       type: "object",
-      properties: {},
-      required: [],
+      properties: {
+        admin_token: { type: "string", description: "Admin token required for webhook management (WEBHOOK_ADMIN_TOKEN)." },
+      },
+      required: ["admin_token"],
     },
   },
 ];

@@ -10,6 +10,8 @@ import { buildEvent } from "../events.js";
 import { SubscriptionStore } from "../subscriptions.js";
 
 const SECRET = "test-secret-that-is-at-least-32-characters-long";
+process.env.WEBHOOK_DATA_DIR = `/tmp/frankencoin-mcp-delivery-test-${process.pid}`;
+process.env.WEBHOOK_ALLOW_INSECURE_LOCALHOST = "true";
 
 function makeSub(overrides = {}) {
   return {
