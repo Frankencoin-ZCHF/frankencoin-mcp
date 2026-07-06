@@ -6,6 +6,7 @@ import { getEventTypeSchemas, buildEvent } from "./events.js";
 import { deliverEvent } from "./delivery.js";
 import { getPollerStatus } from "./poller.js";
 import { getPendingRetryCount } from "./delivery.js";
+import { isAuthorizedRequest } from "./auth.js";
 
 /**
  * Handle all /webhooks/* HTTP requests.
@@ -19,7 +20,18 @@ export async function handleWebhookRequest(req, res, url, store, serverVersion) 
   const path = url.pathname;
 
   try {
-    // POST /webhooks/subscribe
+    // Public schema endpoint.
+    if (path === "/webhooks/events" && req.method === "GET") {
+      return sendJson(res, 200, {
+        ok: true,
+        event_types: getEventTypeSchemas(),
+      });
+    }
+
+    // POST /webhooks/subscribe is intentionally public: any Hermes/user should
+    // be able to create a webhook subscription. Safety comes from SSRF-safe URL
+    // validation, strict rate limits/caps, HMAC delivery secrets, and a per-
+    // subscription management token returned once for test/delete operations.
     if (path === "/webhooks/subscribe" && req.method === "POST") {
       const body = await readBody(req);
       if (!body) return sendJson(res, 400, { ok: false, error: "Invalid JSON body" });
@@ -43,6 +55,9 @@ export async function handleWebhookRequest(req, res, url, store, serverVersion) 
     // DELETE /webhooks/subscriptions/:id
     const deleteMatch = path.match(/^\/webhooks\/subscriptions\/([^/]+)$/);
     if (deleteMatch && req.method === "DELETE") {
+      if (!isAuthorizedForSubscription(req, store, deleteMatch[1])) {
+        return sendJson(res, 401, { ok: false, error: "unauthorized" });
+      }
       const result = store.delete(deleteMatch[1]);
       return sendJson(res, result.status || 200, result);
     }
@@ -50,6 +65,9 @@ export async function handleWebhookRequest(req, res, url, store, serverVersion) 
     // POST /webhooks/subscriptions/:id/test
     const testMatch = path.match(/^\/webhooks\/subscriptions\/([^/]+)\/test$/);
     if (testMatch && req.method === "POST") {
+      if (!isAuthorizedForSubscription(req, store, testMatch[1])) {
+        return sendJson(res, 401, { ok: false, error: "unauthorized" });
+      }
       const sub = store.get(testMatch[1]);
       if (!sub) return sendJson(res, 404, { ok: false, error: "Subscription not found" });
 
@@ -74,21 +92,17 @@ export async function handleWebhookRequest(req, res, url, store, serverVersion) 
 
     // GET /webhooks/subscriptions
     if (path === "/webhooks/subscriptions" && req.method === "GET") {
+      const auth = isAuthorizedRequest(req);
+      if (!auth.ok) return sendJson(res, auth.status, { ok: false, error: auth.error });
       const filterUrl = url.searchParams.get("url") || undefined;
       const result = store.list(filterUrl);
       return sendJson(res, 200, result);
     }
 
-    // GET /webhooks/events
-    if (path === "/webhooks/events" && req.method === "GET") {
-      return sendJson(res, 200, {
-        ok: true,
-        event_types: getEventTypeSchemas(),
-      });
-    }
-
     // GET /webhooks/status
     if (path === "/webhooks/status" && req.method === "GET") {
+      const auth = isAuthorizedRequest(req);
+      if (!auth.ok) return sendJson(res, auth.status, { ok: false, error: auth.error });
       const pollerStatus = getPollerStatus();
       const deliveryStats = store.getDeliveryStats();
       const eventCounts = store.getEventCounts();
@@ -138,6 +152,23 @@ export async function handleWebhookRequest(req, res, url, store, serverVersion) 
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getHeader(req, name) {
+  const value = req.headers[name.toLowerCase()];
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function getBearer(req) {
+  const authorization = getHeader(req, "authorization") || "";
+  return authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+}
+
+function isAuthorizedForSubscription(req, store, subscriptionId) {
+  const admin = isAuthorizedRequest(req);
+  if (admin.ok) return true;
+  const token = getHeader(req, "x-webhook-management-token") || getBearer(req);
+  return store.hasManagementToken(subscriptionId, token);
+}
 
 function sendJson(res, status, data) {
   res.writeHead(status, { "Content-Type": "application/json" });

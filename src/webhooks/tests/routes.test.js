@@ -13,16 +13,20 @@ const PORT = 2000;
 const RECEIVER_PORT = 2001;
 const BASE = `http://localhost:${PORT}`;
 const VALID_SECRET = "a".repeat(32);
+const ADMIN_TOKEN = "t".repeat(32);
+process.env.WEBHOOK_DATA_DIR = `/tmp/frankencoin-mcp-routes-test-${process.pid}`;
 
 let server;
 let store;
 
-async function request(method, path, body = null) {
+async function request(method, path, body = null, { auth = true, managementToken = null } = {}) {
   const url = `${BASE}${path}`;
   const opts = {
     method,
     headers: { "Content-Type": "application/json" },
   };
+  if (auth) opts.headers["X-Webhook-Admin-Token"] = ADMIN_TOKEN;
+  if (managementToken) opts.headers["X-Webhook-Management-Token"] = managementToken;
   if (body) {
     opts.body = JSON.stringify(body);
   }
@@ -39,6 +43,8 @@ async function request(method, path, body = null) {
 
 describe("Webhook Routes Integration", () => {
   before(async () => {
+    process.env.WEBHOOK_ADMIN_TOKEN = ADMIN_TOKEN;
+    process.env.WEBHOOK_ALLOW_INSECURE_LOCALHOST = "true";
     store = new SubscriptionStore();
     server = http.createServer(async (req, res) => {
       const url = new URL(req.url, `http://localhost:${PORT}`);
@@ -57,6 +63,33 @@ describe("Webhook Routes Integration", () => {
     store.subs.clear();
   });
 
+  // ─── Authentication ───────────────────────────────────────────────────────
+
+  describe("webhook management auth", () => {
+    it("should allow unauthenticated subscription creation", async () => {
+      const { status, json } = await request("POST", "/webhooks/subscribe", {
+        url: "https://example.com/hook",
+        secret: VALID_SECRET,
+        events: ["mint"],
+      }, { auth: false });
+      assert.equal(status, 201);
+      assert.equal(json.ok, true);
+      assert.ok(json.subscription.management_token.startsWith("whsec_"));
+    });
+
+    it("should reject unauthenticated global subscription listing", async () => {
+      const { status, json } = await request("GET", "/webhooks/subscriptions", null, { auth: false });
+      assert.equal(status, 401);
+      assert.equal(json.ok, false);
+    });
+
+    it("should allow public event schema without auth", async () => {
+      const { status, json } = await request("GET", "/webhooks/events", null, { auth: false });
+      assert.equal(status, 200);
+      assert.equal(json.ok, true);
+    });
+  });
+
   // ─── POST /webhooks/subscribe → 201 ─────────────────────────────────────
 
   describe("POST /webhooks/subscribe", () => {
@@ -71,6 +104,7 @@ describe("Webhook Routes Integration", () => {
       assert.equal(json.ok, true);
       assert.ok(json.subscription);
       assert.ok(json.subscription.id.startsWith("sub_"));
+      assert.ok(json.subscription.management_token.startsWith("whsec_"));
       assert.equal(json.subscription.url, "https://example.com/hook");
       assert.deepStrictEqual(json.subscription.events, ["mint"]);
     });
@@ -148,7 +182,7 @@ describe("Webhook Routes Integration", () => {
       const url = `${BASE}/webhooks/subscribe`;
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-Webhook-Admin-Token": ADMIN_TOKEN },
         body: "not json {{{",
       });
       assert.equal(res.status, 400);
@@ -166,9 +200,10 @@ describe("Webhook Routes Integration", () => {
         events: ["mint"],
       });
       const id = created.subscription.id;
+      const managementToken = created.subscription.management_token;
 
-      // Delete
-      const { status, json } = await request("DELETE", `/webhooks/subscriptions/${id}`);
+      // Delete with per-subscription token
+      const { status, json } = await request("DELETE", `/webhooks/subscriptions/${id}`, null, { auth: false, managementToken });
       assert.equal(status, 200);
       assert.equal(json.ok, true);
       assert.equal(json.deleted, id);
@@ -252,9 +287,10 @@ describe("Webhook Routes Integration", () => {
           events: ["mint"],
         });
         const id = created.subscription.id;
+        const managementToken = created.subscription.management_token;
 
-        // Trigger test delivery
-        const { status, json } = await request("POST", `/webhooks/subscriptions/${id}/test`);
+        // Trigger test delivery with per-subscription token
+        const { status, json } = await request("POST", `/webhooks/subscriptions/${id}/test`, null, { auth: false, managementToken });
         assert.equal(status, 200);
         assert.equal(json.ok, true);
         assert.equal(json.delivered, true);

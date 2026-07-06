@@ -9,6 +9,7 @@ import { SubscriptionStore } from "../subscriptions.js";
 
 const VALID_SECRET = "a".repeat(32);
 const VALID_URL = "https://example.com/webhook";
+process.env.WEBHOOK_DATA_DIR = `/tmp/frankencoin-mcp-subscriptions-test-${process.pid}`;
 
 function validPayload(overrides = {}) {
   return {
@@ -25,6 +26,8 @@ describe("SubscriptionStore", () => {
 
   beforeEach(() => {
     store = new SubscriptionStore();
+    store.subs.clear();
+    store._save();
   });
 
   afterEach(() => {
@@ -44,16 +47,16 @@ describe("SubscriptionStore", () => {
       assert.deepStrictEqual(result.subscription.events, ["mint"]);
     });
 
-    it("should allow http://localhost URLs", () => {
+    it("should reject http://localhost URLs", () => {
       const result = store.create(validPayload({ url: "http://localhost:3000/hook" }));
-      assert.equal(result.ok, true);
-      assert.equal(result.status, 201);
+      assert.equal(result.ok, false);
+      assert.equal(result.status, 400);
     });
 
-    it("should allow http://127.0.0.1 URLs", () => {
+    it("should reject http://127.0.0.1 URLs", () => {
       const result = store.create(validPayload({ url: "http://127.0.0.1:8080/hook" }));
-      assert.equal(result.ok, true);
-      assert.equal(result.status, 201);
+      assert.equal(result.ok, false);
+      assert.equal(result.status, 400);
     });
 
     it("should accept multiple event types", () => {
@@ -109,6 +112,42 @@ describe("SubscriptionStore", () => {
       const result = store.create(validPayload({ url: longUrl }));
       assert.equal(result.ok, false);
       assert.equal(result.status, 400);
+    });
+  });
+
+  // ─── Reject SSRF targets ─────────────────────────────────────────────────
+
+  describe("create — reject SSRF targets", () => {
+    const blocked = [
+      "https://127.0.0.1/hook",
+      "https://localhost/hook",
+      "https://169.254.169.254/latest/meta-data/",
+      "https://10.0.0.1/hook",
+      "https://172.31.29.152/hook",
+      "https://192.168.1.1/hook",
+      "https://100.64.0.1/hook",
+      "https://[::1]/hook",
+      "https://[::ffff:127.0.0.1]/hook",
+      "https://[::ffff:172.31.29.152]/hook",
+      "https://[fe81::1]/hook",
+    ];
+
+    for (const url of blocked) {
+      it(`should reject ${url}`, () => {
+        const result = store.create(validPayload({ url }));
+        assert.equal(result.ok, false);
+        assert.equal(result.status, 400);
+      });
+    }
+
+    it("should allow exact operational host only when allowlisted", () => {
+      process.env.WEBHOOK_ALLOWED_HOSTS = "ip-172-31-29-152.tail0e3e02.ts.net";
+      try {
+        const result = store.create(validPayload({ url: "https://ip-172-31-29-152.tail0e3e02.ts.net/frankencoin-events" }));
+        assert.equal(result.ok, true);
+      } finally {
+        delete process.env.WEBHOOK_ALLOWED_HOSTS;
+      }
     });
   });
 
