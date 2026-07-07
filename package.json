@@ -1,24 +1,26 @@
 {
   "name": "frankencoin-mcp",
-  "version": "2.0.0",
-  "description": "MCP server for Frankencoin (ZCHF) protocol — 13 consolidated tools for supply, positions, savings, FPS, challenges, analytics, governance, and more",
+  "version": "3.0.0",
+  "description": "MCP server for Frankencoin (ZCHF) protocol — 13 read-only data tools for supply, positions, savings, FPS, challenges, analytics, governance, and more",
   "main": "src/index.js",
   "type": "module",
+  "engines": {
+    "node": ">=20 <23"
+  },
   "bin": {
     "frankencoin-mcp": "./src/index.js",
     "frankencoin": "./src/cli.js"
   },
   "scripts": {
-    "dev": "node --watch src/index.js",
-    "start": "node src/index.js",
-    "start:http": "node src/index.js --http",
-    "lint": "eslint src/",
+    "dev": "node --watch src/index.js --http",
+    "start": "node src/index.js --http",
+    "start:stdio": "node src/index.js",
     "cli": "node src/cli.js",
-    "test": "node --test src/webhooks/tests/*.test.js",
-    "test:webhooks": "node --test src/webhooks/tests/*.test.js"
+    "test": "node --test"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.2",
+    "graphql": "^16.9.0",
     "zod": "^3.24.2"
   },
   "keywords": [
