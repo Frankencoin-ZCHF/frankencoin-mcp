@@ -1,3 +1,6 @@
+# Railway deployment config — stateless, read-only, no build step.
+# Nixpacks auto-detects Node from package.json; there is NO build command.
+
 [build]
 builder = "nixpacks"
 
@@ -8,5 +11,5 @@ healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
-[[volumes]]
-mountPath = "/data"
+# No [[volumes]] — the server is fully stateless (webhook subsystem removed).
+# COINGECKO_API_KEY / DUNE_API_KEY are optional; absence only degrades two tools.
