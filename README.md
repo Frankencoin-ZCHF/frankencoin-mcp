@@ -1,65 +1,24 @@
 # Frankencoin MCP Server
 
-Real-time Frankencoin (ZCHF) protocol data via three interfaces — pick whatever fits your stack:
-
-| Interface | Endpoint | Best for |
-|-----------|----------|----------|
-| **MCP** | `POST https://mcp.frankencoin.com/mcp` | Claude Desktop, Cursor, any MCP-compatible agent |
-| **REST API** | `GET https://mcp.frankencoin.com/api/<tool>` | Agents, scripts, curl — single request, no handshake |
-| **CLI** | `frankencoin <command>` | Humans at the terminal |
+Real-time [Frankencoin](https://frankencoin.com) (ZCHF) protocol data for AI agents and developers. One read-only server, several ways to reach it — supply, prices, peg health, savings, minting positions, liquidation challenges, governance, and historical analytics across every supported chain.
 
 **Public endpoint:** `https://mcp.frankencoin.com`
 
----
+| Interface | Endpoint | Best for |
+|-----------|----------|----------|
+| **MCP** (Streamable HTTP) | `POST /mcp` | Claude Desktop, Cursor, any MCP client / AI agent |
+| **REST** | `GET /api/<tool>` | Scripts, curl, agents — one request, no handshake |
+| **CLI** | `frankencoin <command>` | Humans at the terminal |
+| **llms.txt** | `GET /llms.txt` | A compact, self-describing guide for LLMs/agents |
+| **Legacy SSE** | `GET /sse` | Older MCP clients |
 
-## Tools (v2.0 — 13 consolidated tools)
-
-Organised by **what the agent needs**, not where data comes from. One tool per responsibility.
-
-| # | Tool | Description |
-|---|------|-------------|
-| 1 | `get_protocol_snapshot` | Full live state — supply (per chain), TVL, FPS price/reserve/earnings, savings rate, challenges |
-| 2 | `get_market_data` | Prices, peg health, CHF stablecoin comparison (ZCHF/VCHF/CHFAU), macro (BTC/ETH), collateral prices |
-| 3 | `get_savings` | Rates (approved + pending) + module stats (TVL, interest paid, deposits, withdrawals) |
-| 4 | `get_governance` | Rate proposals, minter applications, FPS equity trades, holder stats. `type` param to filter |
-| 5 | `get_positions` | Minting positions. `detail=true` for full on-chain data; default returns address list |
-| 6 | `get_challenges` | Liquidation challenges with collateral details, pricing, position context |
-| 7 | `get_collaterals` | Accepted collateral types across all chains |
-| 8 | `get_analytics` | Historical time-series, FPS trades, minter history, rate change timeline. `type` param |
-| 9 | `get_knowledge` | All docs and reference: FAQ, guides, token addresses, links. `topic` param |
-| 10 | `get_news` | Press articles, videos, use cases, ecosystem partners |
-| 11 | `get_merch` | Merch store products, prices, availability |
-| 12 | `get_dune_stats` | Dune Analytics — holder counts, minting volume, savings TVL over time |
-| 13 | `query_ponder` | Raw GraphQL escape hatch against ponder.frankencoin.com |
-
-### Design Philosophy
-
-- **Single responsibility per tool** — organised by what the tool returns, not where data comes from
-- **Agent-centric** — the agent asks "what do I need?", the server aggregates internally
-- **Consolidated from 23→13** — fewer tool calls, richer responses, less context wasted
+No authentication. No API key required. Read-only.
 
 ---
 
-## Data Sources
-
-All data aggregated server-side — the agent doesn't need to know about underlying APIs:
-
-| Source | What it provides |
-|--------|-----------------|
-| [api.frankencoin.com](https://api.frankencoin.com) | Supply, TVL, FPS, savings rates, collaterals, challenges, prices |
-| [ponder.frankencoin.com](https://ponder.frankencoin.com) | On-chain indexed data — positions, trades, minters, analytics |
-| [CoinGecko Pro](https://coingecko.com) | Market prices, 24h changes, peg health, CHF stablecoin comparison |
-| [Dune Analytics](https://dune.com/frankencoin) | Holder counts, minting volume, savings TVL history |
-| [GitHub repos](https://github.com/Frankencoin-ZCHF) | Documentation (gitbook), website content (links, media, token addresses) |
-| [merch.frankencoin.com](https://merch.frankencoin.com) | Merch store products via Shopify API |
-
----
-
-## Quick Start
+## Quick start
 
 ### MCP (Claude Desktop / Cursor)
-
-Add to your MCP config:
 
 ```json
 {
@@ -71,120 +30,171 @@ Add to your MCP config:
 }
 ```
 
-### REST API (curl / scripts)
+Then ask your assistant things like *"What's the current state of the Frankencoin protocol?"* or *"How healthy is the ZCHF peg versus other CHF stablecoins?"*.
+
+### REST (curl / scripts)
 
 ```bash
-# Full protocol snapshot
+# Full protocol snapshot — the best starting point
 curl https://mcp.frankencoin.com/api/get_protocol_snapshot
 
-# Market data with peg health
+# Market data + peg health
 curl https://mcp.frankencoin.com/api/get_market_data
 
-# Savings rates + stats
-curl https://mcp.frankencoin.com/api/get_savings
+# Governance: pending minter applications
+curl "https://mcp.frankencoin.com/api/get_governance?type=minters&status=pending"
 
-# Governance activity (minters only)
-curl "https://mcp.frankencoin.com/api/get_governance?type=minters&status=active"
-
-# Positions with full detail
+# Positions with full on-chain detail
 curl "https://mcp.frankencoin.com/api/get_positions?detail=true&limit=10"
 
-# Historical analytics (30 days)
+# 30 days of protocol analytics
 curl "https://mcp.frankencoin.com/api/get_analytics?type=time_series&days=30"
 
-# Documentation
-curl "https://mcp.frankencoin.com/api/get_knowledge?topic=faq"
-
-# Raw GraphQL
+# Raw read-only GraphQL against the on-chain indexer
 curl -X POST https://mcp.frankencoin.com/api/query_ponder \
   -H 'Content-Type: application/json' \
-  -d '{"query": "{ analyticDailyLogs(limit:3) { items { date totalSupply } } }"}'
+  -d '{"query":"{ analyticDailyLogs(limit:3){ items { date totalSupply } } }"}'
 ```
+
+Every REST response is a JSON envelope: `{ "ok": true, "tool": "<name>", "result": { … } }`.
 
 ### CLI
 
 ```bash
 npx frankencoin-mcp snapshot
 npx frankencoin-mcp market
-npx frankencoin-mcp savings
 npx frankencoin-mcp positions --detail --limit 10
 npx frankencoin-mcp analytics --type trades --limit 5
 npx frankencoin-mcp knowledge --topic governance
-npx frankencoin-mcp ponder '{ equityTrades(limit:3) { items { kind trader shares } } }'
+npx frankencoin-mcp ponder '{ equityTrades(limit:3){ items { kind trader shares } } }'
 ```
+
+### Discover everything
+
+`GET /health` and `GET /api` are self-describing manifests, and [`GET /llms.txt`](https://mcp.frankencoin.com/llms.txt) is a compact, always-current guide generated from the live tool registry.
 
 ---
 
-## Self-Hosting
+## Tools
+
+Organised by **what the agent needs**, not where the data comes from — one tool per responsibility, each aggregating from multiple sources internally.
+
+| Tool | Description |
+|------|-------------|
+| `get_protocol_snapshot` | Full live state — supply (per chain), TVL, FPS price/reserve/earnings, savings rate, active challenges |
+| `get_market_data` | Prices, peg health, CHF-stablecoin comparison (ZCHF/VCHF/CHFAU), macro (BTC/ETH), collateral prices |
+| `get_savings` | Approved + pending rates, plus per-module stats (TVL, interest paid, deposits, withdrawals) |
+| `get_governance` | Rate proposals, minter applications, FPS equity trades, holder stats (`type` filter) |
+| `get_positions` | Minting positions; `detail=true` for full on-chain data, else a lightweight address list |
+| `get_challenges` | Liquidation challenges with collateral details, pricing, and position context |
+| `get_collaterals` | Accepted collateral types across all chains |
+| `get_analytics` | Historical time-series, FPS trades, minter history, rate-change timeline (`type` selector) |
+| `get_knowledge` | Docs & reference: FAQ, guides, token addresses, links (`topic` selector) |
+| `get_news` | Press articles, videos, use cases, ecosystem partners |
+| `get_merch` | Merch store products, prices, availability |
+| `get_dune_stats` | Dune Analytics — holder counts, minting volume, savings TVL over time |
+| `query_ponder` | Raw **read-only** GraphQL escape hatch against `ponder.frankencoin.com` |
+
+Parameter details live in each tool's MCP `inputSchema` (via `tools/list`) and in `GET /api`.
+
+---
+
+## Data sources
+
+All aggregated server-side — callers never talk to these directly:
+
+| Source | Provides | Key |
+|--------|----------|-----|
+| [api.frankencoin.com](https://api.frankencoin.com) | Supply, TVL, FPS, savings rates, collaterals, challenges, prices | — |
+| [ponder.frankencoin.com](https://ponder.frankencoin.com) | On-chain indexed data — positions, trades, minters, analytics | — |
+| [CoinGecko](https://coingecko.com) | Market prices, 24h changes, CHF-stablecoin comparison | optional |
+| [Dune Analytics](https://dune.com/frankencoin) | Holder counts, minting volume, savings TVL history | optional |
+| [GitHub repos](https://github.com/Frankencoin-ZCHF) | Documentation and website content (links, media, token addresses) | — |
+| [merch.frankencoin.com](https://merch.frankencoin.com) | Merch products (Shopify) | — |
+| Ethereum RPC | CHFAU on-chain supply | — |
+
+When an optional key is absent, the affected tool (`get_market_data`, `get_dune_stats`) returns **partial data plus a `note`** rather than failing.
+
+---
+
+## Self-hosting
+
+No build step. Node ≥ 20, that's it.
 
 ```bash
-# Clone and install
 git clone https://github.com/Frankencoin-ZCHF/frankencoin-mcp.git
 cd frankencoin-mcp
 npm install
 
-# Run in HTTP mode (port 3000)
-node src/index.js --http
-
-# Or stdio mode (for MCP clients)
-node src/index.js
+node src/index.js --http     # HTTP mode (default port 3000)
+node src/index.js            # stdio mode (for local MCP clients)
+npm test                     # run the test suite
 ```
 
-### Environment Variables
+Health check: `curl http://localhost:3000/health`
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `PORT` | No | HTTP port (default: 3000) |
-| `COINGECKO_API_KEY` | Yes* | CoinGecko Pro API key (for market data) |
-| `DUNE_API_KEY` | No | Dune Analytics API key (for get_dune_stats) |
+### Environment variables
 
-*Or place at `~/.config/coingecko/api_key`
+**Nothing is required to boot.** Every variable is optional; missing secrets only degrade two tools.
+
+| Variable | Default | Effect |
+|----------|---------|--------|
+| `PORT` | `3000` | HTTP port |
+| `COINGECKO_API_KEY` | — | Enables full market/macro data (else those fields degrade) |
+| `DUNE_API_KEY` | — | Enables `get_dune_stats` (else it returns a soft note) |
+| `PUBLIC_URL` | `https://mcp.frankencoin.com` | Canonical origin used in `/llms.txt` and `/api` |
+| `RATE_LIMIT_MAX` | `120` | Requests per IP per minute |
+| `TRUST_PROXY_HOPS` | `1` | Trusted proxy hops for client-IP derivation |
+
+See [`src/config.js`](src/config.js) for the full list (cache, timeouts, session and query_ponder limits).
 
 ---
 
 ## Architecture
 
+Node.js ESM, no build step, no database — stateless between restarts and safe to restart anytime. Strictly layered, with **one** place that performs network I/O:
+
 ```
 src/
-├── index.js          # Server entry — MCP + REST + SSE transports
-├── tools.js          # 13 tool definitions (names, descriptions, schemas)
-├── api.js            # Barrel re-export of all handlers
-├── cli.js            # CLI interface
-└── api/
-    ├── helpers.js    # Shared: fetch helpers, constants, key loading
-    ├── snapshot.js   # get_protocol_snapshot
-    ├── market.js     # get_market_data
-    ├── savings.js    # get_savings
-    ├── governance.js # get_governance
-    ├── positions.js  # get_positions, get_challenges, get_collaterals
-    ├── analytics.js  # get_analytics, get_dune_stats, query_ponder
-    └── content.js    # get_knowledge, get_news, get_merch
+  index.js            entrypoint — stdio vs --http, signals
+  config.js           env read once, frozen; nothing required to boot
+  cli.js              terminal client
+  cache.js            in-memory TTL cache: single-flight + LRU bound
+  lib/                pure utilities (number encoding, envelopes, errors, concurrency)
+  upstream/           the ONLY layer that calls fetch() — one client per source
+  services/           per-domain logic: compose upstreams, transform, shape output
+  tools/              registry (13 zod-validated tool defs) + one dispatch path
+  server/             http router, MCP registration, sessions, rate limiting, llms.txt
+test/                 node:test suites (offline / hermetic)
 ```
+
+**Why it's fast:** caching sits at the upstream boundary, so a single `/prices/list` fetch is shared across every tool that needs it, and concurrent identical fetches are coalesced (single-flight). Warm responses are ~1–2 ms.
+
+### Adding a tool
+
+1. Add the definition (name, description, zod `input`, `params`, `handler`) to `src/tools/registry.js`.
+2. Implement its logic in the relevant `src/services/*.js`, using an `src/upstream/*.js` client for any network call.
+
+That's it — MCP, REST, `/health`, `/api`, and `/llms.txt` all pick it up automatically from the registry.
 
 ---
 
-## Example Prompts
+## Security
 
-> "What's the current state of the Frankencoin protocol?"
-→ `get_protocol_snapshot`
+Public, unauthenticated, read-only — hardened accordingly:
 
-> "How is the ZCHF peg? Compare with other CHF stablecoins."
-→ `get_market_data`
+- **`query_ponder`** is AST-validated: read-only only (no mutations/subscriptions), no introspection or batched queries, with depth/field/alias/length and `limit` caps and a result-size cap.
+- **Rate limiting** derives the client IP from the trusted proxy hop (never the attacker-controllable left-most `X-Forwarded-For`).
+- Request-body caps (413), slowloris timeouts, session caps with idle/absolute expiry, prototype-pollution rejection, and a single error mapper that never leaks stack traces, upstream URLs, secrets, or file paths.
+- Security headers and a strict CORS policy on every response.
 
-> "What's the savings rate and how much is deposited?"
-→ `get_savings`
+Threat model and controls: [`docs/rebuild/SECURITY.md`](docs/rebuild/SECURITY.md).
 
-> "Show me recent FPS trades and any pending governance proposals."
-→ `get_governance`
+---
 
-> "List all active positions with their collateral ratios."
-→ `get_positions` with `detail=true`
+## Deployment
 
-> "What are the risks of using Frankencoin?"
-→ `get_knowledge` with `topic=risks`
-
-> "Show me 90 days of protocol analytics."
-→ `get_analytics` with `type=time_series&days=90`
+Runs on [Railway](https://railway.app) and **auto-deploys from `main`** via nixpacks — no build phase, no dashboard configuration, no required env vars. `railway.toml` sets `startCommand = node src/index.js --http` and health-checks `/health`.
 
 ---
 

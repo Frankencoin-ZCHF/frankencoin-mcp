@@ -25,6 +25,8 @@ export const config = Object.freeze({
   version,
 
   port: int("PORT", 3000),
+  // Canonical public origin, used in self-describing manifests (/llms.txt, /api).
+  publicUrl: (process.env.PUBLIC_URL || "https://mcp.frankencoin.com").replace(/\/+$/, ""),
 
   // Optional secrets — absence degrades, never crashes.
   coingeckoKey: process.env.COINGECKO_API_KEY || null,

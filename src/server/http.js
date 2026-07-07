@@ -15,6 +15,7 @@ import { dispatchTool } from "../tools/dispatch.js";
 import { restSuccess, restError, pretty } from "../lib/envelope.js";
 import { mapError, sanitizeForLog, NotFoundError } from "../lib/errors.js";
 import { createMcpServer } from "./mcp.js";
+import { renderLlmsTxt } from "./llmsTxt.js";
 import { deriveClientIp, checkRateLimit } from "./rateLimit.js";
 import {
   mcpSessions, sseSessions, mcpAtCap, sseAtCap, touch,
@@ -104,16 +105,31 @@ function handleHealth(res) {
       mcp: "POST /mcp — MCP Streamable HTTP",
       rest: "GET /api/<tool> — plain JSON REST",
       sse: "GET /sse — legacy SSE transport",
+      llms: "GET /llms.txt — agent-facing guide",
     },
     activeSessions: activeSessionCount(),
     docs: "https://github.com/Frankencoin-ZCHF/frankencoin-mcp",
   });
 }
 
+function handleLlmsTxt(req, res) {
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    sendJson(res, 405, { error: "Method not allowed" });
+    return;
+  }
+  if (res.headersSent) return;
+  // Public, cacheable, drifts-with-the-registry guide. Override the base no-store.
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+  res.end(renderLlmsTxt(TOOLS, config.publicUrl));
+}
+
 function handleApiIndex(res) {
   sendJson(res, 200, {
     description: "Frankencoin REST API — call any tool with a single GET, no MCP session required.",
     usage: "GET https://mcp.frankencoin.com/api/<tool>[?param=value&...]",
+    llms: "GET /llms.txt — compact agent-facing guide to this server",
     examples: [
       "GET /api/get_protocol_snapshot",
       "GET /api/get_market_data",
@@ -400,13 +416,14 @@ async function handle(req, res) {
 
   const path = url.pathname;
   if (path === "/" || path === "/health") return handleHealth(res);
+  if (path === "/llms.txt") return handleLlmsTxt(req, res);
   if (path === "/api" || path === "/api/") return handleApiIndex(res);
   if (path.startsWith("/api/")) return handleRest(req, res, url, ip);
   if (path === "/mcp") return handleMcp(req, res);
   if (path === "/sse") return handleSse(req, res);
   if (path === "/messages") return handleMessages(req, res, url);
 
-  sendJson(res, 404, { error: "Not found", endpoints: ["/mcp", "/api", "/sse", "/health"] });
+  sendJson(res, 404, { error: "Not found", endpoints: ["/mcp", "/api", "/sse", "/health", "/llms.txt"] });
 }
 
 export function createHttpServer() {
