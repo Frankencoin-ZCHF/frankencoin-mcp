@@ -18,6 +18,14 @@ try {
       keepAliveTimeout: 30_000,
       keepAliveMaxTimeout: 60_000,
       connections: 64,
+      // Wire-level timeout backstops. undici defaults headersTimeout/bodyTimeout to
+      // 300s; if AbortSignal misfires on a reused keep-alive socket against a stalling
+      // origin (observed with a flapping public RPC), that 300s default would hang the
+      // request. These ceilings sit just above the longest per-source AbortSignal (15s)
+      // so per-request timeouts still do the real work — this only bounds the worst case.
+      connect: { timeout: 10_000 },
+      headersTimeout: 18_000,
+      bodyTimeout: 20_000,
     }));
   }
 } catch {
@@ -137,7 +145,9 @@ export async function fetchJson(url, {
 
       let delay = BACKOFF[Math.min(attempt, BACKOFF.length - 1)] + Math.floor(Math.random() * 250);
       if (err.retryAfter && Number.isFinite(err.retryAfter)) {
-        delay = Math.max(delay, err.retryAfter * 1000);
+        // Honor Retry-After but cap it — an upstream (or a Cloudflare edge) returning a
+        // large Retry-After must not be able to stall a request for minutes.
+        delay = Math.max(delay, Math.min(err.retryAfter * 1000, config.maxRetryAfterMs));
       }
       attempt++;
       await sleep(delay);

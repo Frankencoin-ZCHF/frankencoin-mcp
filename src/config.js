@@ -40,6 +40,7 @@ export const config = Object.freeze({
   maxBodyBytes: int("MAX_BODY_BYTES", 65536), // 64 KB
   upstreamMaxConcurrency: int("UPSTREAM_MAX_CONCURRENCY", 8),
   upstreamMaxBytes: int("UPSTREAM_MAX_BYTES", 8 * 1024 * 1024), // 8 MB
+  maxRetryAfterMs: int("MAX_RETRY_AFTER_MS", 10_000), // cap honored Retry-After
   cacheMaxEntries: int("CACHE_MAX_ENTRIES", 500),
   cacheEnabled: (process.env.CACHE_ENABLED ?? "true") !== "false",
 

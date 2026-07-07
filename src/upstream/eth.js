@@ -11,9 +11,13 @@ import { UpstreamError } from "../lib/errors.js";
 async function call(to, data) {
   const json = await fetchJson(ETH_RPC, {
     source: "eth",
-    timeout: 8_000,
+    timeout: 6_000,
     method: "POST",
-    idempotent: true,
+    // Best-effort enrichment against a flaky public RPC: do NOT retry. Retrying a
+    // stalling keep-alive socket was compounding into multi-second hangs on the
+    // critical path of get_market_data.
+    idempotent: false,
+    retries: 0,
     headers: { "Content-Type": "application/json" },
     body: { jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to, data }, "latest"] },
   });
@@ -22,5 +26,14 @@ async function call(to, data) {
 }
 
 export function ethCall(to, data) {
-  return getOrLoad(`eth:${to}:${data}`, 5 * 60_000, () => call(to, data));
+  // Negative-cache: on failure resolve to null (cached like any value) so a down RPC
+  // costs one bounded attempt per TTL window, not one per request. Callers already
+  // treat null as "supply unavailable".
+  return getOrLoad(`eth:${to}:${data}`, 5 * 60_000, async () => {
+    try {
+      return await call(to, data);
+    } catch {
+      return null;
+    }
+  });
 }

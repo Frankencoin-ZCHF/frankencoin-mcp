@@ -20,7 +20,7 @@ async function getTimeSeries({ days = 90 } = {}) {
           date
           totalSupply totalEquity totalSavings
           fpsTotalSupply fpsPrice
-          currentLeadRate annualV1BorrowRate annualV2BorrowRate
+          currentSaveLeadRate annualV1BorrowRate annualV2BorrowRate
           projectedInterests annualNetEarnings realizedNetEarnings earningsPerFPS
           totalMintedV1 totalMintedV2
           totalInflow totalOutflow totalTradeFee
@@ -48,7 +48,7 @@ async function getTimeSeries({ days = 90 } = {}) {
       earningsPerFPS: fromWei(d.earningsPerFPS),
     },
     rates: {
-      savingsRatePercent: fromWei(d.currentLeadRate) * 100,
+      savingsRatePercent: bpsToPercent(d.currentSaveLeadRate),
       v1BorrowRatePercent: fromWei(d.annualV1BorrowRate) * 100,
       v2BorrowRatePercent: fromWei(d.annualV2BorrowRate) * 100,
     },
@@ -75,7 +75,7 @@ async function getTimeSeries({ days = 90 } = {}) {
 
   return {
     note: {
-      savingsRate: "currentLeadRate / savingsRatePercent = what ZCHF savers earn",
+      savingsRate: "currentSaveLeadRate / savingsRatePercent = what ZCHF savers earn",
       v1BorrowRate: "annualV1BorrowRate = interest rate for V1 (legacy CDP) borrowers",
       v2BorrowRate: "annualV2BorrowRate = effective interest rate for V2 position borrowers",
       dataRange: `${daily[daily.length - 1]?.date ?? "?"} → ${daily[0]?.date ?? "?"}`,
