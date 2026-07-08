@@ -50,6 +50,23 @@ test("/health is lean, says 13 tools, no webhook mention", async () => {
   assert.doesNotMatch(JSON.stringify(j), /webhook|17 tools/i);
 });
 
+test("/llms.txt → 200 text/plain, cacheable, lists all 13 tools", async () => {
+  const r = await call("/llms.txt");
+  assert.equal(r.status, 200);
+  assert.match(r.headers.get("content-type"), /text\/plain/);
+  assert.match(r.headers.get("cache-control"), /max-age=3600/);
+  const txt = await r.text();
+  assert.match(txt, /^# Frankencoin MCP Server/);
+  assert.ok(txt.includes("**query_ponder**"));
+  assert.match(txt, /## Tools \(13\)/);
+});
+
+test("/llms.txt rejects non-GET → 405 with Allow", async () => {
+  const r = await call("/llms.txt", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+  assert.equal(r.status, 405);
+  assert.match(r.headers.get("allow"), /GET/);
+});
+
 test("security + CORS headers present, no framework banner", async () => {
   const r = await call("/health");
   assert.equal(r.headers.get("x-content-type-options"), "nosniff");
