@@ -14,6 +14,11 @@ export const ETH_RPC = "https://eth.llamarpc.com";
 export const GITHUB_API = "https://api.github.com";
 export const MERCH_URL = "https://merch.frankencoin.com/products.json?limit=250";
 
+// Independent third-party risk-rating providers (same ones frankencoin.com integrates).
+// Hosts are hard-coded here — env supplies only the API keys/email, never the destination.
+export const PHAROS_BASE = "https://api.pharos.watch";
+export const XERBERUS_BASE = "https://api.xerberus.io/public/v1";
+
 export const SITE_REPO = "Frankencoin-ZCHF/frankencoin-site";
 export const DOCS_REPO = "Frankencoin-ZCHF/gitbook";
 
@@ -55,6 +60,25 @@ export const CHFAU_CONTRACT = "0xbd4dfc058eb95b8de5ceaf39966a1a70f5556f78";
 
 // FPS (Frankencoin Pool Shares) — Ethereum only.
 export const FPS_CONTRACT = "0x1bA26788dfDe592fec8bcB0Eaff472a42BE341B2";
+
+// ── Risk ratings (get_risk) ──────────────────────────────────────────────────
+
+// Pharos stablecoin-safety report card id for ZCHF, and its five scored dimensions.
+export const PHAROS_STABLECOIN_ID = "zchf-frankencoin";
+export const PHAROS_DIMENSIONS = [
+  { key: "pegStability", label: "Peg Stability" },
+  { key: "liquidity", label: "Liquidity / Exit Capacity" },
+  { key: "resilience", label: "Resilience" },
+  { key: "decentralization", label: "Decentralization" },
+  { key: "dependencyRisk", label: "Dependency Risk" },
+];
+
+// The Frankencoin entities the site surfaces from Xerberus' bulk registry/scores feed.
+export const XERBERUS_FC_ENTITIES = [
+  { type: "protocol", id: "frankencoin", name: "Frankencoin", subtitle: "Protocol" },
+  { type: "organisation", id: "frankencoin-dao", name: "Frankencoin", subtitle: "DAO" },
+  { type: "pool", id: "frankencoin-savings-eth", name: "Frankencoin Savings", subtitle: "Ethereum Vault" },
+];
 
 // Dune query ids for the Frankencoin dashboards.
 export const DUNE_QUERIES = {

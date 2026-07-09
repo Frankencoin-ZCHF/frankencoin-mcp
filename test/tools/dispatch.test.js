@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 process.env.CACHE_ENABLED = "false";
 delete process.env.COINGECKO_API_KEY;
 delete process.env.DUNE_API_KEY;
+delete process.env.PHAROS_API_KEY;
+delete process.env.XERBERUS_API_KEY;
 
 const { dispatchTool } = await import("../../src/tools/dispatch.js");
 const { setFetchImpl } = await import("../../src/upstream/client.js");
@@ -97,4 +99,25 @@ test("get_dune_stats degrades to soft note without a key (no throw)", async () =
   const out = await dispatchTool("get_dune_stats", {});
   assert.match(out.note, /not configured/i);
   assert.equal(out.holders, null);
+});
+
+test("get_risk degrades to soft notes without keys (no throw, no network)", async () => {
+  calls.length = 0;
+  const out = await dispatchTool("get_risk", {});
+  assert.match(out.pharos.note, /not configured/i);
+  assert.equal(out.pharos.rating, null);
+  assert.match(out.xerberus.note, /not configured/i);
+  assert.equal(out.xerberus.ratings, null);
+  // Missing keys must short-circuit BEFORE any outbound fetch.
+  assert.ok(!calls.some((c) => /pharos|xerberus/.test(c.url)), "no network call when keys absent");
+});
+
+test("get_risk source=pharos returns only the pharos section", async () => {
+  const out = await dispatchTool("get_risk", { source: "pharos" });
+  assert.ok(out.pharos);
+  assert.equal(out.xerberus, undefined);
+});
+
+test("get_risk rejects an unknown source (enum)", async () => {
+  await assert.rejects(() => dispatchTool("get_risk", { source: "nope" }), ValidationError);
 });

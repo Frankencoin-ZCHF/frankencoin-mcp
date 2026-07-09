@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Frankencoin CLI — direct access to all 13 read-only tools. Imports services
+ * Frankencoin CLI — direct access to all 15 read-only tools. Imports services
  * directly (no server, no MCP). Global --json prints raw JSON; --help prints help.
  *
  *   frankencoin snapshot
@@ -15,7 +15,8 @@ import { getSavings } from "./services/savings.js";
 import { getGovernance } from "./services/governance.js";
 import { getPositions, getChallenges, getCollaterals } from "./services/positions.js";
 import { getAnalytics, getDuneStats } from "./services/analytics.js";
-import { getKnowledge, getNews, getMerch } from "./services/content.js";
+import { getKnowledge, getNews, getMerch, getCompliance } from "./services/content.js";
+import { getRisk } from "./services/risk.js";
 import { runPonderQuery } from "./services/ponder.js";
 
 const NO_COLOR = process.env.NO_COLOR || !process.stdout.isTTY;
@@ -212,6 +213,56 @@ const COMMANDS = {
       }
     },
   },
+  compliance: {
+    desc: "Legal & regulatory compliance — papers, audits, links",
+    help: "frankencoin compliance [--json]",
+    async run(flags) {
+      const d = await getCompliance();
+      if (flags.json) return console.log(JSON.stringify(d, null, 2));
+      section(d.title || "Compliance");
+      if (d.intro) console.log(c.dim(`  ${d.intro}`));
+      section("Regulatory Classification");
+      console.log(`  ${c.bold("Swiss (FINMA)")}  ${d.regulatory?.swiss?.classification ?? "—"}`);
+      if (d.regulatory?.swiss?.document) console.log(`    ${c.cyan(d.regulatory.swiss.document.url)}`);
+      console.log(`  ${c.bold("EU (MiCA)")}     ${d.regulatory?.euMica?.classification ?? "—"}`);
+      for (const doc of d.regulatory?.euMica?.documents ?? []) console.log(`    ${c.cyan(doc.url)}  ${c.dim(doc.label)}`);
+      section("Security Audits");
+      for (const r of d.audits?.reports ?? []) console.log(`  ${(r.firm || "").padEnd(16)} ${c.cyan(r.url)}`);
+      if (d.audits?.bugBounty) console.log(`  ${"Bug bounty".padEnd(16)} ${c.cyan(d.audits.bugBounty.url)}`);
+      section("Contact");
+      console.log(`  ${c.green(d.contact?.email ?? "compliance@frankencoin.com")}`);
+      if (d.disclaimer) console.log(c.dim(`\n  ${d.disclaimer}`));
+    },
+  },
+  risk: {
+    desc: "Third-party risk ratings — Pharos safety card + Xerberus scores",
+    help: "frankencoin risk [--source all|pharos|xerberus] [--json]",
+    async run(flags) {
+      const d = await getRisk({ source: flags.source ?? "all" });
+      if (flags.json) return console.log(JSON.stringify(d, null, 2));
+      if (d.pharos) {
+        section("Pharos — Stablecoin Safety");
+        if (d.pharos.rating === null) {
+          console.log(c.dim(`  ${d.pharos.note}`));
+        } else {
+          console.log(`  Overall         ${c.bold(d.pharos.overallGrade)}  (${fmtNum(d.pharos.overallScore, 0)}/100)`);
+          for (const dim of d.pharos.dimensions || []) {
+            console.log(`  ${dim.label.padEnd(26)} ${dim.grade.padEnd(4)} ${dim.score != null ? fmtNum(dim.score, 0) + "/100" : "—"}`);
+          }
+        }
+      }
+      if (d.xerberus) {
+        section("Xerberus — Composite Risk");
+        if (d.xerberus.ratings === null) {
+          console.log(c.dim(`  ${d.xerberus.note}`));
+        } else {
+          for (const r of d.xerberus.ratings || []) {
+            console.log(`  ${(`${r.entity} ${r.subtitle}`).padEnd(32)} ${r.score != null ? fmtNum(r.score, 0) + "/100" : c.dim("not rated")}`);
+          }
+        }
+      }
+    },
+  },
   dune: {
     desc: "Dune Analytics — holder counts, volumes",
     help: "frankencoin dune [--json]",
@@ -235,7 +286,7 @@ function printHelp(cmd) {
     console.log(`\n${c.bold("Usage:")} ${COMMANDS[cmd].help}\n\n${COMMANDS[cmd].desc}\n`);
     return;
   }
-  console.log(`\n${c.bold(c.cyan("frankencoin"))} — Frankencoin (ZCHF) protocol CLI (13 tools)\n`);
+  console.log(`\n${c.bold(c.cyan("frankencoin"))} — Frankencoin (ZCHF) protocol CLI (15 tools)\n`);
   console.log(`${c.bold("Commands:")}\n`);
   for (const [name, def] of Object.entries(COMMANDS)) {
     console.log(`  ${c.cyan(name.padEnd(16))} ${def.desc}`);

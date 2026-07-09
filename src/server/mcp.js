@@ -1,7 +1,7 @@
 /**
  * MCP server factory. Builds a fresh McpServer per session (the SDK's McpServer is
  * stateful and binds to one transport — intentional, per CLAUDE.md). Registers the
- * 13 tools from the registry; each delegates to the single dispatch path.
+ * 15 tools from the registry; each delegates to the single dispatch path.
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

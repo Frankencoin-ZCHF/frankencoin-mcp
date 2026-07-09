@@ -12,7 +12,8 @@ import { SITE_REPO, DOCS_REPO, DOC_FILES, KNOWLEDGE_TOPICS, FPS_CONTRACT } from 
 
 export async function getKnowledge({ topic = "overview" } = {}) {
   if (topic === "token_addresses") return getTokenAddresses();
-  if (topic === "links" || topic === "compliance") return getLinks();
+  if (topic === "compliance") return getCompliance();
+  if (topic === "links") return getLinks();
 
   const file = DOC_FILES[topic];
   if (!file) {
@@ -132,6 +133,94 @@ async function getLinks() {
       title: c.title, partner: c.partner, category: c.category, url: c.link,
     })),
     note: "Links sourced live from the Frankencoin website repository.",
+  };
+}
+
+// Prefix relative site paths with the canonical origin; leave absolute + mailto as-is.
+const SITE_ORIGIN = "https://frankencoin.com";
+function siteAbs(href) {
+  if (!href) return null;
+  if (/^(https?:|mailto:)/i.test(href)) return href;
+  // Site-hosted PDF filenames contain raw spaces — encode so the URL is directly
+  // fetchable. encodeURI is idempotent for already-encoded (%20) sequences.
+  return encodeURI(`${SITE_ORIGIN}${href.startsWith("/") ? "" : "/"}${href}`);
+}
+
+/**
+ * get_compliance — legal & regulatory posture with every relevant paper/link.
+ * Sourced live from the Frankencoin site repo (compliance.json + the audits block
+ * of index.json). Also backs get_knowledge?topic=compliance. Informational, not legal
+ * advice.
+ */
+export async function getCompliance() {
+  const [c, index] = await Promise.all([
+    githubJson(SITE_REPO, "src/content/en/compliance.json"),
+    githubJson(SITE_REPO, "src/content/en/index.json"),
+  ]);
+
+  const audits = index.trust_security?.audits ?? {};
+
+  // Some audit partners expose one report, others several (sublinks). Flatten both.
+  const auditReports = (audits.partners ?? []).flatMap((p) => {
+    if (Array.isArray(p.sublinks) && p.sublinks.length) {
+      return p.sublinks.map((s) => ({ firm: p.altText, label: s.label, url: siteAbs(s.href) }));
+    }
+    return [{ firm: p.altText, label: "Audit report", url: siteAbs(p.href) }];
+  }).filter((r) => r.url);
+
+  const swissDoc = c.swiss?.documentHref
+    ? { label: c.swiss.documentLabel ?? "Swiss Legal Classification (PDF)", url: siteAbs(c.swiss.documentHref) }
+    : null;
+  const euDocs = (c.eu?.documents ?? []).map((d) => ({ label: d.label, url: siteAbs(d.href) }));
+
+  // Flat "papers" list agents can cite directly — the legal opinions + white paper + register.
+  const papers = [
+    swissDoc && { category: "Swiss (FINMA)", ...swissDoc },
+    ...euDocs.map((d) => ({ category: "EU (MiCA)", ...d })),
+  ].filter(Boolean);
+
+  return {
+    topic: "compliance",
+    title: c.title ?? "Frankencoin Compliance",
+    intro: c.intro ?? null,
+    regulatory: {
+      swiss: {
+        classification: c.swiss?.subtitle ?? null,
+        summary: c.swiss?.description ?? null,
+        assessor: "LEXR Law Switzerland AG",
+        keyPoints: (c.swiss?.keyPoints ?? []).map((k) => ({ title: k.title, description: k.description })),
+        fps: c.swiss?.fpsTitle
+          ? { title: c.swiss.fpsTitle, description: c.swiss.fpsDescription ?? null }
+          : null,
+        document: swissDoc,
+      },
+      euMica: {
+        classification: c.eu?.subtitle ?? null,
+        summary: c.eu?.description ?? null,
+        assessor: "LEXR Germany Rechtsanwalts GmbH",
+        keyPoints: (c.eu?.keyPoints ?? []).map((k) => ({ title: k.title, description: k.description })),
+        documents: euDocs,
+      },
+    },
+    papers,
+    audits: {
+      description: audits.description ?? null,
+      reports: auditReports,
+      bugBounty: audits.bugBounty
+        ? { label: audits.bugBounty.label, description: audits.bugBounty.description, url: siteAbs(audits.bugBounty.href) }
+        : null,
+    },
+    contact: {
+      title: c.contact?.title ?? null,
+      description: c.contact?.description ?? null,
+      email: "compliance@frankencoin.com",
+      url: siteAbs(c.contact?.ctaHref) ?? "mailto:compliance@frankencoin.com",
+    },
+    summary: c.summary?.description ?? null,
+    disclaimer: c.disclaimer?.text
+      ?? "This information summarizes independent legal assessments and does not constitute legal advice.",
+    compliancePageUrl: `${SITE_ORIGIN}/compliance`,
+    note: "Compliance content sourced live from the Frankencoin website repository. Informational only — not legal advice.",
   };
 }
 

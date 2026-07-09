@@ -1,7 +1,7 @@
 {
   "name": "frankencoin-mcp",
   "version": "3.0.0",
-  "description": "MCP server for Frankencoin (ZCHF) protocol — 13 read-only data tools for supply, positions, savings, FPS, challenges, analytics, governance, and more",
+  "description": "MCP server for Frankencoin (ZCHF) protocol — 15 read-only data tools for supply, positions, savings, FPS, challenges, analytics, governance, risk ratings, compliance, and more",
   "main": "src/index.js",
   "type": "module",
   "engines": {

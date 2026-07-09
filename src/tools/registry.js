@@ -1,5 +1,5 @@
 /**
- * The 13 read-only data tools. Each definition owns its zod input schema, so
+ * The 15 read-only data tools. Each definition owns its zod input schema, so
  * validation, coercion, defaults AND clamps live with the tool (not scattered in a
  * dispatch switch). The SAME schema validates MCP and REST args (ARCHITECTURE §D).
  *
@@ -14,7 +14,8 @@ import { getSavings } from "../services/savings.js";
 import { getGovernance } from "../services/governance.js";
 import { getPositions, getChallenges, getCollaterals } from "../services/positions.js";
 import { getAnalytics, getDuneStats } from "../services/analytics.js";
-import { getKnowledge, getNews, getMerch } from "../services/content.js";
+import { getKnowledge, getNews, getMerch, getCompliance } from "../services/content.js";
+import { getRisk } from "../services/risk.js";
 import { runPonderQuery } from "../services/ponder.js";
 
 // ── zod helpers ──────────────────────────────────────────────────────────────
@@ -163,6 +164,26 @@ export const TOOLS = [
     input: empty,
     params: [],
     handler: () => getMerch(),
+  },
+  {
+    name: "get_compliance",
+    description:
+      "Frankencoin (ZCHF) legal & regulatory compliance — every relevant paper and link in one call. Returns: Swiss FINMA classification (payment token, LEXR legal assessment + PDF), EU MiCA classification (no identifiable issuer, LEXR legal opinion + PDF), the ZCHF MiCA white paper and ESMA Interim MiCA Register entry, all third-party security audit reports (Code4rena, Decurity, ChainSecurity, BlockBite), the Compass Security bug-bounty programme, the compliance contact, and the legal disclaimer. Informational only — not legal advice.",
+    input: empty,
+    params: [],
+    handler: () => getCompliance(),
+  },
+  {
+    name: "get_risk",
+    description:
+      "Independent third-party risk ratings for Frankencoin (ZCHF) — the same ratings shown on frankencoin.com. 'pharos' returns the Pharos stablecoin-safety report card: an overall grade + 0–100 score plus five scored dimensions (peg stability, liquidity/exit capacity, resilience, decentralization, dependency risk). 'xerberus' returns Xerberus composite on-chain risk scores (0–100) for the Frankencoin protocol, DAO, and Ethereum savings vault. Ratings are produced by external protocols, NOT the Frankencoin DAO. Use 'source' to select (default 'all').",
+    input: z.object({
+      source: z.enum(["all", "pharos", "xerberus"]).default("all"),
+    }).strict(),
+    params: [
+      { name: "source", type: "string", required: false, description: "all | pharos | xerberus (default all)." },
+    ],
+    handler: (a) => getRisk({ source: a.source }),
   },
   {
     name: "get_dune_stats",
