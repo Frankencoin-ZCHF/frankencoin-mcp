@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Frankencoin MCP Server — 13 read-only data tools.
+ * Frankencoin MCP Server — 15 read-only data tools.
  *
  *   node src/index.js            # stdio mode (Claude Desktop / Cursor / CLI)
  *   node src/index.js --http     # HTTP mode (public deployment)
@@ -44,6 +44,8 @@ if (!useHttp) {
     console.error(`  Health          : http://localhost:${config.port}/health`);
     console.error(`  CoinGecko key   : ${config.coingeckoKey ? "configured" : "absent (market/macro degrade)"}`);
     console.error(`  Dune key        : ${config.duneKey ? "configured" : "absent (dune stats degrade)"}`);
+    console.error(`  Pharos key      : ${config.pharosKey ? "configured" : "absent (risk/pharos degrades)"}`);
+    console.error(`  Xerberus key    : ${config.xerberusKey ? "configured" : "absent (risk/xerberus degrades)"}`);
   });
 
   const shutdown = (signal) => {

@@ -90,8 +90,10 @@ Organised by **what the agent needs**, not where the data comes from — one too
 | `get_collaterals` | Accepted collateral types across all chains |
 | `get_analytics` | Historical time-series, FPS trades, minter history, rate-change timeline (`type` selector) |
 | `get_knowledge` | Docs & reference: FAQ, guides, token addresses, links (`topic` selector) |
+| `get_compliance` | Legal & regulatory posture — Swiss FINMA + EU MiCA classifications, legal opinions, MiCA white paper, ESMA register, security audits, bug bounty |
 | `get_news` | Press articles, videos, use cases, ecosystem partners |
 | `get_merch` | Merch store products, prices, availability |
+| `get_risk` | Independent third-party risk ratings — Pharos stablecoin-safety report card + Xerberus composite scores (`source` selector) |
 | `get_dune_stats` | Dune Analytics — holder counts, minting volume, savings TVL over time |
 | `query_ponder` | Raw **read-only** GraphQL escape hatch against `ponder.frankencoin.com` |
 
@@ -109,11 +111,13 @@ All aggregated server-side — callers never talk to these directly:
 | [ponder.frankencoin.com](https://ponder.frankencoin.com) | On-chain indexed data — positions, trades, minters, analytics | — |
 | [CoinGecko](https://coingecko.com) | Market prices, 24h changes, CHF-stablecoin comparison | optional |
 | [Dune Analytics](https://dune.com/frankencoin) | Holder counts, minting volume, savings TVL history | optional |
+| [Pharos](https://pharos.watch) | Stablecoin-safety report card for ZCHF (`get_risk`) | optional |
+| [Xerberus](https://xerberus.io) | Composite on-chain risk scores (`get_risk`) | optional |
 | [GitHub repos](https://github.com/Frankencoin-ZCHF) | Documentation and website content (links, media, token addresses) | — |
 | [merch.frankencoin.com](https://merch.frankencoin.com) | Merch products (Shopify) | — |
 | Ethereum RPC | CHFAU on-chain supply | — |
 
-When an optional key is absent, the affected tool (`get_market_data`, `get_dune_stats`) returns **partial data plus a `note`** rather than failing.
+When an optional key is absent, the affected tool (`get_market_data`, `get_dune_stats`, `get_risk`) returns **partial data plus a `note`** rather than failing.
 
 ---
 
@@ -135,13 +139,16 @@ Health check: `curl http://localhost:3000/health`
 
 ### Environment variables
 
-**Nothing is required to boot.** Every variable is optional; missing secrets only degrade two tools.
+**Nothing is required to boot.** Every variable is optional; missing secrets only degrade the tools that depend on them.
 
 | Variable | Default | Effect |
 |----------|---------|--------|
 | `PORT` | `3000` | HTTP port |
 | `COINGECKO_API_KEY` | — | Enables full market/macro data (else those fields degrade) |
 | `DUNE_API_KEY` | — | Enables `get_dune_stats` (else it returns a soft note) |
+| `PHAROS_API_KEY` | — | Enables the Pharos section of `get_risk` (else it returns a soft note) |
+| `XERBERUS_API_KEY` | — | Enables the Xerberus section of `get_risk` (else it returns a soft note) |
+| `XERBERUS_USER_EMAIL` | — | Sent with `XERBERUS_API_KEY` (Xerberus requires an identifying email header) |
 | `PUBLIC_URL` | `https://mcp.frankencoin.com` | Canonical origin used in `/llms.txt` and `/api` |
 | `RATE_LIMIT_MAX` | `120` | Requests per IP per minute |
 | `TRUST_PROXY_HOPS` | `1` | Trusted proxy hops for client-IP derivation |

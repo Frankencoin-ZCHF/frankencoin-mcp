@@ -32,6 +32,12 @@ export const config = Object.freeze({
   coingeckoKey: process.env.COINGECKO_API_KEY || null,
   duneKey: process.env.DUNE_API_KEY || null,
 
+  // Third-party risk-rating providers (get_risk). Absent key → that section degrades
+  // to a soft "not configured" note. Hosts are constants — env supplies only creds.
+  pharosKey: process.env.PHAROS_API_KEY || null,
+  xerberusKey: process.env.XERBERUS_API_KEY || null,
+  xerberusEmail: process.env.XERBERUS_USER_EMAIL || null,
+
   // Rate limiting.
   rateLimitWindowMs: int("RATE_LIMIT_WINDOW_MS", 60000),
   rateLimitMax: int("RATE_LIMIT_MAX", 120),
