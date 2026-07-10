@@ -12,7 +12,12 @@ export const DUNE_BASE = "https://api.dune.com/api/v1";
 export const CG_BASE = "https://pro-api.coingecko.com/api/v3";
 export const ETH_RPC = "https://eth.llamarpc.com";
 export const GITHUB_API = "https://api.github.com";
-export const MERCH_URL = "https://merch.frankencoin.com/products.json?limit=250";
+export const MERCH_BASE = "https://merch.frankencoin.com";
+export const MERCH_URL = `${MERCH_BASE}/products.json?limit=250`;
+// Shopify's own MCP servers for this store — agents interact with the store DIRECTLY
+// here (search / cart / checkout); this read-only server only points at them, never proxies.
+export const MERCH_STOREFRONT_MCP = `${MERCH_BASE}/api/mcp`;
+export const MERCH_UCP_MCP = `${MERCH_BASE}/api/ucp/mcp`;
 
 // Independent third-party risk-rating providers (same ones frankencoin.com integrates).
 // Hosts are hard-coded here — env supplies only the API keys/email, never the destination.
@@ -108,11 +113,11 @@ export const DOC_FILES = {
   api: "api-docs/README.md",
 };
 
-// All 15 knowledge topics (docs + token_addresses + links + compliance).
+// All knowledge topics (docs + token_addresses + links + compliance + frontends).
 export const KNOWLEDGE_TOPICS = [
   "overview", "what_is", "faq", "savings", "governance", "minting",
   "opening_positions", "auctions", "risks", "reserve", "pool_shares",
-  "api", "compliance", "token_addresses", "links",
+  "api", "compliance", "frontends", "token_addresses", "links",
 ];
 
 // Ponder root-field allowlist for query_ponder (SECURITY §2.2 Q-allowlist / §1).

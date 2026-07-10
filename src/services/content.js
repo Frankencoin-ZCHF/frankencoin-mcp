@@ -8,11 +8,15 @@
 
 import { githubFile, githubJson } from "../upstream/github.js";
 import { merchProducts } from "../upstream/merch.js";
-import { SITE_REPO, DOCS_REPO, DOC_FILES, KNOWLEDGE_TOPICS, FPS_CONTRACT } from "../lib/constants.js";
+import {
+  SITE_REPO, DOCS_REPO, DOC_FILES, KNOWLEDGE_TOPICS, FPS_CONTRACT,
+  MERCH_BASE, MERCH_STOREFRONT_MCP, MERCH_UCP_MCP,
+} from "../lib/constants.js";
 
 export async function getKnowledge({ topic = "overview" } = {}) {
   if (topic === "token_addresses") return getTokenAddresses();
   if (topic === "compliance") return getCompliance();
+  if (topic === "frontends") return getFrontends();
   if (topic === "links") return getLinks();
 
   const file = DOC_FILES[topic];
@@ -224,6 +228,47 @@ export async function getCompliance() {
   };
 }
 
+/**
+ * get_knowledge?topic=frontends — the independent third-party dapps that interface with
+ * the protocol. Sourced live from the site repo (frontends.json + en labels/warning).
+ * Frankencoin has NO official frontend — the safety warning is surfaced verbatim.
+ */
+export async function getFrontends() {
+  const [list, meta] = await Promise.all([
+    githubJson(SITE_REPO, "src/content/shared/frontends.json"),
+    githubJson(SITE_REPO, "src/content/en/frontends.json"),
+  ]);
+
+  const frontends = (list.frontends ?? []).map((f) => ({
+    name: f.name,
+    url: f.url,
+    creator: f.creator,
+    creatorUrl: f.creatorUrl ?? null,
+    repo: f.repo ?? null,
+    notes: f.notes ?? null,
+    features: {
+      openSource: f.features?.openSource ?? null,
+      ownDomain: f.features?.ownDomain ?? null,
+      selfHostedApi: f.features?.selfHostedApi ?? null,
+      selfHostedIndexer: f.features?.selfHostedIndexer ?? null,
+    },
+  }));
+
+  return {
+    topic: "frontends",
+    title: meta.header?.title ?? "Frankencoin Frontends",
+    subtitle: meta.header?.subtitle ?? null,
+    warning: meta.warning
+      ? { title: meta.warning.title ?? null, body: meta.warning.body ?? null }
+      : null,
+    count: frontends.length,
+    frontends,
+    addYours: "Hosting your own frontend? Add it to src/content/shared/frontends.json in the frankencoin-site repo and open a pull request to get listed.",
+    page: "https://frankencoin.com/frontends",
+    note: "Frankencoin is an open protocol with NO official frontend — each interface is operated independently by its maintainers, listed for information only (not audited, not endorsed). Verify the source before connecting a wallet. Sourced live from the Frankencoin website repository.",
+  };
+}
+
 export async function getNews() {
   const [mediaData, useCaseData, ecosystemData] = await Promise.all([
     githubJson(SITE_REPO, "src/content/shared/media.json"),
@@ -269,7 +314,33 @@ export async function getNews() {
 export async function getMerch() {
   const { products } = await merchProducts();
   return {
-    storeUrl: "https://merch.frankencoin.com",
+    store: {
+      name: "Frankencoin Merch",
+      url: MERCH_BASE,
+      platform: "Shopify",
+    },
+    // The store exposes Shopify's own MCP servers. Agents should interact with the store
+    // DIRECTLY here (live catalog search, cart, checkout) — this read-only server points
+    // at them rather than proxying, so there's no lossy middle hop, no deprecation to
+    // track here, and no UCP agent-profile for us to manage (the calling agent supplies
+    // its own). The product list below is a stable convenience snapshot only.
+    directAccess: {
+      note: "This is a Shopify store with native MCP support. For live catalog search, building a cart, and checkout, connect an agent DIRECTLY to the Shopify MCP endpoints below — do not rely on the snapshot in `products` for availability or purchasing.",
+      storefrontMcp: {
+        endpoint: MERCH_STOREFRONT_MCP,
+        transport: "MCP (JSON-RPC 2.0 over HTTP POST)",
+        auth: "none — stateless, no agent profile required",
+        tools: ["search_catalog", "get_product_details", "search_shop_policies_and_faqs"],
+        note: "Catalog search, product lookup, and store policy/FAQ answers. (The cart tools that also live here are deprecated by Shopify — sunset 2026-08-31 — use the UCP endpoint for cart/checkout.)",
+      },
+      ucpMcp: {
+        endpoint: MERCH_UCP_MCP,
+        transport: "MCP (JSON-RPC 2.0 over HTTP POST), UCP 2026-04-08",
+        auth: "requires the calling agent's UCP agent-profile URI in meta['ucp-agent'].profile — a public JSON document the agent self-hosts (canonically at /.well-known/ucp); permissionless, no registration",
+        capabilities: ["catalog search/lookup", "cart: create / get / update / cancel"],
+        note: "Shopify's current UCP endpoint for catalog and cart. Checkout conversion is handled by Shopify's separate Checkout MCP.",
+      },
+    },
     totalProducts: products.length,
     products: products.map((p) => ({
       title: p.title,
@@ -291,6 +362,6 @@ export async function getMerch() {
       maxPrice: p.variants.reduce((max, v) => Math.max(max, parseFloat(v.price)), 0).toFixed(2),
       available: p.variants.some((v) => v.available),
     })),
-    note: "Live from merch.frankencoin.com — prices in USD.",
+    note: "`products` is a convenience snapshot from the storefront feed (prices in USD). For live availability, search, cart and checkout, use the `directAccess` MCP endpoints above.",
   };
 }

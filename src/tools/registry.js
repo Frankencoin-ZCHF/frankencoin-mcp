@@ -140,12 +140,12 @@ export const TOOLS = [
   {
     name: "get_knowledge",
     description:
-      "All explanatory and reference content about Frankencoin. Use 'topic' to select: 'overview' (default — what is Frankencoin), 'faq', 'savings' (savings guide), 'governance', 'minting' (minting guide), 'opening_positions', 'auctions', 'risks', 'reserve', 'pool_shares' (FPS explanation), 'api' (API docs), 'compliance' (links + legal), 'token_addresses' (contract addresses all chains), 'links' (all key URLs + exchanges), 'what_is' (same as overview).",
+      "All explanatory and reference content about Frankencoin. Use 'topic' to select: 'overview' (default — what is Frankencoin), 'faq', 'savings' (savings guide), 'governance', 'minting' (minting guide), 'opening_positions', 'auctions', 'risks', 'reserve', 'pool_shares' (FPS explanation), 'api' (API docs), 'compliance' (Swiss/EU legal classifications, papers, audits), 'frontends' (independent third-party dapps/interfaces for the protocol), 'token_addresses' (contract addresses all chains), 'links' (all key URLs + exchanges), 'what_is' (same as overview).",
     // topic is a permissive string: an unknown topic returns { error, availableTopics }
     // from the handler (NOT a 400) and never builds a path from the raw value (SPEC/T28).
     input: z.object({ topic: z.string().max(64).default("overview") }).strict(),
     params: [
-      { name: "topic", type: "string", required: false, description: "overview | what_is | faq | savings | governance | minting | opening_positions | auctions | risks | reserve | pool_shares | api | compliance | token_addresses | links (default overview)." },
+      { name: "topic", type: "string", required: false, description: "overview | what_is | faq | savings | governance | minting | opening_positions | auctions | risks | reserve | pool_shares | api | compliance | frontends | token_addresses | links (default overview)." },
     ],
     handler: (a) => getKnowledge({ topic: a.topic }),
   },
@@ -160,7 +160,7 @@ export const TOOLS = [
   {
     name: "get_merch",
     description:
-      "Frankencoin merch store products (merch.frankencoin.com) — titles, prices, variants, availability, images, and direct product URLs. Live data.",
+      "Frankencoin merch store (merch.frankencoin.com). Returns a product snapshot (titles, prices, variants, images, URLs) PLUS `directAccess`: the store's native Shopify MCP endpoints so an agent can interact with the store DIRECTLY — live catalog search, cart, and checkout — instead of through this read-only server. Use directAccess for anything transactional; the product list is a convenience snapshot.",
     input: empty,
     params: [],
     handler: () => getMerch(),
