@@ -166,6 +166,20 @@ POST `{ query: "..." }`. No auth. List queries support `limit`, `orderBy`,
 - Risk premiums: PPM → `ppmToPercent()`
 - Unix seconds → `isoFromUnix()` / `dateFromUnix()`
 
+### Dual-denomination (CHF / USD)
+
+Current-state monetary figures are `{ chf, usd }` pairs, and each such tool response
+carries a top-level `fx: { chfUsd, source, note }` block. Helpers in `lib/numbers.js`:
+- `moneyPair(chf, usd)` — package two authoritative amounts (both from a price feed)
+- `money(chf, rate)` — derive USD from a CHF-only figure
+- `moneyFromUsd(usd, rate)` — derive CHF from a USD-only figure (CoinGecko caps/volumes)
+
+The rate comes from `services/fx.js` (`getChfUsdRate()` / `chfUsdRateFromPrices()`),
+derived from the ZCHF price feed (`usd/chf` on `/prices/list`) so it tracks peg
+deviation. It is the **current** rate only — `get_analytics` therefore keeps its
+historical series in CHF and does NOT fabricate historical USD. `get_positions` /
+`get_challenges` deal in token/collateral units and are left as-is.
+
 ---
 
 ## Adding a new tool

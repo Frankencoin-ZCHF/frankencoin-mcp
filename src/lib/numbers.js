@@ -53,6 +53,32 @@ export function round(n, decimals = 2) {
   return Math.round(n * f) / f;
 }
 
+/**
+ * Package two already-known authoritative amounts as a { chf, usd } pair.
+ * Use when BOTH currencies come straight from an upstream (e.g. a price feed).
+ */
+export function moneyPair(chf, usd) {
+  return { chf: chf ?? null, usd: usd ?? null };
+}
+
+/**
+ * Build a { chf, usd } pair from a CHF amount and a CHF→USD rate, deriving USD.
+ * Use for figures the API only gives in CHF (earnings, reserve, savings totals).
+ * Null-safe: preserves the CHF side; usd is null when the amount or rate is missing.
+ */
+export function money(chf, rate) {
+  if (chf == null || !Number.isFinite(chf)) return { chf: chf ?? null, usd: null };
+  if (rate == null || !Number.isFinite(rate)) return { chf, usd: null };
+  return { chf, usd: round(chf * rate, 2) };
+}
+
+/** Like money(), but from a known USD amount — derives the CHF side. Null-safe. */
+export function moneyFromUsd(usd, rate) {
+  if (usd == null || !Number.isFinite(usd)) return { chf: null, usd: usd ?? null };
+  if (rate == null || !Number.isFinite(rate) || rate === 0) return { chf: null, usd };
+  return { chf: round(usd / rate, 2), usd };
+}
+
 /** Convert a unix-seconds value to an ISO-8601 string, or null. */
 export function isoFromUnix(sec) {
   if (sec == null || sec === "") return null;

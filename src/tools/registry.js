@@ -44,7 +44,7 @@ export const TOOLS = [
   {
     name: "get_protocol_snapshot",
     description:
-      "Full live state of the Frankencoin (ZCHF) protocol in one call. Returns: total supply + per-chain breakdown, TVL (CHF/USD), FPS price/supply/market cap/reserve/earnings, savings lead rate + base rate + pending proposals, and active challenge count. Best starting point for any protocol question.",
+      "Full live state of the Frankencoin (ZCHF) protocol in one call. Returns: total supply + per-chain breakdown, TVL, FPS price/supply/market cap/reserve/earnings (earnings are cumulative all-time), savings lead rate + base rate + pending proposals, and active challenge count. Every monetary figure is a { chf, usd } pair (USD derived at the current CHF/USD rate, exposed in the top-level `fx` block). Best starting point for any protocol question.",
     input: empty,
     params: [],
     handler: () => getProtocolSnapshot(),
@@ -52,7 +52,7 @@ export const TOOLS = [
   {
     name: "get_market_data",
     description:
-      "Live market data: ZCHF peg health (price vs CHF, deviation, status), FPS price, all ecosystem token prices (collateral + ZCHF + FPS), CHF stablecoin comparison (ZCHF vs VCHF vs CHFAU — peg, market cap, volume, supply), macro context (BTC, ETH prices + 24h changes), and accepted collateral token prices with 24h changes. One call for everything price/market related.",
+      "Live market data: ZCHF peg health (price vs CHF, deviation, status), FPS price, all ecosystem token prices (collateral + ZCHF + FPS), CHF stablecoin comparison (ZCHF vs VCHF vs CHFAU — peg, market cap, volume, supply), macro context (BTC, ETH prices + 24h changes), and accepted collateral token prices with 24h changes. Every price/market-cap/volume is a { chf, usd } pair (the side a source omits is derived at the current CHF/USD rate; see the `fx` block). One call for everything price/market related.",
     input: empty,
     params: [],
     handler: () => getMarketData(),
@@ -60,7 +60,7 @@ export const TOOLS = [
   {
     name: "get_savings",
     description:
-      "Complete savings picture: current approved rates per chain/module, any pending rate proposals, plus per-module stats (total deposited, interest paid, withdrawals, event counts). Combines rate governance state with TVL/flow data in one call.",
+      "Complete savings picture: current approved rates per chain/module, any pending rate proposals, plus per-module stats (total deposited, interest paid, withdrawals, event counts). Monetary figures are { chf, usd } pairs (USD derived at the current CHF/USD rate; see the `fx` block). Combines rate governance state with TVL/flow data in one call.",
     input: empty,
     params: [],
     handler: () => getSavings(),
@@ -124,7 +124,7 @@ export const TOOLS = [
   {
     name: "get_analytics",
     description:
-      "Historical protocol analytics. Use 'type' to select: 'time_series' (daily supply, equity, savings, FPS price, rates, earnings — default), 'trades' (FPS equity buy/sell trades), 'minters' (minter application history), 'rate_history' (governance rate change timeline).",
+      "Historical protocol analytics. Use 'type' to select: 'time_series' (daily supply, equity, savings, FPS price, rates, earnings — default), 'trades' (FPS equity buy/sell trades), 'minters' (minter application history), 'rate_history' (governance rate change timeline). Historical monetary values are in CHF only — no historical USD is provided (applying today's rate to past rows would be inaccurate); the current CHF/USD rate is exposed in the `fx` block for approximate conversion.",
     input: z.object({
       type: z.enum(["time_series", "trades", "minters", "rate_history"]).default("time_series"),
       days: intClamp(1, 365, 90),
@@ -140,12 +140,12 @@ export const TOOLS = [
   {
     name: "get_knowledge",
     description:
-      "All explanatory and reference content about Frankencoin. Use 'topic' to select: 'overview' (default — what is Frankencoin), 'faq', 'savings' (savings guide), 'governance', 'minting' (minting guide), 'opening_positions', 'auctions', 'risks', 'reserve', 'pool_shares' (FPS explanation), 'api' (API docs), 'compliance' (links + legal), 'token_addresses' (contract addresses all chains), 'links' (all key URLs + exchanges), 'what_is' (same as overview).",
+      "All explanatory and reference content about Frankencoin. Use 'topic' to select: 'overview' (default — what is Frankencoin), 'faq', 'savings' (savings guide), 'governance', 'minting' (minting guide), 'opening_positions', 'auctions', 'risks', 'reserve', 'pool_shares' (FPS explanation), 'api' (API docs), 'compliance' (Swiss/EU legal classifications, papers, audits), 'frontends' (independent third-party dapps/interfaces for the protocol), 'token_addresses' (contract addresses all chains), 'links' (all key URLs + exchanges), 'what_is' (same as overview).",
     // topic is a permissive string: an unknown topic returns { error, availableTopics }
     // from the handler (NOT a 400) and never builds a path from the raw value (SPEC/T28).
     input: z.object({ topic: z.string().max(64).default("overview") }).strict(),
     params: [
-      { name: "topic", type: "string", required: false, description: "overview | what_is | faq | savings | governance | minting | opening_positions | auctions | risks | reserve | pool_shares | api | compliance | token_addresses | links (default overview)." },
+      { name: "topic", type: "string", required: false, description: "overview | what_is | faq | savings | governance | minting | opening_positions | auctions | risks | reserve | pool_shares | api | compliance | frontends | token_addresses | links (default overview)." },
     ],
     handler: (a) => getKnowledge({ topic: a.topic }),
   },
@@ -160,7 +160,7 @@ export const TOOLS = [
   {
     name: "get_merch",
     description:
-      "Frankencoin merch store products (merch.frankencoin.com) — titles, prices, variants, availability, images, and direct product URLs. Live data.",
+      "Frankencoin merch store (merch.frankencoin.com). Returns a product snapshot (titles, prices, variants, images, URLs) PLUS `directAccess`: the store's native Shopify MCP endpoints so an agent can interact with the store DIRECTLY — live catalog search, cart, and checkout — instead of through this read-only server. Use directAccess for anything transactional; the product list is a convenience snapshot.",
     input: empty,
     params: [],
     handler: () => getMerch(),

@@ -10,10 +10,11 @@ import { ponderQuery } from "../upstream/ponder.js";
 import { duneExecute } from "../upstream/dune.js";
 import { fromWei, bpsToPercent, dateFromUnix } from "../lib/numbers.js";
 import { DUNE_QUERIES, chainName } from "../lib/constants.js";
+import { getChfUsdRate, FX_SOURCE } from "./fx.js";
 import { mapMinter, mapTrade } from "./governance.js";
 
 async function getTimeSeries({ days = 90 } = {}) {
-  const [analyticsData, rateData] = await Promise.all([
+  const [analyticsData, rateData, rate] = await Promise.all([
     ponderQuery(`{
       analyticDailyLogs(limit: ${Math.min(days, 365)}, orderBy: "timestamp", orderDirection: "desc") {
         items {
@@ -32,6 +33,7 @@ async function getTimeSeries({ days = 90 } = {}) {
         items { chainId module approvedRate created blockheight txHash }
       }
     }`),
+    getChfUsdRate(),
   ]);
 
   const daily = (analyticsData.analyticDailyLogs?.items || []).map((d) => ({
@@ -80,6 +82,14 @@ async function getTimeSeries({ days = 90 } = {}) {
       v2BorrowRate: "annualV2BorrowRate = effective interest rate for V2 position borrowers",
       dataRange: `${daily[daily.length - 1]?.date ?? "?"} → ${daily[0]?.date ?? "?"}`,
       totalDays: daily.length,
+    },
+    // Historical series stays in CHF: the *current* CHF/USD rate must NOT be applied to
+    // past rows (that would fabricate USD figures that never existed, and we have no
+    // historical FX). Multiply a CHF value by fx.chfUsd only for a rough current-rate view.
+    fx: {
+      chfUsd: rate,
+      source: FX_SOURCE,
+      note: "Series values are historical CHF. No historical USD is provided — applying today's rate to past values would be inaccurate. Use get_market_data / get_protocol_snapshot for current dual-denominated figures.",
     },
     daily,
     rateHistory: {
