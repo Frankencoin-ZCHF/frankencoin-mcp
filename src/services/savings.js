@@ -3,13 +3,15 @@
  */
 
 import { apiFetch } from "../upstream/frankencoin.js";
-import { fromWei, bpsToPercent, isoFromUnix } from "../lib/numbers.js";
+import { fromWei, bpsToPercent, isoFromUnix, money } from "../lib/numbers.js";
 import { chainName } from "../lib/constants.js";
+import { getChfUsdRate, fxBlock } from "./fx.js";
 
 export async function getSavings() {
-  const [rateData, coreData] = await Promise.all([
+  const [rateData, coreData, rate] = await Promise.all([
     apiFetch("/savings/leadrate/info"),
     apiFetch("/savings/core/info"),
+    getChfUsdRate(),
   ]);
 
   const approved = [];
@@ -46,14 +48,16 @@ export async function getSavings() {
   const stats = [];
   for (const [chainId, modules] of Object.entries(coreData.status || {})) {
     for (const [moduleAddr, m] of Object.entries(modules)) {
+      const balanceChf = fromWei(m.balance);
+      const interestChf = fromWei(m.interest);
       stats.push({
         chainId: Number(chainId),
         chainName: chainName(chainId),
         module: moduleAddr,
-        balanceChf: fromWei(m.balance),
-        totalInterestPaidChf: fromWei(m.interest),
-        totalSavedChf: fromWei(m.save),
-        totalWithdrawnChf: fromWei(m.withdraw),
+        balance: money(balanceChf, rate),
+        totalInterestPaid: money(interestChf, rate),
+        totalSaved: money(fromWei(m.save), rate),
+        totalWithdrawn: money(fromWei(m.withdraw), rate),
         ratePercent: bpsToPercent(m.rate),
         updatedAt: isoFromUnix(m.updated),
         events: {
@@ -66,13 +70,17 @@ export async function getSavings() {
     }
   }
 
+  const totalDepositedChf = stats.reduce((sum, s) => sum + (s.balance.chf ?? 0), 0);
+  const totalInterestPaidChf = stats.reduce((sum, s) => sum + (s.totalInterestPaid.chf ?? 0), 0);
+
   return {
     rates: { approved, proposed },
     stats,
     summary: {
-      totalDepositedChf: stats.reduce((sum, s) => sum + s.balanceChf, 0),
-      totalInterestPaidChf: stats.reduce((sum, s) => sum + s.totalInterestPaidChf, 0),
+      totalDeposited: money(totalDepositedChf, rate),
+      totalInterestPaid: money(totalInterestPaidChf, rate),
       pendingRateChanges: proposed.length,
     },
+    fx: fxBlock(rate),
   };
 }

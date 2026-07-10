@@ -64,13 +64,13 @@ const COMMANDS = {
       if (flags.json) return console.log(JSON.stringify(d, null, 2));
       section("Protocol Snapshot");
       console.log(`  ZCHF Supply     ${c.green(fmtM(d.zchf?.totalSupply))}`);
-      console.log(`  TVL             ${c.green(fmtM(d.zchf?.tvl?.chf))} CHF`);
-      console.log(`  FPS Price       ${c.yellow(fmtNum(d.fps?.priceChf))} CHF`);
-      console.log(`  FPS Market Cap  ${c.yellow(fmtM(d.fps?.marketCapChf))} CHF`);
-      console.log(`  Equity Reserve  ${c.yellow(fmtM(d.fps?.reserve?.equityChf))} CHF`);
-      console.log(`  Net Earnings    ${c.yellow(fmtNum(d.fps?.earnings?.netChf))} CHF`);
+      console.log(`  TVL             ${c.green(fmtM(d.zchf?.tvl?.chf))} CHF  /  ${fmtM(d.zchf?.tvl?.usd)} USD`);
+      console.log(`  FPS Price       ${c.yellow(fmtNum(d.fps?.price?.chf))} CHF  /  ${fmtNum(d.fps?.price?.usd)} USD`);
+      console.log(`  FPS Market Cap  ${c.yellow(fmtM(d.fps?.marketCap?.chf))} CHF  /  ${fmtM(d.fps?.marketCap?.usd)} USD`);
+      console.log(`  Equity Reserve  ${c.yellow(fmtM(d.fps?.reserve?.equity?.chf))} CHF  /  ${fmtM(d.fps?.reserve?.equity?.usd)} USD`);
+      console.log(`  Net Earnings    ${c.yellow(fmtNum(d.fps?.earnings?.net?.chf))} CHF  /  ${fmtNum(d.fps?.earnings?.net?.usd)} USD`);
       console.log(`  Savings Rate    ${c.cyan(fmtNum(d.savings?.leadRatePercent))}%`);
-      console.log(`  Savings TVL     ${c.cyan(fmtM(d.savings?.totalDepositedChf))} ZCHF`);
+      console.log(`  Savings TVL     ${c.cyan(fmtM(d.savings?.totalDeposited?.chf))} ZCHF`);
       console.log(`  Challenges      ${d.challenges?.active > 0 ? c.red(String(d.challenges.active)) : c.green("0")} active`);
     },
   },
@@ -81,17 +81,17 @@ const COMMANDS = {
       const d = await getMarketData();
       if (flags.json) return console.log(JSON.stringify(d, null, 2));
       section("ZCHF Peg Health");
-      console.log(`  Price           ${c.green(fmtNum(d.zchf?.priceChf, 4))} CHF`);
+      console.log(`  Price           ${c.green(fmtNum(d.zchf?.price?.chf, 4))} CHF`);
       console.log(`  Peg Deviation   ${fmtNum(d.zchf?.pegDeviationPercent, 4)}%`);
       console.log(`  Status          ${d.zchf?.pegStatus === "healthy" ? c.green("healthy") : c.yellow(d.zchf?.pegStatus)}`);
       if (d.note) console.log(c.dim(`  (${d.note})`));
       section("CHF Stablecoins");
       for (const sc of d.chfStablecoins || []) {
-        console.log(`  ${c.bold(sc.symbol.padEnd(8))} ${sc.priceChf != null ? fmtNum(sc.priceChf, 4) + " CHF" : "—"}  mcap: ${sc.marketCapChf != null ? fmtM(sc.marketCapChf) : "—"}`);
+        console.log(`  ${c.bold(sc.symbol.padEnd(8))} ${sc.price?.chf != null ? fmtNum(sc.price.chf, 4) + " CHF" : "—"}  mcap: ${sc.marketCap?.chf != null ? fmtM(sc.marketCap.chf) : "—"}`);
       }
       section("Macro");
-      console.log(`  BTC             ${c.yellow(fmtNum(d.macro?.bitcoin?.priceUsd))} USD  (${fmtNum(d.macro?.bitcoin?.change24hPercent)}% 24h)`);
-      console.log(`  ETH             ${c.yellow(fmtNum(d.macro?.ethereum?.priceUsd))} USD  (${fmtNum(d.macro?.ethereum?.change24hPercent)}% 24h)`);
+      console.log(`  BTC             ${c.yellow(fmtNum(d.macro?.bitcoin?.price?.usd))} USD  (${fmtNum(d.macro?.bitcoin?.change24hPercent)}% 24h)`);
+      console.log(`  ETH             ${c.yellow(fmtNum(d.macro?.ethereum?.price?.usd))} USD  (${fmtNum(d.macro?.ethereum?.change24hPercent)}% 24h)`);
     },
   },
   savings: {
@@ -101,8 +101,8 @@ const COMMANDS = {
       const d = await getSavings();
       if (flags.json) return console.log(JSON.stringify(d, null, 2));
       section("Savings Overview");
-      console.log(`  Total Deposited ${c.green(fmtM(d.summary?.totalDepositedChf))} ZCHF`);
-      console.log(`  Total Interest  ${c.green(fmtM(d.summary?.totalInterestPaidChf))} ZCHF`);
+      console.log(`  Total Deposited ${c.green(fmtM(d.summary?.totalDeposited?.chf))} ZCHF`);
+      console.log(`  Total Interest  ${c.green(fmtM(d.summary?.totalInterestPaid?.chf))} ZCHF`);
       console.log(`  Pending Changes ${d.summary?.pendingRateChanges || 0}`);
       section("Approved Rates");
       for (const r of d.rates?.approved || []) {

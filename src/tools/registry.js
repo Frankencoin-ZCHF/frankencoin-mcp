@@ -44,7 +44,7 @@ export const TOOLS = [
   {
     name: "get_protocol_snapshot",
     description:
-      "Full live state of the Frankencoin (ZCHF) protocol in one call. Returns: total supply + per-chain breakdown, TVL (CHF/USD), FPS price/supply/market cap/reserve/earnings, savings lead rate + base rate + pending proposals, and active challenge count. Best starting point for any protocol question.",
+      "Full live state of the Frankencoin (ZCHF) protocol in one call. Returns: total supply + per-chain breakdown, TVL, FPS price/supply/market cap/reserve/earnings (earnings are cumulative all-time), savings lead rate + base rate + pending proposals, and active challenge count. Every monetary figure is a { chf, usd } pair (USD derived at the current CHF/USD rate, exposed in the top-level `fx` block). Best starting point for any protocol question.",
     input: empty,
     params: [],
     handler: () => getProtocolSnapshot(),
@@ -52,7 +52,7 @@ export const TOOLS = [
   {
     name: "get_market_data",
     description:
-      "Live market data: ZCHF peg health (price vs CHF, deviation, status), FPS price, all ecosystem token prices (collateral + ZCHF + FPS), CHF stablecoin comparison (ZCHF vs VCHF vs CHFAU — peg, market cap, volume, supply), macro context (BTC, ETH prices + 24h changes), and accepted collateral token prices with 24h changes. One call for everything price/market related.",
+      "Live market data: ZCHF peg health (price vs CHF, deviation, status), FPS price, all ecosystem token prices (collateral + ZCHF + FPS), CHF stablecoin comparison (ZCHF vs VCHF vs CHFAU — peg, market cap, volume, supply), macro context (BTC, ETH prices + 24h changes), and accepted collateral token prices with 24h changes. Every price/market-cap/volume is a { chf, usd } pair (the side a source omits is derived at the current CHF/USD rate; see the `fx` block). One call for everything price/market related.",
     input: empty,
     params: [],
     handler: () => getMarketData(),
@@ -60,7 +60,7 @@ export const TOOLS = [
   {
     name: "get_savings",
     description:
-      "Complete savings picture: current approved rates per chain/module, any pending rate proposals, plus per-module stats (total deposited, interest paid, withdrawals, event counts). Combines rate governance state with TVL/flow data in one call.",
+      "Complete savings picture: current approved rates per chain/module, any pending rate proposals, plus per-module stats (total deposited, interest paid, withdrawals, event counts). Monetary figures are { chf, usd } pairs (USD derived at the current CHF/USD rate; see the `fx` block). Combines rate governance state with TVL/flow data in one call.",
     input: empty,
     params: [],
     handler: () => getSavings(),
@@ -124,7 +124,7 @@ export const TOOLS = [
   {
     name: "get_analytics",
     description:
-      "Historical protocol analytics. Use 'type' to select: 'time_series' (daily supply, equity, savings, FPS price, rates, earnings — default), 'trades' (FPS equity buy/sell trades), 'minters' (minter application history), 'rate_history' (governance rate change timeline).",
+      "Historical protocol analytics. Use 'type' to select: 'time_series' (daily supply, equity, savings, FPS price, rates, earnings — default), 'trades' (FPS equity buy/sell trades), 'minters' (minter application history), 'rate_history' (governance rate change timeline). Historical monetary values are in CHF only — no historical USD is provided (applying today's rate to past rows would be inaccurate); the current CHF/USD rate is exposed in the `fx` block for approximate conversion.",
     input: z.object({
       type: z.enum(["time_series", "trades", "minters", "rate_history"]).default("time_series"),
       days: intClamp(1, 365, 90),
