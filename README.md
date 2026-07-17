@@ -1,6 +1,6 @@
 # Frankencoin MCP Server
 
-Real-time [Frankencoin](https://frankencoin.com) (ZCHF) protocol data for AI agents and developers. One read-only server, several ways to reach it — supply, prices, peg health, savings, minting positions, liquidation challenges, governance, and historical analytics across every supported chain.
+Real-time [Frankencoin](https://frankencoin.com) (ZCHF) protocol data for AI agents and developers. One read-only server, several ways to reach it — supply, prices, peg health, savings, minting positions, liquidation challenges, governance, insurance products, and historical analytics across every supported chain.
 
 **Public endpoint:** `https://mcp.frankencoin.com`
 
@@ -92,6 +92,7 @@ Organised by **what the agent needs**, not where the data comes from — one too
 | `get_knowledge` | Docs & reference: FAQ, guides, token addresses, links (`topic` selector) |
 | `get_compliance` | Legal & regulatory posture — Swiss FINMA + EU MiCA classifications, legal opinions, MiCA white paper, ESMA register, security audits, bug bounty |
 | `get_news` | Press articles, videos, use cases, ecosystem partners |
+| `get_insurance_products` | ZCHF-related third-party insurance products such as OpenCover ZCHF depeg cover |
 | `get_merch` | Merch store products, prices, availability |
 | `get_risk` | Independent third-party risk ratings — Pharos stablecoin-safety report card + Xerberus composite scores (`source` selector) |
 | `get_dune_stats` | Dune Analytics — holder counts, minting volume, savings TVL over time |
@@ -170,7 +171,7 @@ src/
   lib/                pure utilities (number encoding, envelopes, errors, concurrency)
   upstream/           the ONLY layer that calls fetch() — one client per source
   services/           per-domain logic: compose upstreams, transform, shape output
-  tools/              registry (13 zod-validated tool defs) + one dispatch path
+  tools/              registry (zod-validated tool defs) + one dispatch path
   server/             http router, MCP registration, sessions, rate limiting, llms.txt
 test/                 node:test suites (offline / hermetic)
 ```
