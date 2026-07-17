@@ -14,7 +14,7 @@ import { getSavings } from "../services/savings.js";
 import { getGovernance } from "../services/governance.js";
 import { getPositions, getChallenges, getCollaterals } from "../services/positions.js";
 import { getAnalytics, getDuneStats } from "../services/analytics.js";
-import { getKnowledge, getNews, getMerch, getCompliance } from "../services/content.js";
+import { getKnowledge, getNews, getMerch, getCompliance, getInsuranceProducts } from "../services/content.js";
 import { getRisk } from "../services/risk.js";
 import { runPonderQuery } from "../services/ponder.js";
 
@@ -156,6 +156,14 @@ export const TOOLS = [
     input: empty,
     params: [],
     handler: () => getNews(),
+  },
+  {
+    name: "get_insurance_products",
+    description:
+      "ZCHF-related third-party insurance products exposed as a dedicated ecosystem feature. Returns live/curated insurance products, including provider, category/type (e.g. depeg cover), covered risk, URL, pricing, capacity, purchase flow, and Frankencoin Association role disclaimer. Use this for OpenCover ZCHF depeg cover and future ZCHF insurance integrations — not get_news.",
+    input: empty,
+    params: [],
+    handler: () => getInsuranceProducts(),
   },
   {
     name: "get_merch",

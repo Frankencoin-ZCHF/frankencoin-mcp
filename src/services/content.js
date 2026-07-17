@@ -311,6 +311,47 @@ export async function getNews() {
   };
 }
 
+export async function getInsuranceProducts() {
+  const products = [
+    {
+      id: "opencover-zchf-depeg",
+      name: "OpenCover ZCHF Depeg Cover",
+      provider: "OpenCover",
+      type: "fixed_term_depeg_cover",
+      category: "Depeg cover",
+      asset: "ZCHF",
+      url: "https://opencover.com/frankencoin",
+      status: "live",
+      riskCovered: "Frankencoin ZCHF fixed-term depeg event",
+      pricing: {
+        premiumRate: "0.99% p.a.",
+        premiumPayment: "upfront",
+      },
+      capacity: {
+        underwritingCapacityUsd: 800_000,
+      },
+      purchaseFlow: {
+        summary: "Users choose a cover amount and term, then pay the premium upfront.",
+        requiresWallet: true,
+      },
+      roles: {
+        operator: "OpenCover",
+        issuerOrUnderwriter: "OpenCover / its underwriting partners",
+        frankencoinAssociation: "ecosystem listing/reference only — not issuer, underwriter, broker, or guarantor",
+      },
+      addedAt: "2026-07-17",
+      note: "Third-party cover product operated by OpenCover; not issued or underwritten by the Frankencoin Association.",
+    },
+  ];
+
+  return {
+    feature: "insurance_products",
+    count: products.length,
+    products,
+    note: "Curated list of third-party ZCHF-related insurance products exposed as a dedicated feature. Informational only; availability, pricing, capacity, terms, and claims handling are controlled by the provider.",
+  };
+}
+
 export async function getMerch() {
   const { products } = await merchProducts();
   return {
