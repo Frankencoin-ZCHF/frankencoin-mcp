@@ -63,6 +63,8 @@ export const COINGECKO_IDS = {
 // AllUnity CHFAU contract on Ethereum (6 decimals).
 export const CHFAU_CONTRACT = "0xbd4dfc058eb95b8de5ceaf39966a1a70f5556f78";
 
+// FCS is the holder-facing share/governance token; FPS remains underlying Equity.
+export const FCS_CONTRACT = "0xdb861830d9ae2d1fcf99fa0cfd3973de382b0b5b";
 // FPS (Frankencoin Pool Shares) — Ethereum only.
 export const FPS_CONTRACT = "0x1bA26788dfDe592fec8bcB0Eaff472a42BE341B2";
 
@@ -103,6 +105,8 @@ export const DOC_FILES = {
   what_is: "README.md",
   savings: "savings.md",
   pool_shares: "pool-shares.md",
+  fcs: "fcs.md",
+  fcs_migration: "fcs-migration.md",
   governance: "governance.md",
   reserve: "reserve.md",
   risks: "risks.md",
@@ -116,7 +120,7 @@ export const DOC_FILES = {
 // All knowledge topics (docs + token_addresses + links + compliance + frontends).
 export const KNOWLEDGE_TOPICS = [
   "overview", "what_is", "faq", "savings", "governance", "minting",
-  "opening_positions", "auctions", "risks", "reserve", "pool_shares",
+  "opening_positions", "auctions", "risks", "reserve", "pool_shares", "fcs", "fcs_migration",
   "api", "compliance", "frontends", "token_addresses", "links",
 ];
 

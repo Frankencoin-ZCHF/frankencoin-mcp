@@ -1,5 +1,9 @@
 # Frankencoin MCP Server — Reverse-Engineering Specification
 
+> Historical rebuild baseline. Current FCS extensions to governance, snapshot and
+> knowledge are documented in [FCS support](../FCS.md); the live tool registry is
+> authoritative for current discovery. Underlying FPS economics remain FPS.
+
 > **Purpose.** Exhaustive, factual description of the *current* Frankencoin (ZCHF) MCP server so it can be re-implemented from scratch with identical externally-observable behavior. This documents reality, not desired state. No redesign proposals.
 >
 > **Server version:** `2.0.0` (from `package.json`). **Runtime:** Node.js ESM (`"type": "module"`), no build step, no TypeScript. **Deps:** `@modelcontextprotocol/sdk ^1.10.2`, `zod ^3.24.2` only.

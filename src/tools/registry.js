@@ -1,5 +1,5 @@
 /**
- * The 15 read-only data tools. Each definition owns its zod input schema, so
+ * The read-only data tools. Each definition owns its zod input schema, so
  * validation, coercion, defaults AND clamps live with the tool (not scattered in a
  * dispatch switch). The SAME schema validates MCP and REST args (ARCHITECTURE §D).
  *
@@ -44,7 +44,7 @@ export const TOOLS = [
   {
     name: "get_protocol_snapshot",
     description:
-      "Full live state of the Frankencoin (ZCHF) protocol in one call. Returns: total supply + per-chain breakdown, TVL, FPS price/supply/market cap/reserve/earnings (earnings are cumulative all-time), savings lead rate + base rate + pending proposals, and active challenge count. Every monetary figure is a { chf, usd } pair (USD derived at the current CHF/USD rate, exposed in the top-level `fx` block). Best starting point for any protocol question.",
+      "Frankencoin (ZCHF) protocol snapshot: supply + per-chain breakdown, TVL, underlying FPS Equity price/supply/market cap/reserve/earnings (cumulative all-time), savings rates/proposals and active challenges. Separately returns FCS, the canonical governance and share token wrapping FPS 1:1 on Ethereum: API-reported FCS supply, attributable equity, binding and reference prices, or explicit unavailability. FPS metrics are not relabelled FCS metrics. Monetary figures are { chf, usd } pairs with top-level fx, except FCS totalAssetsZchf and referencePriceZchf in native ZCHF units. Best starting point for protocol questions.",
     input: empty,
     params: [],
     handler: () => getProtocolSnapshot(),
@@ -68,15 +68,15 @@ export const TOOLS = [
   {
     name: "get_governance",
     description:
-      "Governance activity: rate proposals (pending/past), minter applications (pending/denied/all), FPS equity trades (buy/sell), and FPS/ZCHF holder stats from Dune. Use 'type' to select what governance data to return.",
+      "FCS governance: canonical holder-facing share token, 1:1 underlying FPS relationship, Ethereum-only token with voting/delegation and cross-chain vote snapshots, dual quorum and separate binding threshold, official mechanics/migration/trade links. type=fcs returns API-reported FCS supply, attributable equity, binding and reference prices with source/availability notes; internal votes, holder votes, backing balance and eligibility are not supplied by that API. type=all includes this plus indexed approved rate changes, minters, underlying FPS Equity trades (FCS wrapper labelled) and FPS/ZCHF Dune holders, not FCS holders. Other filters include static FCS context. For pending rates use get_savings.",
     input: z.object({
-      type: z.enum(["all", "rate_proposals", "minters", "equity_trades", "holders"]).default("all"),
+      type: z.enum(["all", "fcs", "rate_proposals", "minters", "equity_trades", "holders"]).default("all"),
       status: z.enum(["active", "denied", "all", "pending", "approved"]).default("all"),
       limit: intClamp(1, 100, 20),
     }).strict(),
     params: [
-      { name: "type", type: "string", required: false, description: "all | rate_proposals | minters | equity_trades | holders (default all)." },
-      { name: "status", type: "string", required: false, description: "For minters: active | denied | all. For rate_proposals: pending | approved | all." },
+      { name: "type", type: "string", required: false, description: "all | fcs | rate_proposals | minters | equity_trades | holders (default all). fcs isolates wrapper state from indexer activity." },
+      { name: "status", type: "string", required: false, description: "For minters: active | denied | all. rate_proposals returns approved history; use get_savings for pending rates." },
       { name: "limit", type: "number", required: false, description: "Max items per section (default 20, max 100)." },
     ],
     handler: (a) => getGovernance({ type: a.type, status: a.status, limit: a.limit }),
@@ -140,12 +140,12 @@ export const TOOLS = [
   {
     name: "get_knowledge",
     description:
-      "All explanatory and reference content about Frankencoin. Use 'topic' to select: 'overview' (default — what is Frankencoin), 'faq', 'savings' (savings guide), 'governance', 'minting' (minting guide), 'opening_positions', 'auctions', 'risks', 'reserve', 'pool_shares' (FPS explanation), 'api' (API docs), 'compliance' (Swiss/EU legal classifications, papers, audits), 'frontends' (independent third-party dapps/interfaces for the protocol), 'token_addresses' (contract addresses all chains), 'links' (all key URLs + exchanges), 'what_is' (same as overview).",
+      "Frankencoin explanatory/reference content. Topics: overview (default), what_is, faq, savings, governance (FCS vetoes/delegation and cross-chain vote snapshots), fcs (FCS mechanics and underlying FPS distinction), fcs_migration (FPS/WFPS migration), pool_shares (FCS investing and underlying FPS economics), minting, opening_positions, auctions, risks, reserve, api, compliance, frontends, token_addresses (including Ethereum-only FCS contract), links (official docs, CoW Swap and legacy FPS page). FCS references survive unavailable live docs. Planned future CTA targets are explicitly planned_not_live, not operational websites or apps.",
     // topic is a permissive string: an unknown topic returns { error, availableTopics }
     // from the handler (NOT a 400) and never builds a path from the raw value (SPEC/T28).
     input: z.object({ topic: z.string().max(64).default("overview") }).strict(),
     params: [
-      { name: "topic", type: "string", required: false, description: "overview | what_is | faq | savings | governance | minting | opening_positions | auctions | risks | reserve | pool_shares | api | compliance | frontends | token_addresses | links (default overview)." },
+      { name: "topic", type: "string", required: false, description: "overview | what_is | faq | savings | governance | fcs | fcs_migration | minting | opening_positions | auctions | risks | reserve | pool_shares | api | compliance | frontends | token_addresses | links (default overview)." },
     ],
     handler: (a) => getKnowledge({ topic: a.topic }),
   },
