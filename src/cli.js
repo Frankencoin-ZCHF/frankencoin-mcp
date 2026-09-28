@@ -57,7 +57,7 @@ function section(title) { console.log("\n" + c.bold(c.cyan(`● ${title}`))); }
 
 const COMMANDS = {
   snapshot: {
-    desc: "Full protocol snapshot — supply, FPS, TVL, savings, challenges",
+    desc: "Protocol snapshot — supply, FCS state, underlying FPS economics, TVL, savings, challenges",
     help: "frankencoin snapshot [--json]",
     async run(flags) {
       const d = await getProtocolSnapshot();
@@ -65,6 +65,11 @@ const COMMANDS = {
       section("Protocol Snapshot");
       console.log(`  ZCHF Supply     ${c.green(fmtM(d.zchf?.totalSupply))}`);
       console.log(`  TVL             ${c.green(fmtM(d.zchf?.tvl?.chf))} CHF  /  ${fmtM(d.zchf?.tvl?.usd)} USD`);
+      console.log("  FCS             canonical governance/share token; 1:1 wrapping of FPS, not ZCHF");
+      console.log(`  FCS Supply      ${fmtNum(d.fcs?.state?.totalSupply)} FCS`);
+      console.log(`  FCS State       ${d.fcs?.state?.status ?? "unavailable"} (API-reported)`);
+      console.log(`  FCS Binding     ${d.fcs?.state?.isBinding ?? "unknown"}`);
+      console.log("  Underlying FPS  Equity pricing/reserve/earnings follow (not FCS metrics)");
       console.log(`  FPS Price       ${c.yellow(fmtNum(d.fps?.price?.chf))} CHF  /  ${fmtNum(d.fps?.price?.usd)} USD`);
       console.log(`  FPS Market Cap  ${c.yellow(fmtM(d.fps?.marketCap?.chf))} CHF  /  ${fmtM(d.fps?.marketCap?.usd)} USD`);
       console.log(`  Equity Reserve  ${c.yellow(fmtM(d.fps?.reserve?.equity?.chf))} CHF  /  ${fmtM(d.fps?.reserve?.equity?.usd)} USD`);
@@ -111,8 +116,8 @@ const COMMANDS = {
     },
   },
   governance: {
-    desc: "Governance — rate proposals, minters, FPS trades, holders",
-    help: "frankencoin governance [--type all|rate_proposals|minters|equity_trades|holders] [--status active|denied|all] [--limit N] [--json]",
+    desc: "Governance — FCS state/context, rate history, minters, underlying FPS trades/holders",
+    help: "frankencoin governance [--type all|fcs|rate_proposals|minters|equity_trades|holders] [--status active|denied|all] [--limit N] [--json]",
     async run(flags) {
       const d = await getGovernance({
         type: flags.type ?? "all",
@@ -181,7 +186,7 @@ const COMMANDS = {
   },
   knowledge: {
     desc: "Documentation and reference content",
-    help: "frankencoin knowledge [--topic overview|faq|savings|governance|minting|risks|token_addresses|links|...] [--json]",
+    help: "frankencoin knowledge [--topic overview|faq|savings|governance|fcs|fcs_migration|minting|risks|token_addresses|links|...] [--json]",
     async run(flags) {
       const d = await getKnowledge({ topic: flags.topic ?? "overview" });
       if (flags.json) return console.log(JSON.stringify(d, null, 2));

@@ -1,6 +1,6 @@
 # Frankencoin MCP Server
 
-Real-time [Frankencoin](https://frankencoin.com) (ZCHF) protocol data for AI agents and developers. One read-only server, several ways to reach it — supply, prices, peg health, savings, minting positions, liquidation challenges, governance, insurance products, and historical analytics across every supported chain.
+Real-time [Frankencoin](https://frankencoin.com) (ZCHF) protocol data for AI agents and developers. One read-only server, several ways to reach it — supply, prices, peg health, savings, minting positions, liquidation challenges, FCS governance and underlying FPS economics, insurance products, and historical analytics across every supported chain.
 
 **Public endpoint:** `https://mcp.frankencoin.com`
 
@@ -41,8 +41,11 @@ curl https://mcp.frankencoin.com/api/get_protocol_snapshot
 # Market data + peg health
 curl https://mcp.frankencoin.com/api/get_market_data
 
-# Governance: pending minter applications
-curl "https://mcp.frankencoin.com/api/get_governance?type=minters&status=pending"
+# FCS wrapper state, mechanics and official links
+curl "https://mcp.frankencoin.com/api/get_governance?type=fcs"
+
+# Governance: active minters
+curl "https://mcp.frankencoin.com/api/get_governance?type=minters&status=active"
 
 # Positions with full on-chain detail
 curl "https://mcp.frankencoin.com/api/get_positions?detail=true&limit=10"
@@ -81,15 +84,15 @@ Organised by **what the agent needs**, not where the data comes from — one too
 
 | Tool | Description |
 |------|-------------|
-| `get_protocol_snapshot` | Full live state — supply (per chain), TVL, FPS price/reserve/earnings, savings rate, active challenges |
+| `get_protocol_snapshot` | Full live state — supply (per chain), TVL, FCS state separately from underlying FPS price/reserve/earnings, savings rate, active challenges |
 | `get_market_data` | Prices, peg health, CHF-stablecoin comparison (ZCHF/VCHF/CHFAU), macro (BTC/ETH), collateral prices |
 | `get_savings` | Approved + pending rates, plus per-module stats (TVL, interest paid, deposits, withdrawals) |
-| `get_governance` | Rate proposals, minter applications, FPS equity trades, holder stats (`type` filter) |
+| `get_governance` | FCS context + API-reported supply/binding/reference prices (`type=fcs`); indexed rates/minters, underlying FPS trades and FPS/ZCHF holder stats |
 | `get_positions` | Minting positions; `detail=true` for full on-chain data, else a lightweight address list |
 | `get_challenges` | Liquidation challenges with collateral details, pricing, and position context |
 | `get_collaterals` | Accepted collateral types across all chains |
 | `get_analytics` | Historical time-series, FPS trades, minter history, rate-change timeline (`type` selector) |
-| `get_knowledge` | Docs & reference: FAQ, guides, token addresses, links (`topic` selector) |
+| `get_knowledge` | Docs & reference: FCS mechanics (`fcs`), migration (`fcs_migration`), FAQ, guides, exact token addresses and links (`topic` selector) |
 | `get_compliance` | Legal & regulatory posture — Swiss FINMA + EU MiCA classifications, legal opinions, MiCA white paper, ESMA register, security audits, bug bounty |
 | `get_news` | Press articles, videos, use cases, ecosystem partners |
 | `get_insurance_products` | ZCHF-related third-party insurance products such as OpenCover ZCHF depeg cover |
@@ -102,13 +105,34 @@ Parameter details live in each tool's MCP `inputSchema` (via `tools/list`) and i
 
 ---
 
+## FCS and underlying FPS
+
+FCS is the canonical holder-facing governance and share token on Ethereum:
+`0xdb861830d9ae2d1fcf99fa0cfd3973de382b0b5b`. Each FCS wraps one FPS; the 1:1
+ratio does not apply to investing ZCHF. FPS remains the underlying Equity token,
+with distinct supply, voting records and economic metrics.
+
+Use `get_governance?type=fcs` for API-reported wrapper state with source and
+availability notes, or `get_knowledge?topic=fcs` / `topic=fcs_migration` for
+technical docs. `get_protocol_snapshot` includes the same FCS reference/state
+without renaming its existing FPS metrics. Votes, backing balance and eligibility
+not exposed by the source are explicitly unavailable, not inferred from supply.
+
+- [FCS mechanics](https://docs.frankencoin.com/pool-shares/fcs) · [Migration](https://docs.frankencoin.com/pool-shares/fcs-migration) · [Governance](https://docs.frankencoin.com/governance)
+- [CoW Swap route](https://swap.cow.fi/#/1/swap/USDT/FCS) · [Legacy FPS page](https://frankencoin.com/fps)
+- **Planned, not yet live:** `https://fcs.frankencoin.com` — only a future CTA target
+  under `fcs.plannedLinks.website`, not an existing application or data source.
+
+[Source provenance, units, fallback behaviour and limitations](docs/FCS.md) document
+the unreleased canonical website branch and the primary technical sources.
+
 ## Data sources
 
 All aggregated server-side — callers never talk to these directly:
 
 | Source | Provides | Key |
 |--------|----------|-----|
-| [api.frankencoin.com](https://api.frankencoin.com) | Supply, TVL, FPS, savings rates, collaterals, challenges, prices | — |
+| [api.frankencoin.com](https://api.frankencoin.com) | Supply, TVL, FPS economics, FCS `/fcs/info` state, savings rates, collaterals, challenges, prices | — |
 | [ponder.frankencoin.com](https://ponder.frankencoin.com) | On-chain indexed data — positions, trades, minters, analytics | — |
 | [CoinGecko](https://coingecko.com) | Market prices, 24h changes, CHF-stablecoin comparison | optional |
 | [Dune Analytics](https://dune.com/frankencoin) | Holder counts, minting volume, savings TVL history | optional |

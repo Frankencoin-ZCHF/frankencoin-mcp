@@ -8,6 +8,7 @@
 
 import { githubFile, githubJson } from "../upstream/github.js";
 import { merchProducts } from "../upstream/merch.js";
+import { FCS_REFERENCE } from "../lib/fcs.js";
 import {
   SITE_REPO, DOCS_REPO, DOC_FILES, KNOWLEDGE_TOPICS, FPS_CONTRACT,
   MERCH_BASE, MERCH_STOREFRONT_MCP, MERCH_UCP_MCP,
@@ -24,19 +25,28 @@ export async function getKnowledge({ topic = "overview" } = {}) {
     return { error: `Unknown topic: "${topic}"`, availableTopics: KNOWLEDGE_TOPICS };
   }
 
-  const content = await githubFile(DOCS_REPO, file);
+  const hasFcsReference = ["fcs", "fcs_migration", "governance", "pool_shares"].includes(topic);
+  const content = await githubFile(DOCS_REPO, file).catch((err) => {
+    if (!hasFcsReference) throw err;
+    return null;
+  });
   return {
     topic,
     file,
     source: `https://github.com/${DOCS_REPO}/blob/main/${file}`,
-    docsUrl: `https://docs.frankencoin.com/${file.replace(/\.md$/, "").replace(/\/README$/, "")}`,
+    docsUrl: topic === "fcs" ? FCS_REFERENCE.links.mechanics
+      : topic === "fcs_migration" ? FCS_REFERENCE.links.migration
+      : `https://docs.frankencoin.com/${file.replace(/\.md$/, "").replace(/\/README$/, "")}`,
     content,
+    ...(hasFcsReference ? { fcs: FCS_REFERENCE } : {}),
+    ...(content === null ? { note: "Live documentation unavailable; curated FCS reference and official links remain available." } : {}),
     availableTopics: KNOWLEDGE_TOPICS,
   };
 }
 
 async function getTokenAddresses() {
-  const data = await githubJson(SITE_REPO, "src/content/en/token.json");
+  const fetched = await githubJson(SITE_REPO, "src/content/en/token.json").catch(() => null);
+  const data = fetched ?? {};
   const mapChains = (chains) => (chains ?? []).map((c) => ({
     name: c.name,
     address: c.contract,
@@ -51,13 +61,14 @@ async function getTokenAddresses() {
       description: data.tokens?.subtitle ?? "Swiss franc ERC-20 stablecoin",
       chains: mapChains(data.tokens?.chains),
     },
+    fcs: FCS_REFERENCE,
     fps: {
       name: "Frankencoin Pool Shares",
       symbol: "FPS",
-      description: data.fps?.subtitle ?? "Governance and equity token (Ethereum only)",
+      description: "The underlying Equity token: FPS determines protocol equity pricing, supply, reserve and earnings metrics. Each FCS wraps one FPS; their supplies and voting records are separate.",
       chain: "Ethereum",
-      address: data.fps?.chain?.contract ?? FPS_CONTRACT,
-      explorer: `https://etherscan.io/address/${data.fps?.chain?.contract ?? FPS_CONTRACT}`,
+      address: FPS_CONTRACT,
+      explorer: `https://etherscan.io/address/${FPS_CONTRACT}`,
     },
     svzchf: {
       name: "Frankencoin Savings Vault",
@@ -65,16 +76,18 @@ async function getTokenAddresses() {
       description: data.svzchf?.subtitle ?? "ERC-4626 savings vault token",
       chains: mapChains(data.svzchf?.chains),
     },
-    note: "Addresses sourced live from the Frankencoin website repository.",
+    note: "FCS and underlying FPS identities are curated from official technical references; other addresses come from the website repository." +
+      (fetched === null ? " Website repository unavailable; other token addresses are unavailable." : ""),
   };
 }
 
 async function getLinks() {
-  const [footerData, exchangeData, useCaseData] = await Promise.all([
+  const fetched = await Promise.all([
     githubJson(SITE_REPO, "src/content/en/shared/footer.json"),
     githubJson(SITE_REPO, "src/content/en/exchanges.json"),
     githubJson(SITE_REPO, "src/content/en/use-cases.json"),
-  ]);
+  ].map((request) => request.catch(() => null)));
+  const [footerData, exchangeData, useCaseData] = fetched.map((data) => data ?? {});
 
   const footerLinks = {};
   for (const col of footerData.footer?.columns ?? []) {
@@ -95,6 +108,7 @@ async function getLinks() {
 
   return {
     topic: "links",
+    fcs: FCS_REFERENCE,
     app: {
       main: "https://app.frankencoin.com",
       mint: "https://app.frankencoin.com/mint",
@@ -136,7 +150,8 @@ async function getLinks() {
     useCaseHighlights: (useCaseData.cases ?? []).map((c) => ({
       title: c.title, partner: c.partner, category: c.category, url: c.link,
     })),
-    note: "Links sourced live from the Frankencoin website repository.",
+    note: "FCS links and planned links are curated separately; other links are sourced from the website repository." +
+      (fetched.some((data) => data === null) ? " Some website repository content is unavailable." : ""),
   };
 }
 

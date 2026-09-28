@@ -1,11 +1,13 @@
 /**
- * get_governance (Tool 4) — rate proposals, minters, equity trades, holder stats.
+ * get_governance — FCS context/state plus indexed activity and underlying FPS trades.
  */
 
 import { ponderQuery } from "../upstream/ponder.js";
 import { duneExecute } from "../upstream/dune.js";
 import { fromWei, bpsToPercent, dateFromUnix, isoFromUnix } from "../lib/numbers.js";
 import { DUNE_QUERIES, chainName } from "../lib/constants.js";
+import { FCS_REFERENCE } from "../lib/fcs.js";
+import { getFcs } from "./fcs.js";
 
 async function getRateProposals({ limit = 20 } = {}) {
   const data = await ponderQuery(`{
@@ -59,6 +61,8 @@ function mapTrade(t) {
     count: Number(t.count),
     kind: t.kind,
     trader: t.trader,
+    shareToken: "FPS",
+    traderRole: t.trader?.toLowerCase() === FCS_REFERENCE.address ? "FCS wrapper" : null,
     sharesTraded: fromWei(t.shares),
     priceChf: fromWei(t.price),
     amountChf: fromWei(t.amount),
@@ -77,20 +81,24 @@ async function getEquityTrades({ limit = 20 } = {}) {
 }
 
 async function getHolderStats() {
+  const fcs = { count: null, note: "These Dune queries track ZCHF and underlying FPS, not FCS holders. FCS holder counts are unavailable here." };
   const [zchf, fps] = await Promise.allSettled([
     duneExecute(DUNE_QUERIES.zchfHolders),
     duneExecute(DUNE_QUERIES.fpsHolders),
   ]);
   // No key (MissingSecretError) or upstream failure → soft note, never a 500.
   if (zchf.status === "rejected" && zchf.reason?.name === "MissingSecretError") {
-    return { note: "Dune API key not configured — holder stats unavailable" };
+    return { fcs, note: "Dune API key not configured — holder stats unavailable" };
   }
   const val = (r) => (r.status === "fulfilled" ? r.value?.[0] ?? null : null);
-  return { zchf: val(zchf), fps: val(fps) };
+  return { zchf: val(zchf), fps: val(fps), fcs };
 }
 
 export async function getGovernance({ type = "all", status = "all", limit = 20 } = {}) {
-  const result = {};
+  const result = {
+    fcs: type === "all" || type === "fcs" ? await getFcs() : FCS_REFERENCE,
+    activityNote: "Indexed rate/minter activity and underlying FPS Equity trades, not a complete FCS governance or secondary-market trade history. A wrapper trader label identifies the contract, not the initiating holder. FCS API state is fetched for type=all or type=fcs; other filters include static FCS context only.",
+  };
   if (type === "all" || type === "rate_proposals") result.rateProposals = await getRateProposals({ limit });
   if (type === "all" || type === "minters") result.minters = await getMinters({ status, limit });
   if (type === "all" || type === "equity_trades") result.equityTrades = await getEquityTrades({ limit });

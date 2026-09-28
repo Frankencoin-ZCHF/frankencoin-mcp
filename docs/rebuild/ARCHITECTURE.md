@@ -1,5 +1,9 @@
 # Frankencoin MCP Server — Rewrite Architecture
 
+> Current FCS extension: shared pure reference in `src/lib/fcs.js`, state assembly
+> in `src/services/fcs.js`, existing registry/dispatch and cached upstream clients.
+> See [FCS support](../FCS.md). No new transport, tool, write path or RPC selector.
+
 > **Status:** Design document for the from-scratch rewrite. Design only — no implementation code.
 > **Scope:** Replaces `src/` in the same repo. Keeps the 13 data tools and the same external surface
 > (MCP Streamable HTTP + legacy SSE, REST `/api/<tool>`, `/health`). Drops the entire webhook subsystem.

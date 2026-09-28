@@ -86,11 +86,20 @@ fetch is shared across every tool that needs it. Non-authoritative — wiped on 
 
 ---
 
-## Tools (15)
+## FCS support
+
+`get_governance` supports `type=fcs` for wrapper state; `type=all` includes it.
+`get_protocol_snapshot` returns a separate `fcs` block without relabelling `fps`
+economics. `get_knowledge` adds `fcs` and `fcs_migration` topics; curated references
+are shared in `src/lib/fcs.js`, state assembly in `src/services/fcs.js`. No new tool.
+See [docs/FCS.md](docs/FCS.md) for exact source commits, field units and fallbacks.
+Treat the planned FCS subdomain as not yet live, never an application/data source.
+
+## Tools
 
 `get_protocol_snapshot`, `get_market_data`, `get_savings`, `get_governance`,
 `get_positions`, `get_challenges`, `get_collaterals`, `get_analytics`,
-`get_knowledge`, `get_compliance`, `get_news`, `get_merch`, `get_risk`,
+`get_knowledge`, `get_compliance`, `get_news`, `get_insurance_products`, `get_merch`, `get_risk`,
 `get_dune_stats`, `query_ponder`.
 
 The canonical list lives in `src/tools/registry.js`; `/llms.txt`, `/api`, and `/health`
@@ -105,7 +114,7 @@ node src/index.js            # stdio mode (local Claude Desktop / Cursor / CLI)
 node src/index.js --http     # HTTP mode (public deployment)
 PORT=8080 node src/index.js --http
 node src/cli.js snapshot     # CLI — direct service access, no server
-npm test                     # 77 tests via `node --test`
+npm test                     # full suite via `node --test`
 ```
 
 Health check: `curl http://localhost:3000/health`

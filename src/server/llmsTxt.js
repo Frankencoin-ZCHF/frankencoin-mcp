@@ -9,6 +9,8 @@
  * single self-describing entry point here.
  */
 
+import { FCS_REFERENCE } from "../lib/fcs.js";
+
 /** Short inline parameter summary; required params get a trailing `*`. */
 function paramSummary(params) {
   if (!params || params.length === 0) return "";
@@ -30,7 +32,7 @@ export function renderLlmsTxt(tools, baseUrl) {
   p();
   p(
     "Frankencoin is a decentralized, over-collateralized Swiss-Franc stablecoin (ZCHF) " +
-      "with an FPS pool-share token. This server surfaces live supply, prices, peg " +
+      "with FCS as its canonical holder-facing governance and share token. Each FCS wraps one FPS, the underlying Equity token. This server surfaces live supply, prices, peg " +
       "health, savings rates, minting positions, liquidation challenges, governance, " +
       "news/merch, and historical analytics across every supported chain.",
   );
@@ -72,6 +74,19 @@ export function renderLlmsTxt(tools, baseUrl) {
   );
   p();
 
+  p("## FCS and underlying FPS");
+  p();
+  p(`FCS is Ethereum-only: ${FCS_REFERENCE.address}. FPS price/supply/reserve/earnings remain underlying Equity metrics, not FCS supply or guaranteed market quotes.`);
+  p(FCS_REFERENCE.mechanics.entry);
+  p(FCS_REFERENCE.mechanics.qualification);
+  p(FCS_REFERENCE.mechanics.binding);
+  p(FCS_REFERENCE.mechanics.delegation);
+  p(FCS_REFERENCE.mechanics.crossChain);
+  p(FCS_REFERENCE.mechanics.exit);
+  p("Use get_governance type=fcs for API-reported wrapper state with explicit source/availability notes; use get_knowledge topics fcs and fcs_migration for official technical documentation.");
+  for (const [label, url] of Object.entries(FCS_REFERENCE.links)) p(`- ${label}: ${url}`);
+  p(`- Planned future CTA only (planned_not_live): ${FCS_REFERENCE.plannedLinks.website.url}. Not an existing website or application; never used as a source.`);
+  p();
   p("## Notes");
   p();
   p("- No authentication — public, read-only protocol data.");

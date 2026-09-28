@@ -9,14 +9,16 @@ import { money, moneyPair, round } from "../lib/numbers.js";
 import { chfUsdRateFromPrices, fxBlock } from "./fx.js";
 import { getSavings } from "./savings.js";
 import { getChallenges } from "./positions.js";
+import { getFcs } from "./fcs.js";
 
 export async function getProtocolSnapshot() {
-  const [infoData, fpsData, prices, savings, challenges] = await Promise.all([
+  const [infoData, fpsData, prices, savings, challenges, fcs] = await Promise.all([
     apiFetch("/ecosystem/frankencoin/info"),
     apiFetch("/ecosystem/fps/info"),
     apiFetch("/prices/list"),
     getSavings(),
     getChallenges({ limit: 5 }),
+    getFcs(),
   ]);
 
   // FPS USD price: /ecosystem/fps/info.token.price is CHF-denominated (despite the
@@ -60,7 +62,9 @@ export async function getProtocolSnapshot() {
       tvl: moneyPair(infoData.tvl?.chf, infoData.tvl?.usd),
       chains,
     },
+    fcs,
     fps: {
+      role: "Underlying Equity token; these are FPS economics, not FCS supply or a quoted FCS market price",
       name: fpsData.erc20?.name,
       symbol: fpsData.erc20?.symbol,
       address: fpsData.chains?.[1]?.address,

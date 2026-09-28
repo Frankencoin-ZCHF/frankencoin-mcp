@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { renderLlmsTxt } from "../../src/server/llmsTxt.js";
 import { TOOLS } from "../../src/tools/registry.js";
+import { FCS_CONTRACT } from "../../src/lib/constants.js";
 
 const BASE = "https://mcp.frankencoin.com";
 
@@ -38,5 +39,7 @@ test("uses the given base URL everywhere and leaks no secrets", () => {
   assert.doesNotMatch(txt, /mcp\.frankencoin\.com/); // base was overridden
   // Must not emit an actual secret value/assignment (prose mentions of CoinGecko/Dune
   // as data sources are fine; the renderer never receives key values anyway).
-  assert.doesNotMatch(txt, /_API_KEY\b|Bearer\s+\S|sk-[A-Za-z0-9]{8}|[A-Za-z0-9]{32,}/);
+  // The exact public deployment address is reference data, not a secret. Keep
+  // detecting all other long token-like strings instead of excluding arbitrary hex.
+  assert.doesNotMatch(txt.replaceAll(FCS_CONTRACT, "[public-contract]"), /_API_KEY\b|Bearer\s+\S|sk-[A-Za-z0-9]{8}|[A-Za-z0-9]{32,}/);
 });
