@@ -14,32 +14,29 @@
 import { apiFetch } from "../upstream/frankencoin.js";
 import { cgFetch } from "../upstream/coingecko.js";
 import { ethCall } from "../upstream/eth.js";
-import { config } from "../config.js";
+import { priceQuality } from "../lib/prices.js";
+import { observe } from "../lib/provider.js";
+import { observeMetrics } from "../lib/metric-coverage.js";
 import { COINGECKO_IDS, CHFAU_CONTRACT } from "../lib/constants.js";
 import { pegDeviation, pegStatus, round, money, moneyPair, moneyFromUsd } from "../lib/numbers.js";
 import { chfUsdRateFromPrices, fxBlock } from "./fx.js";
 
-const CG_ABSENT_NOTE = "CoinGecko API key not configured — market/macro fields unavailable";
-
-/** Await a promise, returning null on any rejection (best-effort CoinGecko calls). */
-async function safe(p) {
-  try { return await p; } catch { return null; }
-}
-
 export async function getMarketData() {
-  const hasCg = !!config.coingeckoKey;
   const collateralCgIds = [...new Set(Object.values(COINGECKO_IDS))].join(",");
-
-  const [fcPrices, chfauSupplyHex, zchfData, macroData, collateralData, globalData, chfStableData] =
-    await Promise.all([
-      apiFetch("/prices/list"),
-      safe(ethCall(CHFAU_CONTRACT, "0x18160ddd")),
-      hasCg ? safe(cgFetch(`/simple/price?ids=frankencoin&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`)) : null,
-      hasCg ? safe(cgFetch(`/simple/price?ids=bitcoin,ethereum&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`)) : null,
-      hasCg ? safe(cgFetch(`/simple/price?ids=${collateralCgIds}&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true`)) : null,
-      hasCg ? safe(cgFetch(`/global`)) : null,
-      hasCg ? safe(cgFetch(`/coins/markets?vs_currency=chf&ids=frankencoin,vnx-swiss-franc&order=market_cap_desc&sparkline=false&price_change_percentage=24h`)) : null,
-    ]);
+  const metrics = ["usd", "chf", "usd_24h_change", "usd_market_cap"];
+  const [rawPrices, ...observed] = await Promise.all([
+    apiFetch("/prices/list"),
+    observe(ethCall(CHFAU_CONTRACT, "0x18160ddd"), (v) => typeof v === "string" && /^0x[0-9a-f]+$/i.test(v)),
+    observeMetrics(cgFetch(`/simple/price?ids=frankencoin&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`), ["frankencoin"], [...metrics, "usd_24h_vol"]),
+    observeMetrics(cgFetch(`/simple/price?ids=bitcoin,ethereum&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`), ["bitcoin", "ethereum"], [...metrics, "usd_24h_vol"]),
+    observeMetrics(cgFetch(`/simple/price?ids=${collateralCgIds}&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true`), collateralCgIds.split(","), metrics),
+    observe(cgFetch(`/global`), (v) => Number.isFinite(v?.data?.total_market_cap?.usd)),
+    observeMetrics(cgFetch(`/coins/markets?vs_currency=chf&ids=frankencoin,vnx-swiss-franc&order=market_cap_desc&sparkline=false&price_change_percentage=24h`), ["frankencoin", "vnx-swiss-franc"], ["current_price", "market_cap", "total_volume", "price_change_percentage_24h", "circulating_supply"], true),
+  ]);
+  const fcPrices = (rawPrices || []).map((row) => priceQuality(row));
+  const [chfauSupplyHex, zchfData, macroData, collateralData, globalData, chfStableData] = observed.map((r) => r.value);
+  const names = ["chfauSupply", "coingeckoZchf", "coingeckoMacro", "coingeckoCollateral", "coingeckoGlobal", "coingeckoStablecoins"];
+  const sources = Object.fromEntries(names.map((name, i) => [name, observed[i].health]));
 
   const rate = chfUsdRateFromPrices(fcPrices);
   const fps = (fcPrices || []).find((p) => p.symbol === "FPS");
@@ -55,7 +52,8 @@ export async function getMarketData() {
     symbol: t.symbol,
     price: moneyPair(t.price?.chf, t.price?.usd),
     source: t.source,
-    updatedAt: t.timestamp != null ? new Date(t.timestamp).toISOString() : null,
+    updatedAt: t.updatedAt,
+    freshness: t.freshness,
   }));
 
   const collateral = Object.entries(COINGECKO_IDS).map(([addr, cgId]) => {
@@ -65,9 +63,10 @@ export async function getMarketData() {
       symbol: fcEntry?.symbol ?? cgId,
       name: fcEntry?.name ?? cgId,
       address: addr,
+      freshness: fcEntry?.freshness ?? null,
       price: moneyPair(fcEntry?.price?.chf ?? cg.chf ?? null, cg.usd ?? fcEntry?.price?.usd ?? null),
       change24hPercent: cg.usd_24h_change != null ? round(cg.usd_24h_change, 2) : null,
-      marketCap: moneyFromUsd(cg.usd_market_cap ? Math.round(cg.usd_market_cap) : null, rate),
+      marketCap: moneyFromUsd(cg.usd_market_cap != null ? Math.round(cg.usd_market_cap) : null, rate),
     };
   }).sort((a, b) => (b.marketCap.usd ?? 0) - (a.marketCap.usd ?? 0));
 
@@ -91,7 +90,7 @@ export async function getMarketData() {
   });
 
   const chfStablecoins = [
-    { name: "Frankencoin", symbol: "ZCHF", type: "CDP / overcollateralised", issuer: "Frankencoin Association", ...cmp(zchfCg) },
+    { name: "Frankencoin", symbol: "ZCHF", type: "CDP / overcollateralised", issuer: null, issuerNote: "Decentralised protocol with no identifiable issuer, as described in the attributed MiCA legal assessment (see get_compliance).", steward: "Frankencoin Association", ...cmp(zchfCg) },
     { name: "VNX Swiss Franc", symbol: "VCHF", type: "Fiat-backed", issuer: "VNX", ...cmp(vchfCg) },
     {
       name: "AllUnity CHF", symbol: "CHFAU", type: "Fiat-backed", issuer: "AllUnity (DWS + Flow Traders + Galaxy)",
@@ -108,12 +107,14 @@ export async function getMarketData() {
     price: moneyPair(m?.chf ?? null, m?.usd ?? null),
     change24hPercent: m?.usd_24h_change != null ? round(m.usd_24h_change, 2) : null,
     volume24h: moneyFromUsd(m?.usd_24h_vol ?? null, rate),
-    marketCap: moneyFromUsd(m?.usd_market_cap ? Math.round(m.usd_market_cap) : null, rate),
+    marketCap: moneyFromUsd(m?.usd_market_cap != null ? Math.round(m.usd_market_cap) : null, rate),
   });
 
   const result = {
+    status: observed.every((r) => r.health.status === "available") ? "available" : "partial",
+    sources,
     zchf: {
-      price: moneyPair(zchfPriceChf, zchf.usd ?? null),
+      price: moneyPair(zchfPriceChf, zchf.usd ?? zchfEntry?.price?.usd ?? null),
       change24hPercent: zchf.usd_24h_change != null ? round(zchf.usd_24h_change, 2) : null,
       volume24h: moneyFromUsd(zchf.usd_24h_vol ?? null, rate),
       marketCap: moneyFromUsd(zchf.usd_market_cap ?? null, rate),
@@ -132,13 +133,13 @@ export async function getMarketData() {
       ethereum: macroToken(macroData?.ethereum),
     },
     defiTotalMarketCap: moneyFromUsd(
-      globalData?.data?.total_market_cap?.usd ? Math.round(globalData.data.total_market_cap.usd) : null,
+      globalData?.data?.total_market_cap?.usd != null ? Math.round(globalData.data.total_market_cap.usd) : null,
       rate,
     ),
     fx: fxBlock(rate),
     updatedAt: new Date().toISOString(),
   };
 
-  if (!hasCg) result.note = CG_ABSENT_NOTE;
+  if (result.status !== "available") result.note = "Optional market sources unavailable or not configured; inspect sources. Public API prices remain available. checkedAt assesses a cached response, not provider freshness; asOf is null when not supplied.";
   return result;
 }

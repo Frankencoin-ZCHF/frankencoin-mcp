@@ -2,21 +2,38 @@
  * get_governance — FCS context/state plus indexed activity and underlying FPS trades.
  */
 
+import { observe } from "../lib/provider.js";
+import { apiFetch } from "../upstream/frankencoin.js";
 import { ponderQuery } from "../upstream/ponder.js";
-import { duneExecute } from "../upstream/dune.js";
+import { duneMetrics } from "./dune.js";
 import { fromWei, bpsToPercent, dateFromUnix, isoFromUnix } from "../lib/numbers.js";
-import { DUNE_QUERIES, chainName } from "../lib/constants.js";
+import { chainName } from "../lib/constants.js";
 import { FCS_REFERENCE } from "../lib/fcs.js";
 import { getFcs } from "./fcs.js";
 
-async function getRateProposals({ limit = 20 } = {}) {
+async function getRateProposals({ status = "all", limit = 20 } = {}) {
+  const pending = [];
+  let pendingSource = null;
+  if (status === "pending" || status === "all") {
+    const observed = await observe(apiFetch("/savings/leadrate/info"), (v) => v?.open && typeof v.open === "object" && !Array.isArray(v.open));
+    pendingSource = observed.health;
+    const rates = observed.value ?? {};
+    for (const [chainId, modules] of Object.entries(rates.open || {})) {
+      for (const [module, r] of Object.entries(modules)) pending.push({
+        date: dateFromUnix(r.created), chainId: Number(chainId), chainName: chainName(chainId),
+        module, ratePercent: bpsToPercent(r.nextRate), effectiveAt: isoFromUnix(r.nextChange),
+        txHash: r.txHash, proposer: r.proposer, status: "pending",
+      });
+    }
+    pending.sort((a, b) => b.date.localeCompare(a.date));
+  }
+  if (status === "pending") return { items: pending.slice(0, limit), status: pendingSource.status, pendingSource };
   const data = await ponderQuery(`{
     leadrateRateChangeds(limit: ${Math.min(limit, 100)}, orderBy: "created", orderDirection: "desc") {
       items { chainId module approvedRate created blockheight txHash }
     }
   }`);
-  // Note: pending proposals come from get_savings; this returns approved rate changes.
-  return (data.leadrateRateChangeds?.items || []).map((r) => ({
+  const approved = (data.leadrateRateChangeds?.items || []).map((r) => ({
     date: dateFromUnix(r.created),
     chainId: r.chainId,
     chainName: chainName(r.chainId),
@@ -25,16 +42,17 @@ async function getRateProposals({ limit = 20 } = {}) {
     txHash: r.txHash,
     status: "approved",
   }));
+  return { items: [...pending, ...approved].sort((a, b) => b.date.localeCompare(a.date)).slice(0, limit), status: pendingSource && pendingSource.status !== "available" ? (approved.length ? "partial" : "unavailable") : "available", pendingSource };
 }
 
 function mapMinter(m) {
   return {
     address: m.minter,
     chainId: m.chainId,
-    isActive: !m.denyDate,
+    isActive: !(Number(m.denyDate) > 0),
     applicationFeeChf: fromWei(m.applicationFee),
     appliedAt: m.applyDate ? isoFromUnix(m.applyDate) : null,
-    deniedAt: m.denyDate ? isoFromUnix(m.denyDate) : null,
+    deniedAt: Number(m.denyDate) > 0 ? isoFromUnix(m.denyDate) : null,
     suggestor: m.suggestor,
     applyMessage: m.applyMessage || null,
     denyMessage: m.denyMessage || null,
@@ -45,15 +63,14 @@ function mapMinter(m) {
 }
 
 async function getMinters({ status = "all", limit = 20 } = {}) {
+  const where = status === "denied" ? ', where: {denyDate_gt: "0"}' : status === "active" ? ', where: {OR: [{denyDate: null}, {denyDate: "0"}]}' : "";
   const data = await ponderQuery(`{
-    frankencoinMinters(limit: ${Math.min(limit, 100)}) {
+    frankencoinMinters(limit: ${Math.min(limit, 100)}${where}) {
       items { chainId txHash minter applicationPeriod applicationFee applyMessage applyDate suggestor denyMessage denyDate denyTxHash vetor }
+      pageInfo { hasNextPage endCursor }
     }
   }`);
-  let items = (data.frankencoinMinters?.items || []).map(mapMinter);
-  if (status === "active") items = items.filter((m) => m.isActive);
-  else if (status === "denied") items = items.filter((m) => !m.isActive);
-  return items;
+  return { items: (data.frankencoinMinters?.items || []).map(mapMinter), pageInfo: data.frankencoinMinters?.pageInfo ?? null };
 }
 
 function mapTrade(t) {
@@ -82,16 +99,8 @@ async function getEquityTrades({ limit = 20 } = {}) {
 
 async function getHolderStats() {
   const fcs = { count: null, note: "These Dune queries track ZCHF and underlying FPS, not FCS holders. FCS holder counts are unavailable here." };
-  const [zchf, fps] = await Promise.allSettled([
-    duneExecute(DUNE_QUERIES.zchfHolders),
-    duneExecute(DUNE_QUERIES.fpsHolders),
-  ]);
-  // No key (MissingSecretError) or upstream failure → soft note, never a 500.
-  if (zchf.status === "rejected" && zchf.reason?.name === "MissingSecretError") {
-    return { fcs, note: "Dune API key not configured — holder stats unavailable" };
-  }
-  const val = (r) => (r.status === "fulfilled" ? r.value?.[0] ?? null : null);
-  return { zchf: val(zchf), fps: val(fps), fcs };
+  const { values, ...health } = await duneMetrics(["zchfHolders", "fpsHolders"]);
+  return { zchf: values.zchfHolders?.[0] ?? null, fps: values.fpsHolders?.[0] ?? null, fcs, ...health };
 }
 
 export async function getGovernance({ type = "all", status = "all", limit = 20 } = {}) {
@@ -99,8 +108,17 @@ export async function getGovernance({ type = "all", status = "all", limit = 20 }
     fcs: type === "all" || type === "fcs" ? await getFcs() : FCS_REFERENCE,
     activityNote: "Indexed rate/minter activity and underlying FPS Equity trades, not a complete FCS governance or secondary-market trade history. A wrapper trader label identifies the contract, not the initiating holder. FCS API state is fetched for type=all or type=fcs; other filters include static FCS context only.",
   };
-  if (type === "all" || type === "rate_proposals") result.rateProposals = await getRateProposals({ limit });
-  if (type === "all" || type === "minters") result.minters = await getMinters({ status, limit });
+  if (type === "all" || type === "rate_proposals") {
+    const rates = await getRateProposals({ status, limit });
+    result.rateProposals = rates.items;
+    result.rateProposalsStatus = rates.status;
+    result.pendingRateSource = rates.pendingSource;
+  }
+  if (type === "all" || type === "minters") {
+    const minters = await getMinters({ status, limit });
+    result.minters = minters.items;
+    result.mintersPageInfo = minters.pageInfo;
+  }
   if (type === "all" || type === "equity_trades") result.equityTrades = await getEquityTrades({ limit });
   if (type === "all" || type === "holders") result.holders = await getHolderStats();
   return result;

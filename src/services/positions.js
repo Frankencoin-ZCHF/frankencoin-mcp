@@ -9,21 +9,19 @@
 
 import { apiFetch } from "../upstream/frankencoin.js";
 import { ponderQuery } from "../upstream/ponder.js";
+import { observeMetrics } from "../lib/metric-coverage.js";
+import { priceQuality } from "../lib/prices.js";
 import { cgFetch } from "../upstream/coingecko.js";
 import { fromWei, ppmToPercent, round, isoFromUnix } from "../lib/numbers.js";
 import { COINGECKO_IDS, chainName } from "../lib/constants.js";
 
-/** Best-effort CoinGecko simple/price enrichment; returns {} on any failure or no key. */
+/** Optional enrichment retains provider availability separately from missing values. */
 async function cgEnrich(addresses) {
   const cgIds = [...new Set(addresses.map((a) => COINGECKO_IDS[a]).filter(Boolean))];
-  if (cgIds.length === 0) return {};
-  try {
-    return await cgFetch(
-      `/simple/price?ids=${cgIds.join(",")}&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true`,
-    );
-  } catch {
-    return {};
-  }
+  if (cgIds.length === 0) return { value: {}, health: { status: "not_requested", asOf: null } };
+  return observeMetrics(cgFetch(
+    `/simple/price?ids=${cgIds.join(",")}&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true`,
+  ), cgIds, ["usd_24h_change", "usd_market_cap"]);
 }
 
 export async function getPositions({ detail = false, limit, activeOnly, collateral = null } = {}) {
@@ -33,6 +31,8 @@ export async function getPositions({ detail = false, limit, activeOnly, collater
     const addresses = data.addresses || [];
     return {
       total: data.num,
+      totalMatching: data.num ?? null,
+      totalScope: "source_open_population",
       returned: Math.min(effectiveLimit, addresses.length),
       addresses: addresses.slice(0, effectiveLimit),
       note: "Set detail=true for full position data including collateral, amounts, and pricing.",
@@ -65,20 +65,25 @@ export async function getPositions({ detail = false, limit, activeOnly, collater
   ]);
 
   const priceMap = {};
-  for (const p of prices) priceMap[p.address.toLowerCase()] = p;
+  for (const p of prices) priceMap[p.address.toLowerCase()] = priceQuality(p);
 
   const decimalsMap = {};
   for (const c of collateralList.list || []) decimalsMap[c.address.toLowerCase()] = c.decimals;
 
   const items = pData.mintingHubV2PositionV2s?.items || [];
-  const cgData = await cgEnrich(items.map((p) => p.collateral?.toLowerCase()).filter(Boolean));
+  const enrichment = await cgEnrich(items.map((p) => p.collateral?.toLowerCase()).filter(Boolean));
 
   return {
+    sources: { coingecko: enrichment.health },
     total: items.length,
+    returned: items.length,
+    totalMatching: null,
+    totalScope: "returned_page",
+    capacityNote: "availableForMinting is the source nominal allowance, not executable capacity; closed/denied/expired/cooldown and collateral constraints require additional contract checks. total is retained as a deprecated page-length alias; totalMatching is not provided by this query.",
     positions: items.map((p) => {
       const collateralAddr = p.collateral?.toLowerCase();
       const priceEntry = priceMap[collateralAddr];
-      const cg = cgData[COINGECKO_IDS[collateralAddr]] ?? null;
+      const cg = enrichment.value?.[COINGECKO_IDS[collateralAddr]] ?? null;
       const decimals = decimalsMap[collateralAddr] ?? p.collateralDecimals ?? 18;
 
       const collateralBalance = fromWei(p.collateralBalance, decimals);
@@ -101,14 +106,17 @@ export async function getPositions({ detail = false, limit, activeOnly, collater
           decimals,
           balance: collateralBalance,
           minimumRequired: fromWei(p.minimumCollateral, decimals),
+          freshness: priceEntry?.freshness ?? null,
           priceChf: currentPriceChf ?? null,
           priceUsd: priceEntry?.price?.usd ?? null,
           change24hPercent: cg?.usd_24h_change != null ? round(cg.usd_24h_change, 2) : null,
-          marketCapUsd: cg?.usd_market_cap ? Math.round(cg.usd_market_cap) : null,
+          marketCapUsd: cg?.usd_market_cap != null ? Math.round(cg.usd_market_cap) : null,
           valueChf: valueChf != null ? round(valueChf, 2) : null,
         },
         minted,
         availableForMinting: fromWei(p.availableForMinting),
+        availableForMintingNominal: fromWei(p.availableForMinting),
+        executableMintingCapacity: null,
         collateralRatioPercent: collateralRatio,
         liquidationPriceZchf: fromWei(p.price, 36 - decimals),
         riskPremiumPercent: ppmToPercent(p.riskPremiumPPM || 0),
@@ -160,18 +168,19 @@ export async function getChallenges({ limit = 20, activeOnly = false } = {}) {
   const sliced = list.slice(0, limit);
 
   const priceMap = {};
-  for (const p of prices) priceMap[p.address.toLowerCase()] = p;
+  for (const p of prices) priceMap[p.address.toLowerCase()] = priceQuality(p);
 
   const uniquePositions = [...new Set(sliced.map((c) => c.position.toLowerCase()))];
   const positionMap = await loadPositionContext(uniquePositions);
 
-  const cgData = await cgEnrich(
+  const enrichment = await cgEnrich(
     Object.values(positionMap).map((p) => p.collateral?.toLowerCase()).filter(Boolean),
   );
 
   const now = Date.now() / 1000;
 
   return {
+    sources: { coingecko: enrichment.health },
     total: data.num,
     active: (data.list || []).filter((c) => c.status !== "Success").length,
     challenges: sliced.map((c) => {
@@ -179,7 +188,7 @@ export async function getChallenges({ limit = 20, activeOnly = false } = {}) {
       const collateralDecimals = pos?.collateralDecimals ?? 18;
       const collateralAddr = pos?.collateral?.toLowerCase();
       const priceEntry = collateralAddr ? priceMap[collateralAddr] : null;
-      const cg = collateralAddr ? cgData[COINGECKO_IDS[collateralAddr]] : null;
+      const cg = collateralAddr ? enrichment.value?.[COINGECKO_IDS[collateralAddr]] : null;
 
       const liqPriceZchf = fromWei(c.liqPrice, 36 - collateralDecimals);
       const sizeHuman = fromWei(c.size, collateralDecimals);
@@ -204,10 +213,11 @@ export async function getChallenges({ limit = 20, activeOnly = false } = {}) {
           address: pos.collateral,
           symbol: pos.collateralSymbol,
           decimals: collateralDecimals,
+          freshness: priceEntry?.freshness ?? null,
           priceChf: priceChf ?? null,
           priceUsd: priceEntry?.price?.usd ?? null,
           change24hPercent: cg?.usd_24h_change != null ? round(cg.usd_24h_change, 2) : null,
-          marketCapUsd: cg?.usd_market_cap ? Math.round(cg.usd_market_cap) : null,
+          marketCapUsd: cg?.usd_market_cap != null ? Math.round(cg.usd_market_cap) : null,
         } : null,
         size: sizeHuman,
         filledSize: filledHuman,

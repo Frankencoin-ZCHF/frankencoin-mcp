@@ -18,6 +18,7 @@ import { pharosReportCards } from "../upstream/pharos.js";
 import { xerberusRegistryScores } from "../upstream/xerberus.js";
 import { isoFromUnix } from "../lib/numbers.js";
 import { PHAROS_STABLECOIN_ID, PHAROS_DIMENSIONS, XERBERUS_FC_ENTITIES } from "../lib/constants.js";
+import { providerFailure, availability } from "../lib/provider.js";
 import { MissingSecretError } from "../lib/errors.js";
 
 const isRecord = (v) => typeof v === "object" && v !== null;
@@ -75,14 +76,17 @@ async function getPharosSection() {
   try {
     const parsed = parsePharos(await pharosReportCards());
     if (!parsed) {
-      return { note: "Pharos returned no report card for ZCHF.", rating: null };
+      return { status: "unavailable", code: "empty_response", note: "Pharos returned no report card for ZCHF.", rating: null, asOf: null };
     }
-    return parsed;
+    const hasOverall = parsed.overallScore !== null;
+    const anyDimension = parsed.dimensions.some((d) => d.score !== null);
+    const complete = hasOverall && parsed.dimensions.every((d) => d.score !== null);
+    return { ...parsed, status: complete ? "available" : hasOverall || anyDimension ? "partial" : "unavailable", asOf: parsed.updatedAt, checkedAt: new Date().toISOString() };
   } catch (e) {
     if (e instanceof MissingSecretError) {
-      return { note: "Pharos API key not configured — stablecoin-safety ratings unavailable.", rating: null };
+      return { ...providerFailure(e), note: "Pharos API key not configured — stablecoin-safety ratings unavailable.", rating: null };
     }
-    throw e;
+    return { ...providerFailure(e), rating: null, note: "Pharos data unavailable; upstream request failed." };
   }
 }
 
@@ -114,6 +118,10 @@ async function getXerberusSection() {
   try {
     const ratings = parseXerberus(await xerberusRegistryScores());
     return {
+      status: ratings.every((r) => r.score !== null) ? "available" : ratings.some((r) => r.score !== null) ? "partial" : "unavailable",
+      asOf: null,
+      checkedAt: new Date().toISOString(),
+      freshnessNote: "Provider as-of timestamp not supplied by the registry response contract; checkedAt is an assessment time, not rating freshness.",
       provider: "Xerberus",
       providerUrl: "https://xerberus.io",
       ratings,
@@ -121,9 +129,9 @@ async function getXerberusSection() {
     };
   } catch (e) {
     if (e instanceof MissingSecretError) {
-      return { note: "Xerberus API key not configured — composite risk scores unavailable.", ratings: null };
+      return { ...providerFailure(e), note: "Xerberus API key not configured — composite risk scores unavailable.", ratings: null };
     }
-    throw e;
+    return { ...providerFailure(e), ratings: null, note: "Xerberus data unavailable; upstream request failed." };
   }
 }
 
@@ -144,5 +152,6 @@ export async function getRisk({ source = "all" } = {}) {
   };
   if (wantPharos) result.pharos = pharos;
   if (wantXerberus) result.xerberus = xerberus;
+  result.status = availability(Object.fromEntries(Object.entries({ pharos, xerberus }).filter(([, v]) => v !== undefined)));
   return result;
 }

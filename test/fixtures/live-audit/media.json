@@ -1,0 +1,329 @@
+{
+  "_comment": "This file contains media content (articles and videos) and manual metadata overrides. Open Graph data is fetched by default for articles. Only add manual overrides when you need to override specific fields.",
+  "articles": [
+    "https://www.thenextvertical.com/can-the-swiss-franc-go-on-chain-interview-with-johannes-kern-managing-director-at-frankencoin-association/",
+    "https://www.moneytoday.ch/news/internationale-kryptoboerse-listet-ab-sofort-frankencoin",
+    "https://www.finews.ch/news/finanzplatz/73899-frankencoin-listing-kraken-kryptoboerse",
+    "https://www.tippinpoint.ch/kraken-nimmt-schweizer-stablecoin-ins-angebot-auf/",
+    "https://www.moneytoday.ch/news/frankencoin-will-in-europa-terrain-besetzen",
+    "https://www.finews.ch/news/finanzplatz/72735-frankencoin-association-stablecoin-johannes-kern-mica-whitepaper-kryptoboerse-eu-zchf-schweizer-franken-finanzplatz-schweiz",
+    "https://crispybull.com/frankencoin-johannes-kern-swiss-franc-stablecoin/",
+    "https://cryptoadventure.com/vitalik-linked-wallet-buys-zchf-why-frankencoin-fits-his-stablecoin-thesis/",
+    "https://cointelegraph.com/news/allunity-swiss-franc-stablecoin-chfau-mica",
+    "https://www.nzz.ch/wirtschaft/der-digitale-franken-ist-da-aber-er-stammt-aus-deutschland-schweizer-anbieter-haben-keine-chance-ld.1926730",
+    "https://www.tippinpoint.ch/artikel/78597/den_zins_des_stablecoins_entfesseln.html",
+    "https://www.finews.ch/news/finanzplatz/70983-stablecoin-frankencoin-plusplus-finanzprodukte-etp-treasury-liquiditaetsbewirtschaftung-mietkaution-finanzplatz-schweiz",
+    "https://www.finews.ch/news/finanzplatz/70924-frankencoin-association-advisory-board-stablecoin-andre-scherrer-cedric-waldburger-eric-sarasin-philip-hopf-rene-keller-blockchain",
+    "https://www.tippinpoint.ch/artikel/78308/der_franken-stablecoin_wird_zahlungsmittel_und_macht_das_bankkonto_ueberfluessig_.html",
+    "https://www.tippinpoint.ch/artikel/77293/bitcoin-suisse-praesident_luzius_meisser_lanciert_mit_dem_frankencoin_einen_alternativen_digitalen_franken_.html",
+    "https://www.finews.ch/news/finanzplatz/68422-frankencoin-mt-pelerin-integration-johannes-kern-arnaud-salomon-zchf-stablecoin",
+    "https://agefi.com/de/nachrichten/unternehmen/der-erste-stablecoin-in-schweizer-franken-kann-jetzt-als-zahlungsmittel-in-der-schweiz-genutzt-werden",
+    "https://www.btc-echo.de/news/krypto-news-dach-frankencoin-stablecoin-haertesten-waehrung-europa-217105/",
+    "https://www.leaderdigital.ch/specials/investsg-2025-mit-energie-nachhaltigkeit-621/zwischen-bau-immobilien-und-fintech-14153.html",
+    "https://www.schweizeraktien.net/blog/2024/06/17/aktionariat-ein-neuer-handelsplatz-fuer-aktien-token-und-darin-integriert-der-frankencoin-63687/",
+    "https://www.20min.ch/story/tether-und-co-werden-stablecoins-die-naechste-finanzkrise-ausloesen-103387106",
+    "https://www.nzz.ch/wirtschaft/kunden-von-spar-schweiz-koennen-bereits-in-ueber-100-laeden-mit-kryptowaehrungen-bezahlen-ld.1898731",
+    "https://www.letemps.ch/cyber/crypto/le-bitcoin-continue-de-battre-des-records-porte-par-un-contexte-qui-lui-est-de-plus-en-plus-favorable",
+    "https://agefi.com/actualites/entreprises/frankencoin-valeur-locative-swatch-les-trois-mots-cles-de-la-semaine",
+    "https://agefi.com/actualites/trajectoires/johannes-kern-nomme-directeur-general-de-la-frankencoin-association",
+    "https://agefi.com/actualites/entreprises/le-frankencoin-desormais-disponible-sur-mt-pelerin",
+    "https://www.finews.ch/news/finanzplatz/71537-luzius-meisser-stablecoin-frankencoin-sbf-krypto-finig-allunity-finma-sif-bundesrat-micar-tether-bitcoin-finanzsystem-geldschoepfung-smartcontracts-dezentral-staking-lending-gold"
+  ],
+  "videos": [
+    "https://www.youtube.com/watch?v=qpSljn2UCBA",
+    "https://www.youtube.com/watch?v=ExuQRdgLfLY",
+    "https://www.youtube.com/watch?v=9-fBHEPSu7c",
+    "https://www.youtube.com/watch?v=2HOu1-F1jFk",
+    "https://www.youtube.com/watch?v=iVn_po_1-sY",
+    "https://www.youtube.com/watch?v=99EkLfdEE58&t=3465s",
+    "https://www.youtube.com/watch?v=Vey3nY8oKQs",
+    "https://www.youtube.com/watch?v=Onm3gOQCXlM",
+    "https://www.youtube.com/watch?v=eg_sqXwIfQk",
+    "https://www.youtube.com/watch?v=HHD0cWCfBS4",
+    "https://www.youtube.com/watch?v=xASCsQotwZk",
+    "https://www.youtube.com/watch?v=Xp3kf3RORmc",
+    "https://www.youtube.com/watch?v=GNYixPzeW3I",
+    "https://www.youtube.com/watch?v=05lqIc8nvWY",
+    "https://www.youtube.com/watch?v=SKBjuVndCZ8",
+    "https://www.youtube.com/watch?v=otCYU2AduGY",
+    "https://www.youtube.com/watch?v=uvpNgTYQUXc",
+    "https://youtu.be/YF_a7A7lwoQ"
+  ],
+  "articleMetadata": {
+    "https://www.thenextvertical.com/can-the-swiss-franc-go-on-chain-interview-with-johannes-kern-managing-director-at-frankencoin-association/": {
+      "title": "Can the Swiss Franc Go On-Chain?",
+      "description": "Johannes Kern turns the usual institutional-crypto debate around: instead of asking how crypto can fit into traditional finance, he argues that decentralized systems should be compelling enough for traditional finance to adopt them.",
+      "image": "https://storage.ghost.io/c/66/69/666997ad-b6ef-4453-964f-03eab7c2c978/content/images/size/w1200/2026/10/D1-panel-16-grey-background-v2.jpg",
+      "siteName": "The Next Vertical",
+      "publishedDate": "Jun 3, 2026"
+    },
+    "https://www.moneytoday.ch/news/internationale-kryptoboerse-listet-ab-sofort-frankencoin": {
+      "title": "Internationale Kryptobörse listet ab sofort Frankencoin",
+      "description": "Der Frankencoin gehört neu zum Handelsangebot von Kraken – ein wichtiger Schritt zu grösserer Reichweite für den Schweizer Stablecoin.",
+      "image": "https://www.moneytoday.ch/fileadmin/_processed_/d/b/csm_Frankcoin_Kraken_1df9c5d268.jpg",
+      "siteName": "MoneyToday",
+      "publishedDate": "Oct 9, 2026"
+    },
+    "https://www.finews.ch/news/finanzplatz/73899-frankencoin-listing-kraken-kryptoboerse": {
+      "title": "Frankencoin wird an internationalen Kryptobörse gelistet",
+      "description": "Die Kryptobörse Kraken nimmt Frankencoin (ZCHF) in ihr Handelsangebot auf. Mit dem Listing erhält der dezentrale Schweizer-Franken-Stablecoin Zugang zu einer internationalen Kryptobörse.",
+      "image": "https://www.finews.ch/images/news/2026/10/frankencoin.jpg",
+      "siteName": "finews.ch",
+      "publishedDate": "Oct 8, 2026"
+    },
+    "https://www.tippinpoint.ch/kraken-nimmt-schweizer-stablecoin-ins-angebot-auf/": {
+      "title": "Kraken nimmt Schweizer Stablecoin ins Angebot auf",
+      "description": "Die Kryptoplattform Kraken nimmt den Frankencoin (ZCHF) in ihr Handelsangebot auf. Damit wird die Kryptowährung erstmals über eine grosse internationale Kryptobörse zugänglich.",
+      "image": "https://storage.ghost.io/c/11/7a/117a3396-8af6-43a4-8dc5-f891a0cee13d/content/images/2026/10/Coin_Franken_2606173_090615.webp",
+      "siteName": "tippinpoint.ch",
+      "publishedDate": "Oct 8, 2026"
+    },
+    "https://www.moneytoday.ch/news/frankencoin-will-in-europa-terrain-besetzen": {
+      "title": "Frankencoin will in Europa Terrain besetzen",
+      "description": "Der grösste Schweizer-Franken-Stablecoin breitet seine Flügel aus und will sich über regulierte Kryptobörsen verstärkt in Europa etablieren.",
+      "image": "https://www.moneytoday.ch/fileadmin/_processed_/9/0/csm_Johannes_Kern_Frankencoin_c01e4ae5b2.jpg",
+      "siteName": "MoneyToday",
+      "publishedDate": "Jul 1, 2026"
+    },
+    "https://www.finews.ch/news/finanzplatz/72735-frankencoin-association-stablecoin-johannes-kern-mica-whitepaper-kryptoboerse-eu-zchf-schweizer-franken-finanzplatz-schweiz": {
+      "title": "Frankencoin sichert sich Zugang zum EU-Markt",
+      "description": "Der an die Schweizer Währung gekoppelte Frankencoin (ZCHF) kann auch künftig an Kryptobörsen in der EU gelistet werden. Die Frankencoin Association hat für den Stablecoin das MiCA-Whitepaper im europäischen Register publiziert, kurz vor Ablauf der Übergangsfrist.",
+      "image": "https://www.finews.ch/images/news/2026/06/Johannes-Kern.jpg",
+      "siteName": "finews.ch",
+      "publishedDate": "Jun 30, 2026"
+    },
+    "https://www.nzz.ch/wirtschaft/der-digitale-franken-ist-da-aber-er-stammt-aus-deutschland-schweizer-anbieter-haben-keine-chance-ld.1926730": {
+      "title": "Der digitale Franken kommt aus Deutschland. Schweizer Anbieter haben keine Chance",
+      "description": "Strenge Geldwäschereivorgaben verunmöglichen es Schweizer Firmen, einen Franken-Stablecoin zu lancieren. Nun bringt ein deutsches Unternehmen einen digitalen Franken auf den Markt – gestützt auf EU-Recht.",
+      "siteName": "NZZ",
+      "publishedDate": "Feb 27, 2026"
+    },
+    "https://www.tippinpoint.ch/artikel/78597/den_zins_des_stablecoins_entfesseln.html": {
+      "title": "Den Zins des Stablecoins entfesseln",
+      "description": "Die Schweiz tritt mit Verspätung in den Stablecoin-Markt ein. Die hohen Renditen der Stablecoins fliessen an schlecht regulierte ausländische Firmen. Frankencoin und Plusplus AG wollen das ändern.",
+      "image": "https://www.tippinpoint.ch/bilder/artikel/Illustrationen/2026/mid/Stablecoin_260243_210233.jpg",
+      "siteName": "Tippinpoint",
+      "publishedDate": "Feb 13, 2026"
+    },
+    "https://www.finews.ch/news/finanzplatz/70983-stablecoin-frankencoin-plusplus-finanzprodukte-etp-treasury-liquiditaetsbewirtschaftung-mietkaution-finanzplatz-schweiz": {
+      "title": "Die ersten Finanzprodukte auf den grössten Franken-Stablecoin",
+      "description": "Das Fintech Plusplus lanciert die ersten Finanzprodukte auf Basis von Frankencoin (ZCHF), dem grössten Schweizer-Franken-Stablecoin. Die Angebote umfassen eine Treasury-Lösung für Unternehmen und ein ETP für institutionelle und private Investoren.",
+      "image": "https://www.finews.ch/images/cache/ff1a8ccd13c2dbbe3996d02e581e713c_w646_h388_cp.jpg",
+      "siteName": "finews.ch",
+      "publishedDate": "Jan 28, 2026"
+    },
+    "https://www.finews.ch/news/finanzplatz/70924-frankencoin-association-advisory-board-stablecoin-andre-scherrer-cedric-waldburger-eric-sarasin-philip-hopf-rene-keller-blockchain": {
+      "title": "Franken-Stablecoin-Vereinigung setzt Beirat ein",
+      "description": "Die Frankencoin Association hat einen fünfköpfigen Beirat eingesetzt, um die nächste Entwicklungsphase des Schweizer Stablecoin-Ökosystems zu begleiten.",
+      "image": "https://www.finews.ch/images/cache/63e1071a2c45c4689f939402875f80fd_w646_h388_cp.jpg",
+      "siteName": "finews.ch",
+      "publishedDate": "Jan 22, 2026"
+    },
+    "https://www.tippinpoint.ch/artikel/78308/der_franken-stablecoin_wird_zahlungsmittel_und_macht_das_bankkonto_ueberfluessig_.html": {
+      "title": "Der Franken-Stablecoin wird Zahlungsmittel und macht das Bankkonto überflüssig",
+      "description": "Eine Gruppe von Kryptodienstleistern lanciert ein System mit Visakarte, Rendite und Cashback. Das neue Zahlungssystem soll wie die Lösungen von Revolut oder Neon funktionieren.",
+      "publishedDate": "Sep 23, 2025",
+      "image": "https://www.tippinpoint.ch/bilder/artikel/Illustrationen/2025/mid/Zahlen_Zahlsystem_Stablecoin_2509266_070910.jpg"
+    },
+    "https://www.tippinpoint.ch/artikel/77293/bitcoin-suisse-praesident_luzius_meisser_lanciert_mit_dem_frankencoin_einen_alternativen_digitalen_franken_.html": {
+      "title": "Bitcoin Suisse-Präsident Luzius Meisser lanciert mit dem Frankencoin einen alternativen digitalen Franken",
+      "description": "Der Krypto-Pionier bringt einen Stablecoin heraus, der den Frankenkurs eins-zu-eins abbildet. Dieser hat Ähnlichkeiten zu Pascale Bruderers Swiss Stablecoin. Ist aber trotzdem anders.",
+      "publishedDate": "Mar 15, 2024",
+      "image": "https://www.tippinpoint.ch/bilder/artikel/Personen/2023/mid/Luzius_Meisser_2312342_061232.jpg"
+    },
+    "https://agefi.com/de/nachrichten/unternehmen/der-erste-stablecoin-in-schweizer-franken-kann-jetzt-als-zahlungsmittel-in-der-schweiz-genutzt-werden": {
+      "title": "Der erste Stablecoin in Schweizer Franken kann jetzt als Zahlungsmittel in der Schweiz genutzt werden",
+      "description": "Akteure der Kryptoszene haben gemeinsam daran gearbeitet, den Frankencoin zu einer digitalen Währung für Einkäufe zu machen – ganz ohne Bankkonto.",
+      "image": "https://imagedelivery.net/6fxMw1R4OmixGeeEW8gKng/agefi.com/app/articles/GWjHkLg22CaNJve42GY5BjV8DQQ1ZJHsQ3WVnHk0/width=1080,quality=75,format=auto",
+      "siteName": "AGEFI",
+      "publishedDate": "Sep 29, 2025"
+    },
+    "https://www.letemps.ch/cyber/crypto/le-bitcoin-continue-de-battre-des-records-porte-par-un-contexte-qui-lui-est-de-plus-en-plus-favorable": {
+      "description": "La cryptomonnaie a progressé de 30% depuis le début de l'année, alors que le dollar a perdu 10% sur la même période. Le Congrès américain débat actuellement de trois projets de loi qui pourraient renforcer l'attractivité de cette devise numérique à terme",
+      "title": "Le bitcoin continue de battre des records, porté par un contexte qui lui est de plus en plus favorable",
+      "image": "https://letemps-17455.kxcdn.com/photos/5408ef1b-83da-4272-b653-ee95019f2160/giant.avif",
+      "siteName": "Le Temps",
+      "publishedDate": "Jul 15, 2025"
+    },
+    "https://agefi.com/actualites/entreprises/frankencoin-valeur-locative-swatch-les-trois-mots-cles-de-la-semaine": {
+      "description": "Vous n'avez pas eu le temps de suivre toute l'actualité économique et financière ces derniers jours? Voici les trois informations qui ont marqué cette semaine.",
+      "title": "Frankencoin, valeur locative, Swatch: les trois mots-clés de la semaine",
+      "image": "https://imagedelivery.net/6fxMw1R4OmixGeeEW8gKng/agefi.com/app/articles/5GbyVLSdRalu0KPw0pr9TYtxVpZgVrHWp385M8Fr/width=1080,quality=75,format=auto",
+      "siteName": "AGEFI",
+      "publishedDate": "Oct 4, 2025"
+    },
+    "https://agefi.com/actualites/trajectoires/johannes-kern-nomme-directeur-general-de-la-frankencoin-association": {
+      "description": "Le nouveau directeur supervisera la direction stratégique et opérationnelle de l'organisation zougoise.",
+      "title": "Johannes Kern nommé directeur général de la Frankencoin Association",
+      "image": "https://imagedelivery.net/6fxMw1R4OmixGeeEW8gKng/agefi.com/app/articles/I1Yp7lQ3fhbdbnQ7t3Awka5SJUje22sbSImxULKe/width=1080,quality=75,format=auto",
+      "siteName": "AGEFI",
+      "publishedDate": "Nov 26, 2024"
+    },
+    "https://agefi.com/actualites/entreprises/le-frankencoin-desormais-disponible-sur-mt-pelerin": {
+      "description": "Le stablecoin adossé au franc entame un partenariat avec la plateforme neuchâteloise régulée par la Finma, pour élargir sa base d'utilisateurs.",
+      "title": "Le frankencoin désormais disponible sur Mt Pelerin ",
+      "image": "https://imagedelivery.net/6fxMw1R4OmixGeeEW8gKng/agefi.com/app/articles/LwAD9TZzgFds6QfgKZsnZXJf6Rqjo1eVuKN3CLGq/width=1080,quality=75,format=auto",
+      "siteName": "AGEFI",
+      "publishedDate": "Jul 16, 2025"
+    },
+    "https://www.btc-echo.de/news/krypto-news-dach-frankencoin-stablecoin-haertesten-waehrung-europa-217105/": {
+      "siteName": "BTC-ECHO"
+    },
+    "https://www.schweizeraktien.net/blog/2024/06/17/aktionariat-ein-neuer-handelsplatz-fuer-aktien-token-und-darin-integriert-der-frankencoin-63687/": {
+      "publishedDate": "Jun 17, 2024"
+    },
+    "https://cryptoadventure.com/vitalik-linked-wallet-buys-zchf-why-frankencoin-fits-his-stablecoin-thesis/": {
+      "title": "Vitalik-Linked Wallet Buys ZCHF – Why Frankencoin Fits His Stablecoin Thesis",
+      "description": "A wallet linked to Vitalik Buterin has purchased ZCHF, aligning with his vision for decentralized, non-USD stablecoins. The article explores why Frankencoin fits Ethereum's co-founder's stablecoin thesis.",
+      "image": "/images/media/cryptoadventure-vitalik-zchf.svg",
+      "siteName": "CryptoAdventure",
+      "publishedDate": "Mar 31, 2026"
+    },
+    "https://cointelegraph.com/news/allunity-swiss-franc-stablecoin-chfau-mica": {
+      "title": "AllUnity Launches Swiss Franc Stablecoin CHFAU",
+      "description": "Deutsche Bank-backed AllUnity launches MiCA-compliant CHFAU. Frankencoin (ZCHF) named the largest CHF stablecoin with $38.6M combined market cap.",
+      "siteName": "CoinTelegraph",
+      "publishedDate": "Feb 26, 2026"
+    },
+    "https://www.finews.ch/news/finanzplatz/71537-luzius-meisser-stablecoin-frankencoin-sbf-krypto-finig-allunity-finma-sif-bundesrat-micar-tether-bitcoin-finanzsystem-geldschoepfung-smartcontracts-dezentral-staking-lending-gold": {
+      "title": "Luzius Meisser: «Wir müssen zurück zu einer liberalen Rechtsordnung»",
+      "description": "Luzius Meisser, Erfinder des Frankencoins, über die restriktive Finma-Haltung zu Stablecoins, den Wettbewerb mit Allunity, die Schweizer Rechtsordnung und die Zukunft dezentraler Stablecoins.",
+      "siteName": "finews.ch",
+      "publishedDate": "Mar 17, 2026"
+    },
+    "https://crispybull.com/frankencoin-johannes-kern-swiss-franc-stablecoin/": {
+      "title": "Exclusive: The Swiss Franc, Rebuilt for the Digital Age",
+      "description": "Johannes Kern, managing director at the Frankencoin Association, on why a Swiss franc stablecoin might just win.",
+      "siteName": "CrispyBull",
+      "publishedDate": "Jun 5, 2026"
+    }
+  },
+  "videoMetadata": {
+    "https://www.youtube.com/watch?v=qpSljn2UCBA": {
+      "title": "Frankencoin - présentation et épargne",
+      "description": "Frankencoin est un stablecoin répliquant la valeur du Franc Suisse sous le ticker ZCHF.",
+      "author": "Alpha Omega",
+      "publishedDate": "Oct 4, 2026",
+      "thumbnail": "/images/video-thumbnails/qpSljn2UCBA.jpg"
+    },
+    "https://www.youtube.com/watch?v=ExuQRdgLfLY": {
+      "title": "Can Stablecoins, CBDCs and Tokenised Deposits Coexist | EBC12",
+      "description": "Panel discussion from the European Blockchain Convention (EBC12) on whether stablecoins, CBDCs and tokenised deposits can coexist.",
+      "author": "European Blockchain Convention",
+      "publishedDate": "Oct 1, 2026",
+      "thumbnail": "/images/video-thumbnails/ExuQRdgLfLY.jpg"
+    },
+    "https://www.youtube.com/watch?v=9-fBHEPSu7c": {
+      "title": "The Benefits of Not Needing an Oracle for Introducing a New Collateral - with Paolo Di Stefano",
+      "description": "Paolo Di Stefano, Frankencoin's Director of Collateral Management, explains how the protocol evaluates and onboards new collateral without relying on price oracles.",
+      "author": "Frankencoin",
+      "publishedDate": "Aug 6, 2026",
+      "thumbnail": "/images/video-thumbnails/9-fBHEPSu7c.jpg"
+    },
+    "https://www.youtube.com/watch?v=2HOu1-F1jFk": {
+      "title": "The oracle-free stablecoin: how Frankencoin holds a Swiss franc peg | Fireside with Frankencoin",
+      "description": "Johannes Kern explains how Frankencoin's decentralized, over-collateralized Swiss-franc stablecoin works, including its oracle-free auction-based liquidation model and path to payments, savings and self-custody.",
+      "author": "Range",
+      "publishedDate": "Aug 19, 2026",
+      "thumbnail": "/images/video-thumbnails/2HOu1-F1jFk.jpg"
+    },
+    "https://www.youtube.com/watch?v=iVn_po_1-sY": {
+      "title": "Episode #8 Frankencoin",
+      "description": "Johannes Kern joins Trading Strategy to discuss Frankencoin's optimistic governance, oracle-free collateralised debt model, protocol risk management and sustainable vaults.",
+      "author": "Trading Strategy",
+      "publishedDate": "Aug 12, 2026",
+      "thumbnail": "/images/video-thumbnails/iVn_po_1-sY.jpg"
+    },
+    "https://www.youtube.com/watch?v=99EkLfdEE58&t=3465s": {
+      "title": "ETHConf Crypto Startup Showdown – Frankencoin Pitch",
+      "description": "Frankencoin's ETHConf Crypto Startup Showdown pitch, timestamped to the Frankencoin segment at 57:45.",
+      "author": "ETHGlobal",
+      "publishedDate": "Jul 5, 2026",
+      "thumbnail": "/images/video-thumbnails/99EkLfdEE58.jpg"
+    },
+    "https://www.youtube.com/watch?v=Vey3nY8oKQs": {
+      "title": "EU auf dem falschen Dampfer: Bitcoin-Guru über Finanzpolitik, Künstliche Intelligenz und die Schweiz",
+      "description": "Dr. Luzius Meisser discusses European financial policy, Bitcoin as digital gold, artificial intelligence, and Switzerland's position in a changing financial system.",
+      "author": "DIE WELTWOCHE",
+      "publishedDate": "May 17, 2026",
+      "thumbnail": "/images/video-thumbnails/Vey3nY8oKQs.jpg"
+    },
+    "https://www.youtube.com/watch?v=Onm3gOQCXlM": {
+      "title": "Die größte Veränderung unseres Geldsystems läuft bereits!",
+      "description": "Philip Hopf interviews Dr. Luzius Meisser about stablecoins, Tether, financial freedom, and Frankencoin as a decentralized Swiss franc stablecoin.",
+      "author": "HKCM",
+      "publishedDate": "May 31, 2026",
+      "thumbnail": "/images/video-thumbnails/Onm3gOQCXlM.jpg"
+    },
+    "https://www.youtube.com/watch?v=eg_sqXwIfQk": {
+      "title": "Johannes Kern, Frankencoin | The Other 3%, Why the World Needs a Stablecoin That Isn't the Dollar",
+      "description": "Johannes Kern explains why the world needs credible non-USD stablecoins and how Frankencoin brings the Swiss franc onchain as a decentralized alternative.",
+      "author": "Stable Summit",
+      "publishedDate": "Jun 11, 2026",
+      "thumbnail": "/images/video-thumbnails/eg_sqXwIfQk.jpg"
+    },
+    "https://www.youtube.com/watch?v=Xp3kf3RORmc": {
+      "title": "Stablecoins & The Swiss Franc",
+      "description": "Johannes Kern, Managing Director of the Frankencoin Association, discusses stablecoins and the Swiss franc with WHVP.",
+      "author": "WHVP",
+      "publishedDate": "Mar 26, 2026",
+      "thumbnail": "/images/video-thumbnails/Xp3kf3RORmc.jpg"
+    },
+    "https://www.youtube.com/watch?v=GNYixPzeW3I": {
+      "title": "Decentralized Credit and Stablecoins, the Potential for Swiss Banking | Luzius Meisser",
+      "description": "Luzius Meisser presents on decentralized credit and stablecoins, exploring the potential for Swiss banking at Crypto Valley Conference.",
+      "author": "Crypto Valley",
+      "publishedDate": "Mar 8, 2026",
+      "thumbnail": "/images/video-thumbnails/GNYixPzeW3I.jpg"
+    },
+    "https://www.youtube.com/watch?v=05lqIc8nvWY": {
+      "title": "Frankencoin 2025 Recap Interview - with Managing Director Johannes Kern",
+      "description": "Earlier this December, DAdvisoor sat down with Johannes Kern, the Managing Director of the Frankencoin Association, to talk about Frankencoin, the advancements made in 2025, and what's on the horizon for 2026.",
+      "author": "Frankencoin",
+      "publishedDate": "Dec 31, 2025",
+      "thumbnail": "/images/video-thumbnails/05lqIc8nvWY.jpg"
+    },
+    "https://www.youtube.com/watch?v=uvpNgTYQUXc": {
+      "title": "Onchain FX: Opportunities & Challenges for the next phase of DeFi Stablecoins - Panel",
+      "description": "This panel explores the evolution of onchain foreign exchange and stablecoins beyond the US dollar. The discussion dives deep into how local stablecoins are reshaping global finance.",
+      "author": "Stable Summit",
+      "publishedDate": "Dec 1, 2025",
+      "thumbnail": "/images/video-thumbnails/uvpNgTYQUXc.jpg"
+    },
+    "https://www.youtube.com/watch?v=SKBjuVndCZ8": {
+      "title": "A Real Stable Stablecoin: The Cultural Roots of a Sound Currency",
+      "description": "\"The Swiss franc dodged every shady financial trend for 150 years.\" - Johannes Kern, Managing Director, Frankencoin. Frankencoin is built on the Swiss franc, combining cultural heritage with modern blockchain technology.",
+      "author": "Stable Summit",
+      "publishedDate": "Jul 15, 2025",
+      "thumbnail": "/images/video-thumbnails/SKBjuVndCZ8.jpg"
+    },
+    "https://youtu.be/YF_a7A7lwoQ": {
+      "title": "In welche Währung muss man jetzt \"Krypto\"-Gewinne umschichten (Interview mit Johannes Kern)",
+      "description": "Interview with Johannes Kern about cryptocurrency gains and the importance of stable currencies in the current market environment.",
+      "author": "Marc Steiner Investment Academy",
+      "publishedDate": "Jul 2, 2025",
+      "thumbnail": "/images/video-thumbnails/YF_a7A7lwoQ.jpg"
+    },
+    "https://www.youtube.com/watch?v=otCYU2AduGY": {
+      "title": "Bridging TradFi and DeFi: RWA-Backed Stables (Panel)",
+      "description": "Panel discussion featuring Jacob Laufer (M^0), Johannes Kern (Frankencoin Association), and Jennifer Senha exploring the intersection of traditional finance and DeFi through real-world asset-backed stablecoins.",
+      "author": "Stable Summit",
+      "publishedDate": "Mar 14, 2025",
+      "thumbnail": "/images/video-thumbnails/otCYU2AduGY.jpg"
+    },
+    "https://www.youtube.com/watch?v=HHD0cWCfBS4": {
+      "title": "Dr. Luzius Meisser, Frankencoin Association | The Macro Mechanics Behind Decentralized Credit",
+      "description": "Luzius Meisser explores how decentralized credit systems create money onchain, how DeFi stablecoins reshape capital allocation, and why freer financial infrastructure matters for long-term growth.",
+      "author": "Stable Summit",
+      "publishedDate": "Mar 28, 2026",
+      "thumbnail": "/images/video-thumbnails/HHD0cWCfBS4.jpg"
+    },
+    "https://www.youtube.com/watch?v=xASCsQotwZk": {
+      "title": "Panel | Institutional Use Cases and Adoption Limits of Non-USD Stablecoins",
+      "description": "Johannes Kern joins Stable Summit panelists to discuss where non-USD stablecoins fit in institutional treasury, settlement, and balance sheet workflows — and what still blocks broader adoption.",
+      "author": "Stable Summit",
+      "publishedDate": "Mar 27, 2026",
+      "thumbnail": "/images/video-thumbnails/xASCsQotwZk.jpg"
+    }
+  }
+}

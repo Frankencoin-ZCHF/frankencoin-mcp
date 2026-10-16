@@ -22,7 +22,8 @@ export async function getSavings() {
         chainName: chainName(chainId),
         module: moduleAddr,
         ratePercent: bpsToPercent(m.approvedRate),
-        rateBps: m.approvedRate,
+        rateBps: m.approvedRate / 100,
+        ratePpm: m.approvedRate,
         appliedAt: isoFromUnix(m.created),
         voteCount: m.count,
       });
@@ -30,14 +31,15 @@ export async function getSavings() {
   }
 
   const proposed = [];
-  for (const [chainId, modules] of Object.entries(rateData.proposed || {})) {
+  for (const [chainId, modules] of Object.entries(rateData.open || {})) {
     for (const [moduleAddr, m] of Object.entries(modules)) {
       proposed.push({
         chainId: Number(chainId),
         chainName: chainName(chainId),
         module: moduleAddr,
         proposedRatePercent: bpsToPercent(m.nextRate),
-        proposedRateBps: m.nextRate,
+        proposedRateBps: m.nextRate / 100,
+        proposedRatePpm: m.nextRate,
         proposer: m.proposer,
         effectiveAt: isoFromUnix(m.nextChange),
         proposedAt: isoFromUnix(m.created),
@@ -74,12 +76,12 @@ export async function getSavings() {
   const totalInterestPaidChf = stats.reduce((sum, s) => sum + (s.totalInterestPaid.chf ?? 0), 0);
 
   return {
-    rates: { approved, proposed },
+    rates: { approved, proposed, pendingStatus: rateData.open && typeof rateData.open === "object" && !Array.isArray(rateData.open) ? "available" : "unavailable" },
     stats,
     summary: {
       totalDeposited: money(totalDepositedChf, rate),
       totalInterestPaid: money(totalInterestPaidChf, rate),
-      pendingRateChanges: proposed.length,
+      pendingRateChanges: rateData.open && typeof rateData.open === "object" && !Array.isArray(rateData.open) ? proposed.length : null,
     },
     fx: fxBlock(rate),
   };

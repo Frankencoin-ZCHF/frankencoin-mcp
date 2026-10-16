@@ -12,6 +12,7 @@ export const DUNE_BASE = "https://api.dune.com/api/v1";
 export const CG_BASE = "https://pro-api.coingecko.com/api/v3";
 export const ETH_RPC = "https://eth.llamarpc.com";
 export const GITHUB_API = "https://api.github.com";
+export const GITHUB_RAW = "https://raw.githubusercontent.com";
 export const MERCH_BASE = "https://merch.frankencoin.com";
 export const MERCH_URL = `${MERCH_BASE}/products.json?limit=250`;
 // Shopify's own MCP servers for this store — agents interact with the store DIRECTLY

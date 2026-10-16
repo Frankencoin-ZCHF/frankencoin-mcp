@@ -7,20 +7,28 @@
 
 import { fetchJson } from "./client.js";
 import { getOrLoad } from "../cache.js";
-import { GITHUB_API } from "../lib/constants.js";
+import { GITHUB_API, GITHUB_RAW } from "../lib/constants.js";
 import { UpstreamError } from "../lib/errors.js";
 
 const TTL = 6 * 60 * 60_000; // 6 h
 const SWR = 6 * 60 * 60_000;
 
 async function fetchFile(repo, path) {
-  const data = await fetchJson(`${GITHUB_API}/repos/${repo}/contents/${path}`, {
-    source: "github",
-    timeout: 10_000,
-    headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "frankencoin-mcp" },
-  });
-  if (typeof data?.content !== "string") throw new UpstreamError("github");
-  return Buffer.from(data.content, "base64").toString("utf8");
+  try {
+    const data = await fetchJson(`${GITHUB_API}/repos/${repo}/contents/${path}`, {
+      source: "github", timeout: 10_000, retries: 0,
+      headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "frankencoin-mcp" },
+    });
+    if (typeof data?.content !== "string") throw new UpstreamError("github");
+    return Buffer.from(data.content, "base64").toString("utf8");
+  } catch {
+    // Same fixed public repository/path on its verified default branch. No credentials,
+    // user-selected destinations or data substitution; raw delivery avoids Contents quotas.
+    return fetchJson(`${GITHUB_RAW}/${repo}/main/${path}`, {
+      source: "github", timeout: 10_000, retries: 0, expectJson: false,
+      headers: { Accept: "text/plain", "User-Agent": "frankencoin-mcp" },
+    });
+  }
 }
 
 export function githubFile(repo, path) {

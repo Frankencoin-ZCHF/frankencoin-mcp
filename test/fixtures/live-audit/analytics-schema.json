@@ -1,0 +1,1 @@
+{"data": {"__type": {"fields": [{"name": "date"}, {"name": "timestamp"}, {"name": "txHash"}, {"name": "totalInflow"}, {"name": "totalOutflow"}, {"name": "totalEquity"}, {"name": "totalSavings"}, {"name": "fpsTotalSupply"}, {"name": "fpsPrice"}, {"name": "realizedNetEarnings"}, {"name": "earningsPerFPS"}]}}}

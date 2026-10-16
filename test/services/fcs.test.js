@@ -105,6 +105,8 @@ test("snapshot keeps underlying FPS economics separate from the shared FCS state
 test("governance identifies wrapper-originated FPS trades without claiming FCS holder counts", async () => {
   setFetchImpl(async (url) => {
     if (url.endsWith("/fcs/info")) return response(info());
+    // Governance now reads the authoritative open set, separate from indexed approved history.
+    if (url.endsWith("/savings/leadrate/info")) return response({ open: {} });
     if (url.includes("ponder.frankencoin.com")) return response({ data: {
       leadrateRateChangeds: { items: [] }, frankencoinMinters: { items: [] },
       equityTrades: { items: [{ trader: "0xDb861830D9Ae2d1fCF99fA0cfd3973de382B0B5b", kind: "Buy", shares: "2000000000000000000", created: "1720000000" }] },
