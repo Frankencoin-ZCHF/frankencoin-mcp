@@ -290,47 +290,38 @@ export async function getFrontends() {
 }
 
 export async function getNews() {
+  // Fetch, validate and map inside each independent observation boundary.
+  const array = (data, key, itemValid) => {
+    if (!Array.isArray(data?.[key]) || !data[key].every(itemValid)) throw new TypeError("Invalid content schema");
+    return data[key];
+  };
+  const record = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  const text = (v) => typeof v === "string" && v.length > 0;
+  const section = (path, map) => observe(githubJson(SITE_REPO, path).then(map));
   const observed = await Promise.all([
-    observe(githubJson(SITE_REPO, "src/content/shared/media.json")),
-    observe(githubJson(SITE_REPO, "src/content/en/use-cases.json")),
-    observe(githubJson(SITE_REPO, "src/content/en/ecosystem.json")),
-  ]);
-  const [mediaData, useCaseData, ecosystemData] = observed.map((r) => r.value ?? {});
-  const sources = Object.fromEntries(["media", "useCases", "ecosystem"].map((name, i) => [name, observed[i].health]));
-
-  const articles = (mediaData.articles ?? []).map((url) => {
-    const meta = mediaData.articleMetadata?.[url] ?? {};
-    return {
-      url,
-      title: meta.title ?? null,
-      description: meta.description ?? null,
-      siteName: meta.siteName ?? null,
-      publishedDate: meta.publishedDate ?? null,
-      image: meta.image ?? null,
-    };
-  });
-
-  const videos = (mediaData.videos ?? []).map((url) => {
-    const meta = mediaData.videoMetadata?.[url] ?? {};
-    return {
-      url,
-      title: meta.title ?? null,
-      description: meta.description ?? null,
-      author: meta.author ?? null,
-      publishedDate: meta.publishedDate ?? null,
-    };
-  });
-
-  return {
-    status: availability(sources),
-    sources,
-    media: observed[0].value ? { articles, videos } : null,
-    useCases: observed[1].value === null ? null : (useCaseData.cases ?? []).map((c) => ({
+    section("src/content/shared/media.json", (data) => ({
+      articles: array(data, "articles", text).map((url) => {
+        const meta = data.articleMetadata?.[url] ?? {};
+        return { url, title: meta.title ?? null, description: meta.description ?? null, siteName: meta.siteName ?? null, publishedDate: meta.publishedDate ?? null, image: meta.image ?? null };
+      }),
+      videos: array(data, "videos", text).map((url) => {
+        const meta = data.videoMetadata?.[url] ?? {};
+        return { url, title: meta.title ?? null, description: meta.description ?? null, author: meta.author ?? null, publishedDate: meta.publishedDate ?? null };
+      }),
+    })),
+    section("src/content/en/use-cases.json", (data) => array(data, "cases", record).map((c) => ({
       title: c.title, partner: c.partner, category: c.category, description: c.description, url: c.link,
-    })),
-    ecosystem: observed[2].value === null ? null : (ecosystemData.tabs ?? []).map((t) => ({
+    }))),
+    section("src/content/en/ecosystem.json", (data) => array(data, "tabs", record).map((t) => ({
       name: t.name, category: t.category ?? t.badge, description: t.description, url: t.href,
-    })),
+    }))),
+  ]);
+  const sources = Object.fromEntries(["media", "useCases", "ecosystem"].map((name, i) => [name, observed[i].health]));
+  return {
+    status: availability(sources), sources,
+    media: observed[0].value,
+    useCases: observed[1].value,
+    ecosystem: observed[2].value,
     note: "Content sourced from the Frankencoin website repository (cached). Unavailable sections are null with explicit source status, not fabricated empty datasets.",
   };
 }

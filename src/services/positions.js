@@ -9,7 +9,7 @@
 
 import { apiFetch } from "../upstream/frankencoin.js";
 import { ponderQuery } from "../upstream/ponder.js";
-import { observe } from "../lib/provider.js";
+import { observeMetrics } from "../lib/metric-coverage.js";
 import { priceQuality } from "../lib/prices.js";
 import { cgFetch } from "../upstream/coingecko.js";
 import { fromWei, ppmToPercent, round, isoFromUnix } from "../lib/numbers.js";
@@ -19,9 +19,9 @@ import { COINGECKO_IDS, chainName } from "../lib/constants.js";
 async function cgEnrich(addresses) {
   const cgIds = [...new Set(addresses.map((a) => COINGECKO_IDS[a]).filter(Boolean))];
   if (cgIds.length === 0) return { value: {}, health: { status: "not_requested", asOf: null } };
-  return observe(cgFetch(
+  return observeMetrics(cgFetch(
     `/simple/price?ids=${cgIds.join(",")}&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true`,
-  ), (v) => v && Object.keys(v).length > 0);
+  ), cgIds, ["usd_24h_change", "usd_market_cap"]);
 }
 
 export async function getPositions({ detail = false, limit, activeOnly, collateral = null } = {}) {
@@ -110,7 +110,7 @@ export async function getPositions({ detail = false, limit, activeOnly, collater
           priceChf: currentPriceChf ?? null,
           priceUsd: priceEntry?.price?.usd ?? null,
           change24hPercent: cg?.usd_24h_change != null ? round(cg.usd_24h_change, 2) : null,
-          marketCapUsd: cg?.usd_market_cap ? Math.round(cg.usd_market_cap) : null,
+          marketCapUsd: cg?.usd_market_cap != null ? Math.round(cg.usd_market_cap) : null,
           valueChf: valueChf != null ? round(valueChf, 2) : null,
         },
         minted,
@@ -217,7 +217,7 @@ export async function getChallenges({ limit = 20, activeOnly = false } = {}) {
           priceChf: priceChf ?? null,
           priceUsd: priceEntry?.price?.usd ?? null,
           change24hPercent: cg?.usd_24h_change != null ? round(cg.usd_24h_change, 2) : null,
-          marketCapUsd: cg?.usd_market_cap ? Math.round(cg.usd_market_cap) : null,
+          marketCapUsd: cg?.usd_market_cap != null ? Math.round(cg.usd_market_cap) : null,
         } : null,
         size: sizeHuman,
         filledSize: filledHuman,

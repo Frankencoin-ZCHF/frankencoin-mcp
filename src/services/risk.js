@@ -80,7 +80,8 @@ async function getPharosSection() {
     }
     const hasOverall = parsed.overallScore !== null;
     const anyDimension = parsed.dimensions.some((d) => d.score !== null);
-    return { ...parsed, status: hasOverall ? "available" : anyDimension ? "partial" : "unavailable", asOf: parsed.updatedAt, checkedAt: new Date().toISOString() };
+    const complete = hasOverall && parsed.dimensions.every((d) => d.score !== null);
+    return { ...parsed, status: complete ? "available" : hasOverall || anyDimension ? "partial" : "unavailable", asOf: parsed.updatedAt, checkedAt: new Date().toISOString() };
   } catch (e) {
     if (e instanceof MissingSecretError) {
       return { ...providerFailure(e), note: "Pharos API key not configured — stablecoin-safety ratings unavailable.", rating: null };

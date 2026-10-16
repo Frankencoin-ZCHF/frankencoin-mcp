@@ -16,34 +16,27 @@ import { cgFetch } from "../upstream/coingecko.js";
 import { ethCall } from "../upstream/eth.js";
 import { priceQuality } from "../lib/prices.js";
 import { observe } from "../lib/provider.js";
+import { observeMetrics } from "../lib/metric-coverage.js";
 import { COINGECKO_IDS, CHFAU_CONTRACT } from "../lib/constants.js";
 import { pegDeviation, pegStatus, round, money, moneyPair, moneyFromUsd } from "../lib/numbers.js";
 import { chfUsdRateFromPrices, fxBlock } from "./fx.js";
 
 export async function getMarketData() {
   const collateralCgIds = [...new Set(Object.values(COINGECKO_IDS))].join(",");
+  const metrics = ["usd", "chf", "usd_24h_change", "usd_market_cap"];
   const [rawPrices, ...observed] = await Promise.all([
     apiFetch("/prices/list"),
     observe(ethCall(CHFAU_CONTRACT, "0x18160ddd"), (v) => typeof v === "string" && /^0x[0-9a-f]+$/i.test(v)),
-    observe(cgFetch(`/simple/price?ids=frankencoin&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`), (v) => v?.frankencoin?.usd != null),
-    observe(cgFetch(`/simple/price?ids=bitcoin,ethereum&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`), (v) => v?.bitcoin?.usd != null || v?.ethereum?.usd != null),
-    observe(cgFetch(`/simple/price?ids=${collateralCgIds}&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true`), (v) => v && Object.values(v).some((x) => x?.usd != null)),
-    observe(cgFetch(`/global`), (v) => v?.data?.total_market_cap?.usd != null),
-    observe(cgFetch(`/coins/markets?vs_currency=chf&ids=frankencoin,vnx-swiss-franc&order=market_cap_desc&sparkline=false&price_change_percentage=24h`), (v) => Array.isArray(v) && v.length > 0),
+    observeMetrics(cgFetch(`/simple/price?ids=frankencoin&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`), ["frankencoin"], [...metrics, "usd_24h_vol"]),
+    observeMetrics(cgFetch(`/simple/price?ids=bitcoin,ethereum&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`), ["bitcoin", "ethereum"], [...metrics, "usd_24h_vol"]),
+    observeMetrics(cgFetch(`/simple/price?ids=${collateralCgIds}&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true`), collateralCgIds.split(","), metrics),
+    observe(cgFetch(`/global`), (v) => Number.isFinite(v?.data?.total_market_cap?.usd)),
+    observeMetrics(cgFetch(`/coins/markets?vs_currency=chf&ids=frankencoin,vnx-swiss-franc&order=market_cap_desc&sparkline=false&price_change_percentage=24h`), ["frankencoin", "vnx-swiss-franc"], ["current_price", "market_cap", "total_volume", "price_change_percentage_24h", "circulating_supply"], true),
   ]);
   const fcPrices = (rawPrices || []).map((row) => priceQuality(row));
   const [chfauSupplyHex, zchfData, macroData, collateralData, globalData, chfStableData] = observed.map((r) => r.value);
   const names = ["chfauSupply", "coingeckoZchf", "coingeckoMacro", "coingeckoCollateral", "coingeckoGlobal", "coingeckoStablecoins"];
   const sources = Object.fromEntries(names.map((name, i) => [name, observed[i].health]));
-  // A 200 with only part of the requested dataset is not full source availability.
-  const expected = [null, ["frankencoin"], ["bitcoin", "ethereum"], collateralCgIds.split(","), null, ["frankencoin", "vnx-swiss-franc"]];
-  observed.forEach((entry, i) => {
-    if (!expected[i] || entry.health.status !== "available") return;
-    const missing = expected[i].filter((id) => Array.isArray(entry.value)
-      ? !entry.value.some((v) => v.id === id && v.current_price != null)
-      : entry.value[id]?.usd == null);
-    if (missing.length) Object.assign(entry.health, { status: "partial", missingFields: missing });
-  });
 
   const rate = chfUsdRateFromPrices(fcPrices);
   const fps = (fcPrices || []).find((p) => p.symbol === "FPS");
@@ -73,7 +66,7 @@ export async function getMarketData() {
       freshness: fcEntry?.freshness ?? null,
       price: moneyPair(fcEntry?.price?.chf ?? cg.chf ?? null, cg.usd ?? fcEntry?.price?.usd ?? null),
       change24hPercent: cg.usd_24h_change != null ? round(cg.usd_24h_change, 2) : null,
-      marketCap: moneyFromUsd(cg.usd_market_cap ? Math.round(cg.usd_market_cap) : null, rate),
+      marketCap: moneyFromUsd(cg.usd_market_cap != null ? Math.round(cg.usd_market_cap) : null, rate),
     };
   }).sort((a, b) => (b.marketCap.usd ?? 0) - (a.marketCap.usd ?? 0));
 
@@ -114,7 +107,7 @@ export async function getMarketData() {
     price: moneyPair(m?.chf ?? null, m?.usd ?? null),
     change24hPercent: m?.usd_24h_change != null ? round(m.usd_24h_change, 2) : null,
     volume24h: moneyFromUsd(m?.usd_24h_vol ?? null, rate),
-    marketCap: moneyFromUsd(m?.usd_market_cap ? Math.round(m.usd_market_cap) : null, rate),
+    marketCap: moneyFromUsd(m?.usd_market_cap != null ? Math.round(m.usd_market_cap) : null, rate),
   });
 
   const result = {
@@ -140,7 +133,7 @@ export async function getMarketData() {
       ethereum: macroToken(macroData?.ethereum),
     },
     defiTotalMarketCap: moneyFromUsd(
-      globalData?.data?.total_market_cap?.usd ? Math.round(globalData.data.total_market_cap.usd) : null,
+      globalData?.data?.total_market_cap?.usd != null ? Math.round(globalData.data.total_market_cap.usd) : null,
       rate,
     ),
     fx: fxBlock(rate),

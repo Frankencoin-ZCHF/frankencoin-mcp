@@ -15,6 +15,14 @@ These are candidate code changes, not a claim that production is deployed or tha
 
 FCS remains the holder-facing wrapper/governance token, FPS the underlying Equity token. No on-chain writes, transaction or webhook features, authentication/allowlist broadening, credential changes, deployment or merge are included.
 
+## Independent-review repairs (R1–R3)
+
+- Root/application version remains 3.1.0; unrelated shebang-regex lock metadata is restored to the unchanged 3.0.0 tarball.
+- CoinGecko availability validates every requested ID and finite metric, not just USD-price presence. Missing fields are enumerated; some usable fields mean partial, none mean unavailable. Invalid numeric values become null; real zero caps, volumes and changes survive. Position/challenge enrichment checks both consumed metrics for all requested IDs.
+- Dune rejects null/non-object rows and validates the supported `holders` column as a nonnegative safe integer. Mixed valid/invalid rows are partial. **Series schemas remain unverified:** minting/TVL columns and units cannot be established from the retained evidence. Their metrics remain null/unavailable with `unverified_metric_schema`; object rows are retained separately in `unverifiedRows`, explicitly not validated metrics. A production query/schema capture is still required; no column names, units or replacement amounts were invented.
+- Pharos needs the overall score and all five finite dimension scores for full availability; incomplete scores are partial.
+- News validates required arrays and maps each section inside its observation boundary. Missing/malformed sections are null; explicit empty arrays are valid. Healthy media survives malformed use cases.
+
 ## Verification
 
 Deterministic regressions use public response-body fixtures and explicitly synthetic failure cases; raw private logs, session headers and credentials are excluded. Run `npm ci --ignore-scripts && npm test` on Node 20–22. There is no project lint or build script; source syntax checks and `git diff --check` supplement tests. Paid/credentialed providers require separately authorised operational verification; graceful degradation is not proof of restored service.
