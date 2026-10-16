@@ -68,7 +68,7 @@ export const TOOLS = [
   {
     name: "get_governance",
     description:
-      "FCS governance: canonical holder-facing share token, 1:1 underlying FPS relationship, Ethereum-only token with voting/delegation and cross-chain vote snapshots, dual quorum and separate binding threshold, official mechanics/migration/trade links. type=fcs returns API-reported FCS supply, attributable equity, binding and reference prices with source/availability notes; internal votes, holder votes, backing balance and eligibility are not supplied by that API. type=all includes this plus indexed approved rate changes, minters, underlying FPS Equity trades (FCS wrapper labelled) and FPS/ZCHF Dune holders, not FCS holders. Other filters include static FCS context. For pending rates use get_savings.",
+      "FCS governance: canonical holder-facing share token, 1:1 underlying FPS relationship, Ethereum-only token with voting/delegation and cross-chain vote snapshots, dual quorum and separate binding threshold, official mechanics/migration/trade links. type=fcs returns API-reported FCS supply, attributable equity, binding and reference prices with source/availability notes; internal votes, holder votes, backing balance and eligibility are not supplied by that API. type=all includes this plus indexed approved rate changes, minters, underlying FPS Equity trades (FCS wrapper labelled) and FPS/ZCHF Dune holders, not FCS holders. Other filters include static FCS context. Pending rates use the public API open set; status=pending never returns approved history.",
     input: z.object({
       type: z.enum(["all", "fcs", "rate_proposals", "minters", "equity_trades", "holders"]).default("all"),
       status: z.enum(["active", "denied", "all", "pending", "approved"]).default("all"),
@@ -76,7 +76,7 @@ export const TOOLS = [
     }).strict(),
     params: [
       { name: "type", type: "string", required: false, description: "all | fcs | rate_proposals | minters | equity_trades | holders (default all). fcs isolates wrapper state from indexer activity." },
-      { name: "status", type: "string", required: false, description: "For minters: active | denied | all. rate_proposals returns approved history; use get_savings for pending rates." },
+      { name: "status", type: "string", required: false, description: "For minters: active | denied | all. For rate_proposals: pending | approved | all (authoritative open state plus indexed history)." },
       { name: "limit", type: "number", required: false, description: "Max items per section (default 20, max 100)." },
     ],
     handler: (a) => getGovernance({ type: a.type, status: a.status, limit: a.limit }),
@@ -84,7 +84,7 @@ export const TOOLS = [
   {
     name: "get_positions",
     description:
-      "ZCHF minting positions. By default returns address list + count (lightweight). Set detail=true for full on-chain data: collateral type/balance, minted amount, available capacity, liquidation price, collateral ratio, risk premium, expiry, cooldown, and live market prices.",
+      "ZCHF minting positions. By default returns address list + count (lightweight). Set detail=true for full on-chain data: collateral type/balance, minted amount, nominal allowance (not executable minting capacity), liquidation price, collateral ratio, risk premium, expiry, cooldown, and live market prices.",
     input: z.object({
       detail: bool(false),
       limit: intClampOpt(1, 100),
@@ -124,7 +124,7 @@ export const TOOLS = [
   {
     name: "get_analytics",
     description:
-      "Historical protocol analytics. Use 'type' to select: 'time_series' (daily supply, equity, savings, FPS price, rates, earnings — default), 'trades' (FPS equity buy/sell trades), 'minters' (minter application history), 'rate_history' (governance rate change timeline). Historical monetary values are in CHF only — no historical USD is provided (applying today's rate to past rows would be inaccurate); the current CHF/USD rate is exposed in the `fx` block for approximate conversion.",
+      "Historical protocol analytics. Use 'type' to select: 'time_series' (daily equity, savings, FPS price and realized earnings; removed indexer metrics are null — default), 'trades' (FPS equity buy/sell trades), 'minters' (minter application history), 'rate_history' (governance rate change timeline). Historical monetary values are in CHF only — no historical USD is provided (applying today's rate to past rows would be inaccurate); the current CHF/USD rate is exposed in the `fx` block for approximate conversion.",
     input: z.object({
       type: z.enum(["time_series", "trades", "minters", "rate_history"]).default("time_series"),
       days: intClamp(1, 365, 90),
@@ -132,8 +132,8 @@ export const TOOLS = [
     }).strict(),
     params: [
       { name: "type", type: "string", required: false, description: "time_series | trades | minters | rate_history (default time_series)." },
-      { name: "days", type: "number", required: false, description: "Days of history (default 90, max 365)." },
-      { name: "limit", type: "number", required: false, description: "Max items for trades/minters (default 20, max 100)." },
+      { name: "days", type: "number", required: false, description: "Days for time_series / rolling rate_history (default 90, max 365)." },
+      { name: "limit", type: "number", required: false, description: "Max items for trades/minters/rate_history (default 20, max 100)." },
     ],
     handler: (a) => getAnalytics({ type: a.type, days: a.days, limit: a.limit }),
   },
@@ -196,7 +196,7 @@ export const TOOLS = [
   {
     name: "get_dune_stats",
     description:
-      "On-chain analytics from Dune Analytics — ZCHF holder count, FPS holder count, historical minting volume, and savings TVL over time. Data may be slightly delayed vs real-time.",
+      "On-chain analytics from Dune Analytics — ZCHF holder count, FPS holder count, historical minting volume, and savings TVL over time. Check status and per-query diagnostics: unavailable metrics are null, not healthy delayed data.",
     input: empty,
     params: [],
     handler: () => getDuneStats(),
@@ -215,8 +215,3 @@ export const TOOLS = [
 
 /** name → tool definition. */
 export const TOOL_MAP = new Map(TOOLS.map((t) => [t.name, t]));
-
-/** Zod raw shape for MCP registration (server.tool expects a plain shape object). */
-export function zodShape(def) {
-  return def.input.shape || {};
-}

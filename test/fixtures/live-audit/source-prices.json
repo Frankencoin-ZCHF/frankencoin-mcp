@@ -1,0 +1,327 @@
+[
+  {
+    "chainId": 1,
+    "address": "0x8747a3114Ef7f0eEBd3eB337F745E31dBF81a952",
+    "name": "Draggable quitt.shares",
+    "symbol": "DQTS",
+    "decimals": 0,
+    "price": {
+      "chf": 8.1119,
+      "usd": 9.79821792
+    },
+    "source": "thegraph",
+    "timestamp": 1792135647884
+  },
+  {
+    "name": "Coinbase Wrapped BTC",
+    "price": {
+      "chf": 0,
+      "usd": 0
+    },
+    "source": null,
+    "symbol": "cbBTC",
+    "address": "0x913B061e19549dEf21541d66fF121abA8e7F9221",
+    "chainId": 1,
+    "decimals": 8,
+    "timestamp": 0
+  },
+  {
+    "chainId": 1,
+    "address": "0x6810e776880C02933D47DB1b9fc05908e5386b96",
+    "name": "Gnosis Token",
+    "symbol": "GNO",
+    "decimals": 18,
+    "price": {
+      "chf": 95.2768,
+      "usd": 115.08304375471432
+    },
+    "source": "defillama",
+    "timestamp": 1792135648230
+  },
+  {
+    "chainId": 1,
+    "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "name": "Wrapped Ether",
+    "symbol": "WETH",
+    "decimals": 18,
+    "price": {
+      "chf": 2032.7264,
+      "usd": 2455.290195601344
+    },
+    "source": "defillama",
+    "timestamp": 1792135647296
+  },
+  {
+    "name": "Apple xStock",
+    "price": {
+      "chf": 247.8538,
+      "usd": 299.377780430285
+    },
+    "source": "defillama",
+    "symbol": "AAPLx",
+    "address": "0x9d275685dC284C8eB1C79f6ABA7a63Dc75ec890a",
+    "chainId": 1,
+    "decimals": 18,
+    "timestamp": 1781695417551
+  },
+  {
+    "chainId": 1,
+    "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "name": "Wrapped BTC",
+    "symbol": "WBTC",
+    "decimals": 8,
+    "price": {
+      "chf": 67907.96,
+      "usd": 82024.68500053506
+    },
+    "source": "defillama",
+    "timestamp": 1792135647193
+  },
+  {
+    "chainId": 1,
+    "address": "0x1bA26788dfDe592fec8bcB0Eaff472a42BE341B2",
+    "name": "Frankencoin Pool Share",
+    "symbol": "FPS",
+    "decimals": 18,
+    "price": {
+      "chf": 1271.0732,
+      "usd": 1535.3042961186777
+    },
+    "source": "custom",
+    "timestamp": 1792135646920
+  },
+  {
+    "chainId": 1,
+    "address": "0x2Bd214946806DbEE88Dd3b44b26A21759723d8A2",
+    "name": "SWISSGRAMS GOLD",
+    "symbol": "SGG",
+    "decimals": 6,
+    "price": {
+      "chf": 3570.8671,
+      "usd": 4313.18
+    },
+    "source": "custom",
+    "timestamp": 1792135647012
+  },
+  {
+    "name": "Dai Stablecoin",
+    "price": {
+      "chf": 0.8279,
+      "usd": 1.000007308081417
+    },
+    "source": "defillama",
+    "symbol": "DAI",
+    "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    "chainId": 1,
+    "decimals": 18,
+    "timestamp": 1790986051138
+  },
+  {
+    "chainId": 1,
+    "address": "0x343324F53CBEEE3Ee6d171f2a20F005964C98047",
+    "name": "Switzerlend AG C1 Shares SHA",
+    "symbol": "LENDS",
+    "decimals": 0,
+    "price": {
+      "chf": 67.6005,
+      "usd": 81.653358682
+    },
+    "source": "thegraph",
+    "timestamp": 1792135648071
+  },
+  {
+    "chainId": 1,
+    "address": "0x68749665FF8D2d112Fa859AA293F07A622782F38",
+    "name": "Tether Gold",
+    "symbol": "XAUt",
+    "decimals": 6,
+    "price": {
+      "chf": 3458.1407,
+      "usd": 4177.0199557101505
+    },
+    "source": "defillama",
+    "timestamp": 1792135647628
+  },
+  {
+    "chainId": 1,
+    "address": "0x23346B04a7f55b8760E5860AA5A77383D63491cD",
+    "name": "Staked yBOLD",
+    "symbol": "ysyBOLD",
+    "decimals": 18,
+    "price": {
+      "chf": 0.9056,
+      "usd": 1.093976076144082
+    },
+    "source": "defillama",
+    "timestamp": 1792135647170
+  },
+  {
+    "chainId": 1,
+    "address": "0xD533a949740bb3306d119CC777fa900bA034cd52",
+    "name": "Curve DAO Token",
+    "symbol": "CRV",
+    "decimals": 18,
+    "price": {
+      "chf": 0.2899,
+      "usd": 0.35018228847563676
+    },
+    "source": "defillama",
+    "timestamp": 1792135648168
+  },
+  {
+    "chainId": 1,
+    "address": "0xFeDC5f4a6c38211c1338aa411018DFAf26612c08",
+    "name": "SPDR S&P 500 ETF (Ondo Tokenized)",
+    "symbol": "SPYon",
+    "decimals": 18,
+    "price": {
+      "chf": 646.1062,
+      "usd": 780.4190344194969
+    },
+    "source": "defillama",
+    "timestamp": 1792135647277
+  },
+  {
+    "chainId": 1,
+    "address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
+    "name": "Wrapped liquid staked Ether 2.0",
+    "symbol": "wstETH",
+    "decimals": 18,
+    "price": {
+      "chf": 2526.8775,
+      "usd": 3052.1655663161787
+    },
+    "source": "defillama",
+    "timestamp": 1792135647248
+  },
+  {
+    "chainId": 1,
+    "address": "0x8c1BEd5b9a0928467c9B1341Da1D7BD5e10b6549",
+    "name": "Liquid Staked ETH",
+    "symbol": "LsETH",
+    "decimals": 18,
+    "price": {
+      "chf": 2273.9392,
+      "usd": 2746.6463626336067
+    },
+    "source": "defillama",
+    "timestamp": 1792135647690
+  },
+  {
+    "chainId": 1,
+    "address": "0x553C7f9C780316FC1D34b8e14ac2465Ab22a090B",
+    "name": "RealUnit Shares",
+    "symbol": "REALU",
+    "decimals": 0,
+    "price": {
+      "chf": 1.368,
+      "usd": 1.6524541913577515
+    },
+    "source": "thegraph",
+    "timestamp": 1792135647608
+  },
+  {
+    "chainId": 1,
+    "address": "0x45804880De22913dAFE09f4980848ECE6EcbAf78",
+    "name": "Paxos Gold",
+    "symbol": "PAXG",
+    "decimals": 18,
+    "price": {
+      "chf": 3463.2152,
+      "usd": 4183.149393127796
+    },
+    "source": "defillama",
+    "timestamp": 1792135647222
+  },
+  {
+    "name": "AllUnity CHF",
+    "price": {
+      "chf": 1,
+      "usd": 1.2078802684586945
+    },
+    "source": null,
+    "symbol": "CHFAU",
+    "address": "0xBD4DfC058eb95b8De5ceAF39966A1a70F5556F78",
+    "chainId": 1,
+    "decimals": 6,
+    "timestamp": 9999999999999
+  },
+  {
+    "chainId": 1,
+    "address": "0x2E880962A9609aA3eab4DEF919FE9E917E99073B",
+    "name": "Boss Info AG",
+    "symbol": "BOSS",
+    "decimals": 0,
+    "price": {
+      "chf": 6.6756,
+      "usd": 8.063351443
+    },
+    "source": "defillama",
+    "timestamp": 1792135648143
+  },
+  {
+    "name": "Uniswap",
+    "price": {
+      "chf": 2.7455,
+      "usd": 3.316336946885619
+    },
+    "source": "defillama",
+    "symbol": "UNI",
+    "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+    "chainId": 1,
+    "decimals": 18,
+    "timestamp": 1781695416926
+  },
+  {
+    "chainId": 1,
+    "address": "0xa9b17f572341219703Bc951725Bdb3CA756B1A65",
+    "name": "Herculis Gold Coin",
+    "symbol": "XAUH",
+    "decimals": 18,
+    "price": {
+      "chf": 111.2897,
+      "usd": 134.42463584824335
+    },
+    "source": "defillama",
+    "timestamp": 1792135467129
+  },
+  {
+    "chainId": 1,
+    "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "name": "Coinbase Wrapped BTC",
+    "symbol": "cbBTC",
+    "decimals": 8,
+    "price": {
+      "chf": 67995.3816,
+      "usd": 82130.27983650017
+    },
+    "source": "defillama",
+    "timestamp": 1792135647106
+  },
+  {
+    "chainId": 1,
+    "address": "0xB58E61C3098d85632Df34EecfB899A1Ed80921cB",
+    "name": "Frankencoin",
+    "symbol": "ZCHF",
+    "decimals": 18,
+    "price": {
+      "chf": 1,
+      "usd": 1.2078802684586945
+    },
+    "source": "defillama",
+    "timestamp": 1792135466925
+  },
+  {
+    "chainId": 1,
+    "address": "0x79d4f0232A66c4c91b89c76362016A1707CFBF4f",
+    "name": "VNX Franc",
+    "symbol": "VCHF",
+    "decimals": 18,
+    "price": {
+      "chf": 1.0009,
+      "usd": 1.2090743548543093
+    },
+    "source": "defillama",
+    "timestamp": 1792135648286
+  }
+]

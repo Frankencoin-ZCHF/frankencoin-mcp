@@ -4,8 +4,8 @@
  *
  * Units (per CLAUDE.md / SPEC §4):
  *   - Token amounts from Ponder are BigInt strings → fromWei() to a JS float.
- *   - Savings rates are stored as basis-points × 10 (37500 → 3.75%) → bpsToPercent().
- *   - Risk premiums are stored on the same bps-scale here (10000 → 1.0%) → ppmToPercent().
+ *   - Savings rates are stored in PPM (37500 → 3.75%); bpsToPercent is a legacy helper name.
+ *   - Risk premiums are also PPM (10000 → 1.0%) → ppmToPercent().
  */
 
 /**
@@ -18,12 +18,12 @@ export function fromWei(val, decimals = 18) {
   return Number(BigInt(val)) / Math.pow(10, decimals);
 }
 
-/** Basis-points ×10 → percent: 37500 → 3.75 */
+/** Legacy name: converts PPM, NOT conventional basis points. 37500 → 3.75. */
 export function bpsToPercent(bps) {
   return bps / 10000;
 }
 
-/** PPM (bps-scaled here) → percent: 10000 → 1.0 */
+/** PPM → percent: 10000 → 1.0 */
 export function ppmToPercent(ppm) {
   return ppm / 10000;
 }

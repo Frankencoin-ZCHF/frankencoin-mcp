@@ -56,8 +56,10 @@ curl "https://mcp.frankencoin.com/api/get_analytics?type=time_series&days=30"
 # Raw read-only GraphQL against the on-chain indexer
 curl -X POST https://mcp.frankencoin.com/api/query_ponder \
   -H 'Content-Type: application/json' \
-  -d '{"query":"{ analyticDailyLogs(limit:3){ items { date totalSupply } } }"}'
+  -d '{"query":"{ analyticDailyLogs(limit:3){ items { date fpsTotalSupply totalEquity } } }"}'
 ```
+
+Data-contract corrections and migration notes: [v3.1](docs/data-contract-v3.1.md). Optional-provider health is separate from transport success; `ok:true` does not mean all metrics are available.
 
 Every REST response is a JSON envelope: `{ "ok": true, "tool": "<name>", "result": { … } }`.
 

@@ -7,7 +7,8 @@
  */
 
 import { githubFile, githubJson } from "../upstream/github.js";
-import { merchProducts } from "../upstream/merch.js";
+import { merchProducts, merchMetadata } from "../upstream/merch.js";
+import { observe, availability } from "../lib/provider.js";
 import { FCS_REFERENCE } from "../lib/fcs.js";
 import {
   SITE_REPO, DOCS_REPO, DOC_FILES, KNOWLEDGE_TOPICS, FPS_CONTRACT,
@@ -26,12 +27,12 @@ export async function getKnowledge({ topic = "overview" } = {}) {
   }
 
   const hasFcsReference = ["fcs", "fcs_migration", "governance", "pool_shares"].includes(topic);
-  const content = await githubFile(DOCS_REPO, file).catch((err) => {
-    if (!hasFcsReference) throw err;
-    return null;
-  });
+  const observed = await observe(githubFile(DOCS_REPO, file), (v) => typeof v === "string" && v.trim().length > 0);
+  const content = observed.value;
   return {
     topic,
+    status: content === null ? (hasFcsReference ? "partial" : "unavailable") : "available",
+    sources: { github: observed.health },
     file,
     source: `https://github.com/${DOCS_REPO}/blob/main/${file}`,
     docsUrl: topic === "fcs" ? FCS_REFERENCE.links.mechanics
@@ -39,7 +40,7 @@ export async function getKnowledge({ topic = "overview" } = {}) {
       : `https://docs.frankencoin.com/${file.replace(/\.md$/, "").replace(/\/README$/, "")}`,
     content,
     ...(hasFcsReference ? { fcs: FCS_REFERENCE } : {}),
-    ...(content === null ? { note: "Live documentation unavailable; curated FCS reference and official links remain available." } : {}),
+    ...(content === null ? { note: hasFcsReference ? "Live documentation unavailable; curated FCS reference and official links remain available." : "Live documentation unavailable; official source links are provided, not replacement content." } : {}),
     availableTopics: KNOWLEDGE_TOPICS,
   };
 }
@@ -249,10 +250,12 @@ export async function getCompliance() {
  * Frankencoin has NO official frontend — the safety warning is surfaced verbatim.
  */
 export async function getFrontends() {
-  const [list, meta] = await Promise.all([
-    githubJson(SITE_REPO, "src/content/shared/frontends.json"),
-    githubJson(SITE_REPO, "src/content/en/frontends.json"),
+  const observed = await Promise.all([
+    observe(githubJson(SITE_REPO, "src/content/shared/frontends.json"), (v) => Array.isArray(v?.frontends)),
+    observe(githubJson(SITE_REPO, "src/content/en/frontends.json")),
   ]);
+  const [list, meta] = observed.map((r) => r.value ?? {});
+  const sources = { listings: observed[0].health, metadata: observed[1].health };
 
   const frontends = (list.frontends ?? []).map((f) => ({
     name: f.name,
@@ -271,13 +274,15 @@ export async function getFrontends() {
 
   return {
     topic: "frontends",
+    status: availability(sources),
+    sources,
     title: meta.header?.title ?? "Frankencoin Frontends",
     subtitle: meta.header?.subtitle ?? null,
     warning: meta.warning
       ? { title: meta.warning.title ?? null, body: meta.warning.body ?? null }
       : null,
-    count: frontends.length,
-    frontends,
+    count: observed[0].value ? frontends.length : null,
+    frontends: observed[0].value ? frontends : null,
     addYours: "Hosting your own frontend? Add it to src/content/shared/frontends.json in the frankencoin-site repo and open a pull request to get listed.",
     page: "https://frankencoin.com/frontends",
     note: "Frankencoin is an open protocol with NO official frontend — each interface is operated independently by its maintainers, listed for information only (not audited, not endorsed). Verify the source before connecting a wallet. Sourced live from the Frankencoin website repository.",
@@ -285,11 +290,13 @@ export async function getFrontends() {
 }
 
 export async function getNews() {
-  const [mediaData, useCaseData, ecosystemData] = await Promise.all([
-    githubJson(SITE_REPO, "src/content/shared/media.json"),
-    githubJson(SITE_REPO, "src/content/en/use-cases.json"),
-    githubJson(SITE_REPO, "src/content/en/ecosystem.json"),
+  const observed = await Promise.all([
+    observe(githubJson(SITE_REPO, "src/content/shared/media.json")),
+    observe(githubJson(SITE_REPO, "src/content/en/use-cases.json")),
+    observe(githubJson(SITE_REPO, "src/content/en/ecosystem.json")),
   ]);
+  const [mediaData, useCaseData, ecosystemData] = observed.map((r) => r.value ?? {});
+  const sources = Object.fromEntries(["media", "useCases", "ecosystem"].map((name, i) => [name, observed[i].health]));
 
   const articles = (mediaData.articles ?? []).map((url) => {
     const meta = mediaData.articleMetadata?.[url] ?? {};
@@ -315,14 +322,16 @@ export async function getNews() {
   });
 
   return {
-    media: { articles, videos },
-    useCases: (useCaseData.cases ?? []).map((c) => ({
+    status: availability(sources),
+    sources,
+    media: observed[0].value ? { articles, videos } : null,
+    useCases: observed[1].value === null ? null : (useCaseData.cases ?? []).map((c) => ({
       title: c.title, partner: c.partner, category: c.category, description: c.description, url: c.link,
     })),
-    ecosystem: (ecosystemData.tabs ?? []).map((t) => ({
+    ecosystem: observed[2].value === null ? null : (ecosystemData.tabs ?? []).map((t) => ({
       name: t.name, category: t.category ?? t.badge, description: t.description, url: t.href,
     })),
-    note: "Content sourced live from the Frankencoin website repository.",
+    note: "Content sourced from the Frankencoin website repository (cached). Unavailable sections are null with explicit source status, not fabricated empty datasets.",
   };
 }
 
@@ -368,10 +377,16 @@ export async function getInsuranceProducts() {
 }
 
 export async function getMerch() {
-  const { products } = await merchProducts();
+  const [{ products }, metadata] = await Promise.all([
+    merchProducts(), observe(merchMetadata(), (v) => typeof v?.currency === "string" && /^[A-Z]{3}$/.test(v.currency)),
+  ]);
+  const currency = metadata.value?.currency ?? null;
   return {
     store: {
       name: "Frankencoin Merch",
+      currency,
+      currencySource: `${MERCH_BASE}/meta.json`,
+      currencyStatus: metadata.health,
       url: MERCH_BASE,
       platform: "Shopify",
     },
@@ -399,6 +414,7 @@ export async function getMerch() {
     },
     totalProducts: products.length,
     products: products.map((p) => ({
+      currency,
       title: p.title,
       handle: p.handle,
       url: `https://merch.frankencoin.com/products/${p.handle}`,
@@ -410,6 +426,7 @@ export async function getMerch() {
       variants: p.variants.map((v) => ({
         title: v.title,
         price: v.price,
+        currency,
         compareAtPrice: v.compare_at_price || null,
         available: v.available,
         sku: v.sku || null,
@@ -418,6 +435,6 @@ export async function getMerch() {
       maxPrice: p.variants.reduce((max, v) => Math.max(max, parseFloat(v.price)), 0).toFixed(2),
       available: p.variants.some((v) => v.available),
     })),
-    note: "`products` is a convenience snapshot from the storefront feed (prices in USD). For live availability, search, cart and checkout, use the `directAccess` MCP endpoints above.",
+    note: "`products` is a convenience snapshot from the storefront feed (amounts in store currency; null currency means metadata unavailable, never an assumed currency). For live availability, search, cart and checkout, use the `directAccess` MCP endpoints above.",
   };
 }

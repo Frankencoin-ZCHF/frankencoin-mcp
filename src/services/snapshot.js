@@ -48,9 +48,9 @@ export async function getProtocolSnapshot() {
     updated: new Date(c.updated * 1000).toISOString(),
   }));
 
-  // Lead vs base rate on Ethereum by the bps×10 threshold (10000 = base, >10000 = savings).
-  const leadRate = savings.rates.approved.find((r) => r.chainId === 1 && r.rateBps > 10000);
-  const baseRate = savings.rates.approved.find((r) => r.chainId === 1 && r.rateBps === 10000);
+  // Lead vs base rate on Ethereum (10000 PPM = 1%).
+  const leadRate = savings.rates.approved.find((r) => r.chainId === 1 && r.ratePpm > 10000);
+  const baseRate = savings.rates.approved.find((r) => r.chainId === 1 && r.ratePpm === 10000);
   const activeChallenges = challenges.challenges.filter((c) => c.status !== "Success");
 
   return {
@@ -90,7 +90,7 @@ export async function getProtocolSnapshot() {
     savings: {
       leadRatePercent: leadRate?.ratePercent ?? null,
       baseRatePercent: baseRate?.ratePercent ?? null,
-      pendingRateChanges: savings.rates.proposed.length,
+      pendingRateChanges: savings.summary.pendingRateChanges,
       totalDeposited: savings.summary.totalDeposited,
     },
     challenges: {
