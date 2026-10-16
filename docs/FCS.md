@@ -33,10 +33,8 @@ Current reference links: [mechanics](https://docs.frankencoin.com/pool-shares/fc
 [legacy FPS page](https://frankencoin.com/fps).
 A trade link is not a liquidity or execution guarantee.
 
-`https://fcs.frankencoin.com` is a **planned future CTA target, not yet live**.
-It appears only under `fcs.plannedLinks.website` with `status=planned_not_live`
-(and equivalently labelled prose), never as an operational link, application or
-upstream data source. This MCP does not fetch or probe that target.
+The canonical FCS website is https://frankencoin.com/fcs, exposed as
+`fcs.links.website`. No separate planned website is advertised.
 
 ## Live-state decision
 
@@ -67,7 +65,7 @@ reads `ask`, `bid`, `totalAssets`, `totalSupply` and `isBinding` with `FCSABI`.
 
 Primary technical sources: the official mechanics, migration and governance docs
 above; the documentation repository was inspected at
-`Frankencoin-ZCHF/gitbook@7dc671d065bc9ded860f20318d36b1451f076d62`.
+`Frankencoin-ZCHF/gitbook@a1322816a282debedd8ab3dfae89a7f1364f4590`.
 Runtime document topics still fetch current official GitBook files.
 
 The [ChainSecurity assessment](https://reports.chainsecurity.com/Frankencoin/ChainSecurity_Frankencoin_FPS2_Audit.pdf)
@@ -76,14 +74,14 @@ The [ChainSecurity assessment](https://reports.chainsecurity.com/Frankencoin/Cha
 [FPS2.sol](https://github.com/Frankencoin-ZCHF/FrankenCoin/blob/c1f229e3b26050367aafcb55da294342b4cae382/contracts/equity/fps2/FPS2.sol#L48-L114),
 [FPS2MintRedeem.sol](https://github.com/Frankencoin-ZCHF/FrankenCoin/blob/c1f229e3b26050367aafcb55da294342b4cae382/contracts/equity/fps2/FPS2MintRedeem.sol#L25-L96),
 [Governance.sol](https://github.com/Frankencoin-ZCHF/FrankenCoin/blob/c1f229e3b26050367aafcb55da294342b4cae382/contracts/equity/Governance.sol#L12-L105).
-Source/audit names FPS2 and FPS1 correspond to FCS and underlying FPS in current
-docs; the reviewed token uses FPS2 branding, while the API reports FCS. An audit
-of a commit does not by itself attest deployed bytecode. No contract is modified.
+These are historical audit sources. Current official docs describe the subsequent
+FCS rebrand and shared 1% quorum, superseding the audited two-tier threshold.
+Neither documentation nor an audit attests deployed bytecode. No contract is modified.
 
 Preserved distinctions:
 - 1:1 applies to wrapping FPS, not investing ZCHF. ZCHF is the ERC-4626 asset.
-- Delegation is non-subtractive/transitive. Qualified actions need **>1% internal
-  FCS votes** plus the separate underlying FPS quorum (audit: at least 2%).
+- Delegation is non-subtractive/transitive. Current docs specify a shared **>1%**
+  quorum for FCS-based and direct legacy FPS actions, not the audit's old 2% gate.
 - Binding requires **>2/3 underlying FPS votes**, not supply, and can reverse.
 - Tokens remain on Ethereum; two sets of vote snapshots cross chains (audit pp7–10,
   finding #006). No bridged FCS token is asserted.
@@ -92,15 +90,10 @@ Preserved distinctions:
   holding duration and either binding state (source lines 110–114; finding #022,
   audit p22). No guaranteed profit, liquidity, price or simple unconditional exit.
 
-### Unreleased homepage source
+### Released website source
 
-Cloned the **canonical** repository branch directly, not a fork or PR branch:
-`Frankencoin-ZCHF/frankencoin-site:fcs-launch-homepage`, pinned at
-`18a55400de54956b3355a2a8929f98550164cd96`.
-The [English homepage launch section](https://github.com/Frankencoin-ZCHF/frankencoin-site/blob/18a55400de54956b3355a2a8929f98550164cd96/src/content/en/index.json#L77-L103)
-and matching German content establish canonical positioning, equity participation,
-time-weighted governance, 1:1 FPS wrapping and the exact USDT/FCS CoW route.
-This snapshot's homepage and footer point to `/fcs`; it is not evidence of a live
-subdomain or transactional application. The owner-specified future subdomain above
-is therefore planned-only. Technical docs take precedence over simplified or
-inconsistent marketing copy elsewhere in this branch. No live homepage scraping.
+The canonical repository main branch was inspected at
+`444f8318b25068b46b81b8117b661a0119740fe4`, including `src/content/en/fcs.json`.
+The public https://frankencoin.com/fcs page responded successfully. Released site
+content supersedes the removed launch branch. Technical docs take precedence over simplified or
+inconsistent marketing copy. Documentation is fetched from the released GitBook main branch.

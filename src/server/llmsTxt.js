@@ -85,7 +85,7 @@ export function renderLlmsTxt(tools, baseUrl) {
   p(FCS_REFERENCE.mechanics.exit);
   p("Use get_governance type=fcs for API-reported wrapper state with explicit source/availability notes; use get_knowledge topics fcs and fcs_migration for official technical documentation.");
   for (const [label, url] of Object.entries(FCS_REFERENCE.links)) p(`- ${label}: ${url}`);
-  p(`- Planned future CTA only (planned_not_live): ${FCS_REFERENCE.plannedLinks.website.url}. Not an existing website or application; never used as a source.`);
+
   p();
   p("## Notes");
   p();

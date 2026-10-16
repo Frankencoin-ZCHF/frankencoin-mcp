@@ -140,7 +140,7 @@ export const TOOLS = [
   {
     name: "get_knowledge",
     description:
-      "Frankencoin explanatory/reference content. Topics: overview (default), what_is, faq, savings, governance (FCS vetoes/delegation and cross-chain vote snapshots), fcs (FCS mechanics and underlying FPS distinction), fcs_migration (FPS/WFPS migration), pool_shares (FCS investing and underlying FPS economics), minting, opening_positions, auctions, risks, reserve, api, compliance, frontends, token_addresses (including Ethereum-only FCS contract), links (official docs, CoW Swap and legacy FPS page). FCS references survive unavailable live docs. Planned future CTA targets are explicitly planned_not_live, not operational websites or apps.",
+      "Frankencoin explanatory/reference content. Topics: overview (default), what_is, faq, savings, governance (FCS vetoes/delegation and cross-chain vote snapshots), fcs (FCS mechanics and underlying FPS distinction), fcs_migration (FPS/WFPS migration), pool_shares (FCS investing and underlying FPS economics), minting, opening_positions, auctions, risks, reserve, api, compliance, frontends, token_addresses (including Ethereum-only FCS contract), links (official docs, CoW Swap and legacy FPS page). FCS references survive unavailable live docs. The canonical FCS website is https://frankencoin.com/fcs; current official documentation takes precedence over historical audit summaries.",
     // topic is a permissive string: an unknown topic returns { error, availableTopics }
     // from the handler (NOT a 400) and never builds a path from the raw value (SPEC/T28).
     input: z.object({ topic: z.string().max(64).default("overview") }).strict(),

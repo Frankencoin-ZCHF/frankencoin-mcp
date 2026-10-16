@@ -132,27 +132,28 @@ test("curated FCS reference and links survive unavailable GitHub without fabrica
     const out = await dispatchTool("get_knowledge", { topic });
     assert.equal(out.fcs.address, FCS);
     assert.equal(out.fcs.links.legacyFps, "https://frankencoin.com/fps");
-    assert.equal(out.fcs.plannedLinks.website.status, "planned_not_live");
+    assert.equal(out.fcs.links.website, "https://frankencoin.com/fcs");
+    assert.equal(out.fcs.plannedLinks, undefined);
     assert.match(out.note, /unavailable/i);
     if (["fcs", "fcs_migration", "governance", "pool_shares"].includes(topic)) assert.equal(out.content, null);
     if (topic === "links") assert.equal(out.app.fcs, undefined);
   }
 });
 
-test("FCS knowledge topics expose exact mechanics, current links and a separately planned CTA", async () => {
+test("FCS knowledge topics expose exact mechanics and released canonical links", async () => {
   const calls = [];
   setFetchImpl(async (url) => { calls.push(url); return github("# Official documentation"); });
   const mechanics = await dispatchTool("get_knowledge", { topic: "fcs" });
   assert.equal(mechanics.docsUrl, "https://docs.frankencoin.com/pool-shares/fcs");
-  assert.ok(calls.some((url) => url.endsWith("/contents/fcs.md")));
-  assert.match(mechanics.fcs.mechanics.qualification, /more than 1%.*internal FCS.*underlying FPS quorum/);
+  assert.ok(calls.some((url) => url.endsWith("/contents/fcs.md?ref=main")));
+  assert.match(mechanics.fcs.mechanics.qualification, /shared quorum of more than 1%/);
   assert.match(mechanics.fcs.mechanics.binding, /more than two thirds.*underlying FPS votes/);
   assert.match(mechanics.fcs.mechanics.delegation, /non-subtractive and transitive/);
   assert.match(mechanics.fcs.mechanics.exit, /binding.*wrapper.*90-day/);
   assert.match(mechanics.fcs.mechanics.exit, /at least.*average.*either binding state/);
   assert.equal(mechanics.fcs.sources.website.repository, "Frankencoin-ZCHF/frankencoin-site");
-  assert.equal(mechanics.fcs.sources.website.branch, "fcs-launch-homepage");
-  assert.equal(mechanics.fcs.sources.website.commit, "18a55400de54956b3355a2a8929f98550164cd96");
+  assert.equal(mechanics.fcs.sources.website.branch, "main");
+  assert.equal(mechanics.fcs.sources.website.commit, "444f8318b25068b46b81b8117b661a0119740fe4");
   assert.equal(mechanics.fcs.sources.mechanics.commit, "c1f229e3b26050367aafcb55da294342b4cae382");
   assert.ok(mechanics.fcs.links.explorer.endsWith(FCS));
   assert.equal(mechanics.fcs.links.mechanics, mechanics.docsUrl);
@@ -161,15 +162,14 @@ test("FCS knowledge topics expose exact mechanics, current links and a separatel
   assert.equal(mechanics.fcs.links.governancePage, "https://frankencoin.com/governance");
   assert.equal(mechanics.fcs.links.trade, "https://swap.cow.fi/#/1/swap/USDT/FCS");
   assert.equal(mechanics.fcs.links.legacyFps, "https://frankencoin.com/fps");
-  assert.equal(mechanics.fcs.plannedLinks.website.url, "https://fcs.frankencoin.com");
-  assert.equal(mechanics.fcs.plannedLinks.website.status, "planned_not_live");
-  assert.ok(!JSON.stringify(mechanics.fcs.links).includes("https://fcs.frankencoin.com"));
+  assert.equal(mechanics.fcs.links.website, "https://frankencoin.com/fcs");
+  assert.equal(mechanics.fcs.plannedLinks, undefined);
   for (const topic of ["fcs_migration", "governance", "pool_shares"]) {
     const out = await dispatchTool("get_knowledge", { topic });
     assert.deepEqual(out.fcs, mechanics.fcs);
     assert.ok(out.availableTopics.includes("fcs_migration"));
   }
-  assert.ok(calls.some((url) => url.endsWith("/contents/fcs-migration.md")));
+  assert.ok(calls.some((url) => url.endsWith("/contents/fcs-migration.md?ref=main")));
 });
 
 test("token addresses distinguish canonical FCS from underlying FPS despite stale site copy", async () => {

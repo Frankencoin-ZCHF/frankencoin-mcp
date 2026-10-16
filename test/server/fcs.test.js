@@ -52,7 +52,8 @@ test("REST manifest and llms discover FCS without adding a tool or relabeling FP
   assert.match(llms, /underlying Equity token/);
   assert.ok(llms.includes(FCS_REFERENCE.address));
   for (const url of Object.values(FCS_REFERENCE.links)) assert.ok(llms.includes(url), url);
-  assert.match(llms, /planned_not_live.*https:\/\/fcs\.frankencoin\.com/);
+  assert.ok(llms.includes("https://frankencoin.com/fcs"));
+  assert.doesNotMatch(llms, /planned_not_live|planned future CTA/i);
 });
 
 test("REST knowledge, governance and snapshot agree on FCS identity, links and unavailable state", async () => {
@@ -75,7 +76,7 @@ test("REST knowledge, governance and snapshot agree on FCS identity, links and u
     assert.equal(j.result.fcs.state.status, "unavailable");
     assert.equal(j.result.fcs.state.totalSupply, null);
   }
-  assert.ok(outbound.every((url) => !url.includes("fcs.frankencoin.com")), "planned CTA must never be fetched");
+  assert.ok(outbound.every((url) => !url.includes(["fcs", "frankencoin", "com"].join("."))), "no invented host may be fetched");
 });
 
 test("CLI help exposes FCS state and documentation selectors", () => {

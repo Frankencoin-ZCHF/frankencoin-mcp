@@ -19,12 +19,18 @@ export function restError(tool, err) {
 }
 
 export function mcpSuccess(data) {
-  return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+  // Dual-emit per MCP: structured clients need not parse a nested JSON text block.
+  // Preserve the text form for older clients and keep domain `content` untouched.
+  return { structuredContent: data, content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
 }
 
 export function mcpError(err) {
-  const { clientMessage } = mapError(err);
-  return { content: [{ type: "text", text: `Error: ${clientMessage}` }], isError: true };
+  const { clientMessage, code } = mapError(err);
+  return {
+    structuredContent: { error: clientMessage, code },
+    content: [{ type: "text", text: `Error: ${clientMessage}` }],
+    isError: true,
+  };
 }
 
 /** Pretty JSON string (2-space) used for every REST body — success and error alike. */
