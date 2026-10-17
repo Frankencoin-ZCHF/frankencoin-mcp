@@ -15,14 +15,16 @@ const SWR = 6 * 60 * 60_000;
 
 async function fetchFile(repo, path) {
   try {
-    const data = await fetchJson(`${GITHUB_API}/repos/${repo}/contents/${path}`, {
+    const data = await fetchJson(`${GITHUB_API}/repos/${repo}/contents/${path}?ref=main`, {
       source: "github", timeout: 10_000, retries: 0,
       headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "frankencoin-mcp" },
     });
     if (typeof data?.content !== "string") throw new UpstreamError("github");
-    return Buffer.from(data.content, "base64").toString("utf8");
+    const text = Buffer.from(data.content, "base64").toString("utf8");
+    if (!text.trim()) throw new UpstreamError("github");
+    return text;
   } catch {
-    // Same fixed public repository/path on its verified default branch. No credentials,
+    // Same fixed public repository/path on main, just like the Contents request. No credentials,
     // user-selected destinations or data substitution; raw delivery avoids Contents quotas.
     return fetchJson(`${GITHUB_RAW}/${repo}/main/${path}`, {
       source: "github", timeout: 10_000, retries: 0, expectJson: false,
@@ -36,5 +38,10 @@ export function githubFile(repo, path) {
 }
 
 export async function githubJson(repo, path) {
-  return JSON.parse(await githubFile(repo, path));
+  const text = await githubFile(repo, path);
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new UpstreamError("github");
+  }
 }

@@ -9,6 +9,7 @@
 import { githubFile, githubJson } from "../upstream/github.js";
 import { merchProducts, merchMetadata } from "../upstream/merch.js";
 import { observe, availability } from "../lib/provider.js";
+import { UpstreamError } from "../lib/errors.js";
 import { FCS_REFERENCE } from "../lib/fcs.js";
 import {
   SITE_REPO, DOCS_REPO, DOC_FILES, KNOWLEDGE_TOPICS, FPS_CONTRACT,
@@ -21,13 +22,20 @@ export async function getKnowledge({ topic = "overview" } = {}) {
   if (topic === "frontends") return getFrontends();
   if (topic === "links") return getLinks();
 
-  const file = DOC_FILES[topic];
+  const file = Object.hasOwn(DOC_FILES, topic) ? DOC_FILES[topic] : null;
   if (!file) {
     return { error: `Unknown topic: "${topic}"`, availableTopics: KNOWLEDGE_TOPICS };
   }
 
   const hasFcsReference = ["fcs", "fcs_migration", "governance", "pool_shares"].includes(topic);
-  const observed = await observe(githubFile(DOCS_REPO, file), (v) => typeof v === "string" && v.trim().length > 0);
+  const observed = await observe(githubFile(DOCS_REPO, file).then((text) => {
+    // These fixed GitBook files contain Markdown headings. A JSON placeholder or
+    // HTML gateway page is not documentation, even when delivered with HTTP 200.
+    if (!/^#{1,6}\s+\S/m.test(text) || /^\s*(?:<!doctype html|<html)/i.test(text)) {
+      throw new UpstreamError("github");
+    }
+    return text;
+  }));
   const content = observed.value;
   return {
     topic,
@@ -151,7 +159,7 @@ async function getLinks() {
     useCaseHighlights: (useCaseData.cases ?? []).map((c) => ({
       title: c.title, partner: c.partner, category: c.category, url: c.link,
     })),
-    note: "FCS links and planned links are curated separately; other links are sourced from the website repository." +
+    note: "FCS links use the canonical website and official technical references; other links are sourced from the website repository." +
       (fetched.some((data) => data === null) ? " Some website repository content is unavailable." : ""),
   };
 }

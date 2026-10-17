@@ -130,7 +130,7 @@ test("R3 news empty objects are not confirmed empty datasets", async () => {
 
 test("R3 malformed use cases do not discard captured healthy media", async () => {
   const media = fixture("media");
-  route = (url) => url.includes("api.github.com") ? githubBody(url.endsWith("/media.json") ? media : url.endsWith("/use-cases.json") ? { cases: { invalid: true } } : { tabs: [] }) : undefined;
+  route = (url) => url.includes("api.github.com") ? githubBody(new URL(url).pathname.endsWith("/media.json") ? media : new URL(url).pathname.endsWith("/use-cases.json") ? { cases: { invalid: true } } : { tabs: [] }) : undefined;
   const out = await dispatchTool("get_news", {});
   assert.equal(out.status, "partial");
   assert.equal(out.media.articles.length, media.articles.length);
@@ -141,7 +141,7 @@ test("R3 malformed use cases do not discard captured healthy media", async () =>
 });
 
 test("R3 explicitly empty arrays are valid empty datasets", async () => {
-  route = (url) => url.includes("api.github.com") ? githubBody(url.endsWith("/media.json") ? { articles: [], videos: [] } : url.endsWith("/use-cases.json") ? { cases: [] } : { tabs: [] }) : undefined;
+  route = (url) => url.includes("api.github.com") ? githubBody(new URL(url).pathname.endsWith("/media.json") ? { articles: [], videos: [] } : new URL(url).pathname.endsWith("/use-cases.json") ? { cases: [] } : { tabs: [] }) : undefined;
   const out = await dispatchTool("get_news", {});
   assert.equal(out.status, "available");
   assert.deepEqual(out.media, { articles: [], videos: [] });

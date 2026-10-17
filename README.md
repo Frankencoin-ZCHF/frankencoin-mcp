@@ -122,11 +122,10 @@ not exposed by the source are explicitly unavailable, not inferred from supply.
 
 - [FCS mechanics](https://docs.frankencoin.com/pool-shares/fcs) · [Migration](https://docs.frankencoin.com/pool-shares/fcs-migration) · [Governance](https://docs.frankencoin.com/governance)
 - [CoW Swap route](https://swap.cow.fi/#/1/swap/USDT/FCS) · [Legacy FPS page](https://frankencoin.com/fps)
-- **Planned, not yet live:** `https://fcs.frankencoin.com` — only a future CTA target
-  under `fcs.plannedLinks.website`, not an existing application or data source.
+- [Canonical FCS website](https://frankencoin.com/fcs).
 
 [Source provenance, units, fallback behaviour and limitations](docs/FCS.md) document
-the unreleased canonical website branch and the primary technical sources.
+the released canonical website and the primary technical sources.
 
 ## Data sources
 

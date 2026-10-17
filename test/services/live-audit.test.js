@@ -192,7 +192,7 @@ test("I10 GitHub Contents failure falls back to the same public main-branch file
 
 test("I10 source failures preserve news sections and disclose unavailable docs", async () => {
   const media = fixture("media");
-  route = (url) => url.includes("api.github.com") && url.endsWith("/media.json") ? response({ content: Buffer.from(JSON.stringify(media)).toString("base64") }) : undefined;
+  route = (url) => url.includes("api.github.com") && new URL(url).pathname.endsWith("/media.json") ? response({ content: Buffer.from(JSON.stringify(media)).toString("base64") }) : undefined;
   const out = await dispatchTool("get_news", {});
   assert.equal(out.status, "partial");
   assert.equal(out.media.articles.length, media.articles.length);
@@ -277,7 +277,7 @@ test("I06 missing authoritative open set does not masquerade as no pending propo
 });
 
 test("I10 frontend metadata failure preserves independently sourced listings", async () => {
-  route = (url) => url.includes("api.github.com") && url.endsWith("/shared/frontends.json") ? response({ content: Buffer.from(JSON.stringify({ frontends: [{ name: "Example", url: "https://example.org" }] })).toString("base64") }) : undefined;
+  route = (url) => url.includes("api.github.com") && new URL(url).pathname.endsWith("/shared/frontends.json") ? response({ content: Buffer.from(JSON.stringify({ frontends: [{ name: "Example", url: "https://example.org" }] })).toString("base64") }) : undefined;
   const out = await dispatchTool("get_knowledge", { topic: "frontends" });
   assert.equal(out.status, "partial");
   assert.equal(out.frontends[0].name, "Example");
