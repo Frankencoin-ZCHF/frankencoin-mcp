@@ -88,7 +88,10 @@ test("snapshot keeps underlying FPS economics separate from the shared FCS state
   });
   const snapshot = await dispatchTool("get_protocol_snapshot", {});
   const governance = await dispatchTool("get_governance", { type: "fcs" });
-  assert.deepEqual(snapshot.fcs, governance.fcs);
+  assert.ok(snapshot.fcs.state.source.retrievedAt);
+  assert.ok(governance.fcs.state.source.retrievedAt);
+  const normalize = (v) => ({ ...v, state: { ...v.state, source: { ...v.state.source, retrievedAt: null } } });
+  assert.deepEqual(normalize(snapshot.fcs), normalize(governance.fcs));
   assert.equal(snapshot.fcs?.state.totalSupply, 246.5);
   assert.equal(snapshot.fps.totalSupply, 10000);
   assert.equal(snapshot.fps.price.chf, 500);

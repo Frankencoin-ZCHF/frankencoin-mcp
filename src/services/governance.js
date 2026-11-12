@@ -8,7 +8,7 @@ import { ponderQuery } from "../upstream/ponder.js";
 import { duneMetrics } from "./dune.js";
 import { fromWei, bpsToPercent, dateFromUnix, isoFromUnix } from "../lib/numbers.js";
 import { chainName } from "../lib/constants.js";
-import { FCS_REFERENCE } from "../lib/fcs.js";
+import { FCS_REFERENCE, fcsContext } from "../lib/fcs.js";
 import { getFcs } from "./fcs.js";
 
 async function getRateProposals({ status = "all", limit = 20 } = {}) {
@@ -103,9 +103,9 @@ async function getHolderStats() {
   return { zchf: values.zchfHolders?.[0] ?? null, fps: values.fpsHolders?.[0] ?? null, fcs, ...health };
 }
 
-export async function getGovernance({ type = "all", status = "all", limit = 20 } = {}) {
+export async function getGovernance({ type = "all", status = "all", limit = 20, includeContext = false } = {}) {
   const result = {
-    fcs: type === "all" || type === "fcs" ? await getFcs() : FCS_REFERENCE,
+    fcs: type === "all" || type === "fcs" ? await getFcs({ includeContext }) : fcsContext(includeContext),
     activityNote: "Indexed rate/minter activity and underlying FPS Equity trades, not a complete FCS governance or secondary-market trade history. A wrapper trader label identifies the contract, not the initiating holder. FCS API state is fetched for type=all or type=fcs; other filters include static FCS context only.",
   };
   if (type === "all" || type === "rate_proposals") {

@@ -25,7 +25,7 @@ beforeEach(() => {
 });
 
 test("catalogue discovers all 21 reports and preserves every structured field and unit", async () => {
-  const out = await dispatchTool("get_collateral_assessments", {});
+  const out = await dispatchTool("get_collateral_assessments", { view: "full", limit: 50 });
   assert.equal(out.status, "available");
   assert.equal(out.total, 21); assert.equal(out.count, 21);
   assert.equal(out.assessments.filter((a) => a.publication === "published").length, 18);
@@ -62,7 +62,7 @@ test("new entries are discovered without code changes and duplicate lifecycle ve
     tree.tree.push({ path, mode: "100644", type: "blob", sha: "test" });
     files[path] = files["assessments/published/WBTC.md"];
   }
-  assert.equal((await dispatchTool("get_collateral_assessments", {})).count, 23);
+  assert.equal((await dispatchTool("get_collateral_assessments", { view: "full", limit: 50 })).count, 23);
   const out = await dispatchTool("get_collateral_assessments", { asset: "WBTC" });
   assert.deepEqual(out.assessments.map((a) => a.publication), ["deprecated", "published"]);
 });
@@ -71,7 +71,7 @@ test("malformed or absent JSON does not erase readable reports; unavailable file
   files["assessments/published/WBTC.md"] = "---\n{bad json}\n---\n# Assessment\n\n## Summary\nReadable.\n\n## Details\nPreserved.";
   files["assessments/draft/BGB.md"] = "# Legacy report\n\n## Summary\nNo metadata.";
   failed.add("assessments/published/CRV.md");
-  const out = await dispatchTool("get_collateral_assessments", { includeContent: true });
+  const out = await dispatchTool("get_collateral_assessments", { includeContent: true, limit: 50 });
   assert.equal(out.status, "partial");
   assert.equal(out.count, 21);
   const wbtc = out.assessments.find((a) => a.asset === "WBTC");
@@ -84,11 +84,11 @@ test("malformed or absent JSON does not erase readable reports; unavailable file
 
 test("tree failure or truncation falls back to all directories; discovery failure is never an empty success", async () => {
   treeDown = true;
-  assert.equal((await dispatchTool("get_collateral_assessments", {})).count, 21);
+  assert.equal((await dispatchTool("get_collateral_assessments", { view: "full", limit: 50 })).count, 21);
   treeDown = false; tree.truncated = true;
-  assert.equal((await dispatchTool("get_collateral_assessments", {})).count, 21);
+  assert.equal((await dispatchTool("get_collateral_assessments", { view: "full", limit: 50 })).count, 21);
   failed.add("assessments/draft");
-  const out = await dispatchTool("get_collateral_assessments", {});
+  const out = await dispatchTool("get_collateral_assessments", { view: "full", limit: 50 });
   assert.equal(out.status, "unavailable"); assert.equal(out.assessments, null); assert.equal(out.count, null);
 });
 
@@ -103,4 +103,19 @@ test("invalid selectors and symlinks never become file requests; unknown assets 
   const out = await dispatchTool("get_collateral_assessments", { asset: "UNKNOWN" });
   assert.equal(out.count, 0); assert.equal(out.availableAssets.length, 21);
   assert.ok(calls.every((url) => url.includes("/git/trees/")));
+});
+
+
+test("default catalogue is compact, paginated before file reads and complete across pages", async () => {
+  const first = await dispatchTool("get_collateral_assessments", {});
+  assert.equal(first.count, 10); assert.equal(first.total, 21); assert.equal(first.view, "summary");
+  assert.deepEqual(first.pageInfo, { offset: 0, limit: 10, totalMatching: 21, hasNextPage: true, nextOffset: 10 });
+  assert.equal(calls.filter((x) => x.includes("raw.githubusercontent.com") || x.includes("/contents/assessments/")).length, 10);
+  for (const a of first.assessments) { assert.equal(a.metadata.risk_scores, undefined); assert.ok(a.metadata.risk_parameters); assert.equal(a.content, undefined); }
+  const second = await dispatchTool("get_collateral_assessments", { offset: 10 });
+  const third = await dispatchTool("get_collateral_assessments", { offset: 20 });
+  assert.equal(third.count, 1); assert.equal(third.pageInfo.nextOffset, null);
+  assert.equal(new Set([...first.assessments, ...second.assessments, ...third.assessments].map((a) => a.path)).size, 21);
+  const empty = await dispatchTool("get_collateral_assessments", { offset: 100 });
+  assert.equal(empty.count, 0); assert.equal(empty.pageInfo.hasNextPage, false);
 });

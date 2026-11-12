@@ -103,7 +103,7 @@ Organised by **what the agent needs**, not where the data comes from — one too
 | `get_insurance_products` | ZCHF-related third-party insurance products such as OpenCover ZCHF depeg cover |
 | `get_merch` | Merch store products, prices, availability |
 | `get_risk` | Independent third-party risk ratings — Pharos stablecoin-safety report card + Xerberus composite scores (`source` selector) |
-| `get_dune_stats` | Dune Analytics — holder counts, minting volume, savings TVL over time |
+| `get_dune_stats` | Published Dune results with explicitly scoped indexer alternatives; inspect `sources` and `duneStatus` |
 | `query_ponder` | Raw **read-only** GraphQL escape hatch against `ponder.frankencoin.com` |
 
 Parameter details live in each tool's MCP `inputSchema` (via `tools/list`) and in `GET /api`.
@@ -119,14 +119,16 @@ Website data now follows [`frankencoin-site-redesign/main`](https://github.com/F
 curl 'https://mcp.frankencoin.com/api/get_knowledge?topic=website'
 curl 'https://mcp.frankencoin.com/api/get_knowledge?topic=website&page=association&language=de'
 
-# Discover all collateral reports, including their publication status
+# Browse compact pages of collateral reports, including their publication status
 curl 'https://mcp.frankencoin.com/api/get_collateral_assessments'
+curl 'https://mcp.frankencoin.com/api/get_collateral_assessments?offset=10'
+curl 'https://mcp.frankencoin.com/api/get_collateral_assessments?view=full&limit=50'
 curl 'https://mcp.frankencoin.com/api/get_collateral_assessments?asset=WBTC'
 curl 'https://mcp.frankencoin.com/api/get_collateral_assessments?publication=draft&includeContent=true'
 curl 'https://mcp.frankencoin.com/api/get_collateral_assessments?document=framework'
 ```
 
-Assessments are discovered from [`frankencoin-collateral-assessments/main`](https://github.com/Frankencoin-ZCHF/frankencoin-collateral-assessments). New reports appear after the GitHub cache refreshes (6-hour TTL plus 6-hour stale-while-revalidate). Full source text and all JSON metadata are retained; proposed parameters and research publication status do not imply live collateral approval. Supporting documents include `overview`, `framework`, `schema`, `template`, `validator` and `workflow`.
+Assessments are discovered from [`frankencoin-collateral-assessments/main`](https://github.com/Frankencoin-ZCHF/frankencoin-collateral-assessments). New reports appear after the GitHub cache refreshes (6-hour TTL plus 6-hour stale-while-revalidate). Defaults return 10 summaries with author/date/proposed parameters and `pageInfo`. Follow `nextOffset` until null; `limit` is capped at 50. `view=full` returns all JSON metadata on that page, while `asset=WBTC` or `includeContent=true` adds unabridged text. Full source text and all JSON metadata remain accessible; proposed parameters and research publication status do not imply live collateral approval. Supporting documents include `overview`, `framework`, `schema`, `template`, `validator` and `workflow`.
 
 Website copy can contain dated figures and runtime placeholders; use protocol tools for live metrics. Missing content has explicit availability status. German content falls back to English where needed, with missing language sources reported.
 
@@ -139,7 +141,7 @@ with distinct supply, voting records and economic metrics.
 
 Use `get_governance?type=fcs` for API-reported wrapper state with source and
 availability notes, or `get_knowledge?topic=fcs` / `topic=fcs_migration` for
-technical docs. `get_protocol_snapshot` includes the same FCS reference/state
+technical docs. `get_protocol_snapshot` defaults to compact FCS identity/state (`includeContext=true` includes the full reference)
 without renaming its existing FPS metrics. Votes, backing balance and eligibility
 not exposed by the source are explicitly unavailable, not inferred from supply.
 
@@ -195,7 +197,7 @@ Health check: `curl http://localhost:3000/health`
 | `PORT` | `3000` | HTTP port |
 | `COINGECKO_API_KEY` | — | Enables full market/macro data (else those fields degrade) |
 | `DUNE_API_KEY` | — | Enables `get_dune_stats` (else it returns a soft note) |
-| `PHAROS_API_KEY` | — | Enables the Pharos section of `get_risk` (else it returns a soft note) |
+| `PHAROS_API_KEY` | — | Enables detailed Pharos v9 report cards; the public overall-grade fallback works without a key |
 | `XERBERUS_API_KEY` | — | Enables the Xerberus section of `get_risk` (else it returns a soft note) |
 | `XERBERUS_USER_EMAIL` | — | Sent with `XERBERUS_API_KEY` (Xerberus requires an identifying email header) |
 | `PUBLIC_URL` | `https://mcp.frankencoin.com` | Canonical origin used in `/llms.txt` and `/api` |
@@ -257,3 +259,10 @@ Runs on [Railway](https://railway.app) and **auto-deploys from `main`** via nixp
 ## License
 
 MIT — [Frankencoin Association](https://frankencoin.com)
+
+
+## v3.3 data and freshness contract
+
+No new tools: the same 17-tool REST/MCP catalogue supports lean defaults, source provenance and provider fallbacks. See [the v3.3 contract](docs/data-contract-v3.3.md) for changed defaults, exact metric scopes, freshness fields and deployment checks.
+
+Dune requests now read published results without starting executions. Failed or unverified queries fall back to indexer data with their source and scope stated; Dune health remains visible separately. Pharos uses the v9 model with a public overall-grade fallback. CHFAU supply uses a canonical Ethereum block hash and fixed RPC failover. FCS block evidence becomes available once the companion Frankencoin API change is deployed; older APIs remain supported with unknown measurement freshness.

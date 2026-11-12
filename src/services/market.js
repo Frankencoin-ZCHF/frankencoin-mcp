@@ -13,7 +13,8 @@
 
 import { apiFetch } from "../upstream/frankencoin.js";
 import { cgFetch } from "../upstream/coingecko.js";
-import { ethCall } from "../upstream/eth.js";
+import { ethRead } from "../upstream/eth.js";
+import { freshness } from "../lib/freshness.js";
 import { priceQuality } from "../lib/prices.js";
 import { observe } from "../lib/provider.js";
 import { observeMetrics } from "../lib/metric-coverage.js";
@@ -26,7 +27,7 @@ export async function getMarketData() {
   const metrics = ["usd", "chf", "usd_24h_change", "usd_market_cap"];
   const [rawPrices, ...observed] = await Promise.all([
     apiFetch("/prices/list"),
-    observe(ethCall(CHFAU_CONTRACT, "0x18160ddd"), (v) => typeof v === "string" && /^0x[0-9a-f]+$/i.test(v)),
+    observe(ethRead(CHFAU_CONTRACT, "0x18160ddd")),
     observeMetrics(cgFetch(`/simple/price?ids=frankencoin&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`), ["frankencoin"], [...metrics, "usd_24h_vol"]),
     observeMetrics(cgFetch(`/simple/price?ids=bitcoin,ethereum&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`), ["bitcoin", "ethereum"], [...metrics, "usd_24h_vol"]),
     observeMetrics(cgFetch(`/simple/price?ids=${collateralCgIds}&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true`), collateralCgIds.split(","), metrics),
@@ -34,9 +35,12 @@ export async function getMarketData() {
     observeMetrics(cgFetch(`/coins/markets?vs_currency=chf&ids=frankencoin,vnx-swiss-franc&order=market_cap_desc&sparkline=false&price_change_percentage=24h`), ["frankencoin", "vnx-swiss-franc"], ["current_price", "market_cap", "total_volume", "price_change_percentage_24h", "circulating_supply"], true),
   ]);
   const fcPrices = (rawPrices || []).map((row) => priceQuality(row));
-  const [chfauSupplyHex, zchfData, macroData, collateralData, globalData, chfStableData] = observed.map((r) => r.value);
+  const [chfauObservation, zchfData, macroData, collateralData, globalData, chfStableData] = observed.map((r) => r.value);
   const names = ["chfauSupply", "coingeckoZchf", "coingeckoMacro", "coingeckoCollateral", "coingeckoGlobal", "coingeckoStablecoins"];
   const sources = Object.fromEntries(names.map((name, i) => [name, observed[i].health]));
+
+  const chfauSupplyHex = chfauObservation?.value;
+  sources.chfauSupply = { ...sources.chfauSupply, ...(chfauObservation ? { ...chfauObservation, value: undefined, asOf: chfauObservation.measuredAt, freshness: freshness(chfauObservation.measuredAt, 600) } : {}) };
 
   const rate = chfUsdRateFromPrices(fcPrices);
   const fps = (fcPrices || []).find((p) => p.symbol === "FPS");
@@ -75,7 +79,7 @@ export async function getMarketData() {
 
   let chfauSupply = null;
   try {
-    if (chfauSupplyHex && chfauSupplyHex !== "0x") chfauSupply = Math.round(Number(BigInt(chfauSupplyHex)) / 1e6);
+    if (chfauSupplyHex && chfauSupplyHex !== "0x") chfauSupply = Number(BigInt(chfauSupplyHex)) / 1e6;
   } catch { chfauSupply = null; }
 
   // CHF-stablecoin CoinGecko data is denominated in CHF (vs_currency=chf) → derive USD.
@@ -98,7 +102,10 @@ export async function getMarketData() {
       marketCap: moneyPair(null, null), volume24h: moneyPair(null, null), change24hPercent: null,
       circulatingSupply: chfauSupply,
       contract: CHFAU_CONTRACT,
-      note: "No CoinGecko price feed yet — supply from on-chain (Ethereum, 6 decimals)",
+      totalSupply: chfauSupply,
+      supplyScope: "Ethereum ERC-20 totalSupply, not independently established circulating supply",
+      source: sources.chfauSupply,
+      note: "Supply is an Ethereum totalSupply() read at the reported canonical block (6 decimals). circulatingSupply is a deprecated alias; price and circulation exclusions are not established by this read.",
     },
   ];
 

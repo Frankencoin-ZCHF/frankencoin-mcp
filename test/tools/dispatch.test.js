@@ -103,19 +103,20 @@ test("query_ponder mutation rejected with generic message", async () => {
 
 test("get_dune_stats degrades to soft note without a key (no throw)", async () => {
   const out = await dispatchTool("get_dune_stats", {});
-  assert.match(out.note, /not configured/i);
+  assert.equal(out.queries.zchfHolders.status, "unconfigured");
   assert.equal(out.holders, null);
 });
 
-test("get_risk degrades to soft notes without keys (no throw, no network)", async () => {
+test("get_risk degrades to soft notes without keys (no throw; only public fallback is fetched)", async () => {
   calls.length = 0;
   const out = await dispatchTool("get_risk", {});
-  assert.match(out.pharos.note, /not configured/i);
+  assert.equal(out.pharos.status, "unconfigured");
   assert.equal(out.pharos.rating, null);
   assert.match(out.xerberus.note, /not configured/i);
   assert.equal(out.xerberus.ratings, null);
   // Missing keys must short-circuit BEFORE any outbound fetch.
-  assert.ok(!calls.some((c) => /pharos|xerberus/.test(c.url)), "no network call when keys absent");
+  assert.ok(calls.some((c) => c.url === "https://api.pharos.watch/api/safety-grades"));
+  assert.ok(!calls.some((c) => /report-cards|xerberus/.test(c.url)), "no protected call when keys absent");
 });
 
 test("get_risk source=pharos returns only the pharos section", async () => {

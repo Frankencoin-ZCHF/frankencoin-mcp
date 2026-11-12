@@ -58,3 +58,14 @@ export const FCS_REFERENCE = {
     risk: "No guaranteed profit, valuation, liquidity or exit proceeds. FCS participates in reserve income and losses and can lose all value. Read operation-specific previews and limits before transacting; this MCP is read-only.",
   },
 };
+
+/** Small identity/reference block for state tools; knowledge topics retain full mechanics. */
+export function fcsContext(includeContext = false) {
+  if (includeContext) return FCS_REFERENCE;
+  const { name, symbol, role, chainId, chain, address, underlying, links } = FCS_REFERENCE;
+  return { name, symbol, role, chainId, chain, address,
+    underlying: { symbol: underlying.symbol, address: underlying.address, wrapRatio: underlying.wrapRatio, note: underlying.note },
+    links: { website: links.website, mechanics: links.mechanics, apiReference: links.apiReference },
+    context: { included: false, tool: "get_knowledge", arguments: { topic: "fcs" } },
+  };
+}

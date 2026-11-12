@@ -25,7 +25,7 @@ export function parseAssessment(content) {
   return { metadata, metadataStatus, missingFields, summary, markdown, content };
 }
 
-export async function getCollateralAssessments({ asset, publication = "all", includeContent = false, document } = {}) {
+export async function getCollateralAssessments({ asset, publication = "all", includeContent = false, document, view = "summary", limit = 10, offset = 0 } = {}) {
   const documents = Object.entries(ASSESSMENT_DOCUMENTS).map(([id, path]) => ({ document: id, path, url: sourceUrl(path) }));
   const base = { repository: ASSESSMENTS_REPO, branch: "main", documents,
     note: "Repository research, including drafts and deprecated assessments, is not live collateral approval or executable lending terms. Publication status comes from the directory. Metadata and rates retain their source units; use get_collaterals/get_positions for protocol state. Full source text remains available even when metadata cannot be parsed." };
@@ -42,18 +42,21 @@ export async function getCollateralAssessments({ asset, publication = "all", inc
   const sources = { index: index.health };
   if (!index.value) return { ...base, status: "unavailable", sources, total: null, count: null, assessments: null };
   const selected = index.value.filter((entry) => (publication === "all" || entry.publication === publication) && (!asset || entry.asset.toLowerCase() === asset.toLowerCase()));
-  const assessments = await Promise.all(selected.map(async (entry) => {
+  const page = selected.slice(offset, offset + limit);
+  const full = view === "full" || asset != null || includeContent;
+  const assessments = await Promise.all(page.map(async (entry) => {
     const observed = await observe(githubFile(ASSESSMENTS_REPO, entry.path), (text) => typeof text === "string" && /^#\s+\S/m.test(text) && !/^\s*(?:<!doctype html|<html)/i.test(text));
     const parsed = observed.value === null ? null : parseAssessment(observed.value);
     const status = parsed ? parsed.metadataStatus === "parsed" && !parsed.missingFields.length ? "available" : "partial" : "unavailable";
     sources[entry.path] = { ...observed.health, status, ...(status === "partial" ? { code: "incomplete_metadata" } : {}) };
     return { ...entry, url: sourceUrl(entry.path), status,
-      metadata: parsed?.metadata ?? null, metadataStatus: parsed?.metadataStatus ?? "unavailable", missingFields: parsed?.missingFields ?? null,
+      metadata: parsed?.metadata ? full ? parsed.metadata : Object.fromEntries(["asset_name", "asset_ticker", "contract_address", "assessment_date", "author", "risk_parameters"].filter((key) => Object.hasOwn(parsed.metadata, key)).map((key) => [key, parsed.metadata[key]])) : null, metadataStatus: parsed?.metadataStatus ?? "unavailable", missingFields: parsed?.missingFields ?? null,
       summary: parsed?.summary ?? null,
       ...((asset || includeContent) ? { markdown: parsed?.markdown ?? null, content: parsed?.content ?? null } : {}),
     };
   }));
-  return { ...base, status: availability(sources), sources, total: index.value.length, count: assessments.length, assessments,
-    ...(asset && !assessments.length ? { error: `No assessment found for "${asset}" with publication=${publication}`, availableAssets: index.value.map(({ asset, publication }) => ({ asset, publication })) } : {}),
+  return { ...base, status: availability(sources), sources, total: index.value.length, count: assessments.length, view: full ? "full" : "summary", assessments,
+    pageInfo: { offset, limit, totalMatching: selected.length, hasNextPage: offset + assessments.length < selected.length, nextOffset: offset + assessments.length < selected.length ? offset + assessments.length : null },
+    ...(asset && !selected.length ? { error: `No assessment found for "${asset}" with publication=${publication}`, availableAssets: index.value.map(({ asset, publication }) => ({ asset, publication })) } : {}),
   };
 }
