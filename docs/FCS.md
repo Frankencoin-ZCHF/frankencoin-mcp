@@ -51,12 +51,9 @@ reads `ask`, `bid`, `totalAssets`, `totalSupply` and `isBinding` with `FCSABI`.
 - `isBinding=false` and a zero supply remain real values; missing/invalid data is
   null, never coerced to zero/false. Wrong deployment, invalid payloads and source
   errors return `state.status=unavailable`; missing fields return partial data.
-- The API substitutes zero when `bid()` fails. Expose that ambiguous zero as null
-  with a note, not a verified zero quote. `/fcs/discount` is intentionally not
+- The API substitutes zero when `bid()` fails. Without explicit `metadata.readStatus.bid=available`, expose that ambiguous zero as null; a metadata-marked successful zero remains zero. `/fcs/discount` is intentionally not
   consumed: its fallback of 1 likewise cannot distinguish a failed read.
-- This is **API-reported contract state**, not independently RPC-verified or
-  same-block data. The 30-second MCP cache cannot establish upstream freshness:
-  the API exposes no block number or update timestamp, both explicitly null.
+- This is **API-reported contract state**, not independently RPC-verified. When valid API metadata is present, all five reads are reported as pinned to one block, with its hash and timestamp. `updatedAt` is upstream refresh completion; `retrievedAt` is actual MCP HTTP retrieval, preserved through cache hits. Without that metadata, block/time remain null and freshness unknown. The 30-second MCP cache cannot establish measurement freshness.
 - Internal FCS votes, holder votes/delegation, wrapper-held FPS, underlying votes,
   quorum and redemption eligibility are explicitly `notProvided`. FCS supply is
   not used to infer any of them. Dune FPS/ZCHF holders are not FCS holders.

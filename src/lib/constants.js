@@ -10,7 +10,8 @@ export const API_BASE = "https://api.frankencoin.com";
 export const PONDER_BASE = "https://ponder.frankencoin.com";
 export const DUNE_BASE = "https://api.dune.com/api/v1";
 export const CG_BASE = "https://pro-api.coingecko.com/api/v3";
-export const ETH_RPC = "https://eth.llamarpc.com";
+export const ETH_RPC = "https://ethereum-rpc.publicnode.com";
+export const ETH_RPC_FALLBACKS = [ETH_RPC, "https://eth.drpc.org"];
 export const GITHUB_API = "https://api.github.com";
 export const GITHUB_RAW = "https://raw.githubusercontent.com";
 export const MERCH_BASE = "https://merch.frankencoin.com";
@@ -67,7 +68,8 @@ export const COINGECKO_IDS = {
   "0x68749665ff8d2d112fa859aa293f07a622782f38": "tether-gold",
   "0x79d4f0232a66c4c91b89c76362016a1707cfbf4f": "vnx-franc",
   "0xfedc5f4a6c38211c1338aa411018dfaf26612c08": "spdr-sp-500-etf-ondo",
-  "0x9d275685dc284c8eb1c79f6aba7a63dc75ec890a": "apple-tokenized-stock-defichain",
+  // AAPLx: no verified CoinGecko contract mapping. The DeFiChain Apple token
+  // is a different asset; retain the Frankencoin API price instead.
   // FPS (0x1bA26…) is deliberately absent — not listed on CoinGecko.
 };
 
@@ -81,14 +83,12 @@ export const FPS_CONTRACT = "0x1bA26788dfDe592fec8bcB0Eaff472a42BE341B2";
 
 // ── Risk ratings (get_risk) ──────────────────────────────────────────────────
 
-// Pharos stablecoin-safety report card id for ZCHF, and its five scored dimensions.
+// Pharos v9 uses three pillars; do not map legacy v8 dimensions onto them.
 export const PHAROS_STABLECOIN_ID = "zchf-frankencoin";
-export const PHAROS_DIMENSIONS = [
-  { key: "pegStability", label: "Peg Stability" },
-  { key: "liquidity", label: "Liquidity / Exit Capacity" },
-  { key: "resilience", label: "Resilience" },
-  { key: "decentralization", label: "Decentralization" },
-  { key: "dependencyRisk", label: "Dependency Risk" },
+export const PHAROS_PILLARS = [
+  { key: "backing", label: "Backing" },
+  { key: "exit", label: "Exit" },
+  { key: "control", label: "Control" },
 ];
 
 // The Frankencoin entities the site surfaces from Xerberus' bulk registry/scores feed.

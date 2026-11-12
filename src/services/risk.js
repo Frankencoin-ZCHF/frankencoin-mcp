@@ -1,23 +1,7 @@
-/**
- * get_risk — independent third-party risk ratings for Frankencoin (ZCHF), the same
- * ratings surfaced on frankencoin.com's Trust & Security section.
- *
- *   source=pharos   → Pharos stablecoin-safety report card (overall grade/score +
- *                     five dimensions: peg stability, liquidity, resilience,
- *                     decentralization, dependency risk).
- *   source=xerberus → Xerberus composite risk scores (0–100) for the Frankencoin
- *                     protocol, DAO, and Ethereum savings vault.
- *   source=all      → both (default).
- *
- * Degradable (like get_dune_stats): a provider WITHOUT its API key returns a soft
- * "not configured" note instead of throwing, so the tool never hard-fails.
- * Ratings are produced by EXTERNAL protocols, not the Frankencoin DAO.
- */
-
 import { pharosReportCards } from "../upstream/pharos.js";
 import { xerberusRegistryScores } from "../upstream/xerberus.js";
-import { isoFromUnix } from "../lib/numbers.js";
-import { PHAROS_STABLECOIN_ID, PHAROS_DIMENSIONS, XERBERUS_FC_ENTITIES } from "../lib/constants.js";
+import { freshness, sourceTime } from "../lib/freshness.js";
+import { PHAROS_STABLECOIN_ID, PHAROS_PILLARS, XERBERUS_FC_ENTITIES } from "../lib/constants.js";
 import { providerFailure, availability } from "../lib/provider.js";
 import { MissingSecretError } from "../lib/errors.js";
 
@@ -35,58 +19,54 @@ function scoreBand(score) {
 
 // ── Pharos ────────────────────────────────────────────────────────────────────
 
-function parsePharos(body) {
-  if (!isRecord(body) || !Array.isArray(body.cards)) return null;
-  const card = body.cards.find((c) => isRecord(c) && c.id === PHAROS_STABLECOIN_ID);
-  if (!isRecord(card)) return null;
-
-  const cardDims = isRecord(card.dimensions) ? card.dimensions : {};
-  const dimensions = PHAROS_DIMENSIONS.map(({ key, label }) => {
-    const d = isRecord(cardDims[key]) ? cardDims[key] : {};
-    const score = num(d.score);
-    return {
-      key,
-      label,
-      grade: str(d.grade) ?? "NR",
-      score,
-      band: scoreBand(score),
-      detail: str(d.detail) ?? "Dimension unavailable",
-    };
+function parsePharos(observation, publicOnly) {
+  const body = observation.data;
+  if (body?.model !== "v9" || body.schemaVersion !== (publicOnly ? 1 : 9)) return null;
+  const cards = publicOnly ? body.grades : body.cards;
+  const card = Array.isArray(cards) && cards.find((c) => c?.id === PHAROS_STABLECOIN_ID);
+  if (!card || !["rated", "not-rated", "pipeline-gap"].includes(card.ratingStatus)) return null;
+  const score = num(card.score);
+  if (card.ratingStatus === "rated" && (score === null || score < 0 || score > 100 || !str(card.grade))) return null;
+  const pillars = publicOnly ? null : PHAROS_PILLARS.map(({ key, label }) => {
+    const p = card.pillars?.[key];
+    const n = num(p?.score);
+    return { key, label, score: n !== null && n >= 0 && n <= 100 ? n : null,
+      evidenceLevel: p?.evidenceLevel ?? null, freshness: p?.freshness ?? null,
+      aggregationDisposition: p?.aggregationDisposition ?? null, reasons: p?.reasons ?? [] };
   });
-
-  const overallScore = num(card.overallScore);
-  const methodology = isRecord(body.methodology) ? body.methodology : null;
-
+  const publicationStatus = publicOnly ? body.publicationStatus : body.publicationHealth?.status;
+  const quality = freshness(body.asOfSec, 7200);
+  if (publicationStatus === "held") quality.status = "held";
+  const complete = !publicOnly && pillars.every((p) => p.score !== null) && !card.partialEvidence && publicationStatus === "current" && quality.status === "fresh";
   return {
-    provider: "Pharos",
-    providerUrl: "https://pharos.watch",
-    name: str(card.name) ?? "Frankencoin",
-    symbol: str(card.symbol) ?? "ZCHF",
-    overallGrade: str(card.overallGrade) ?? "NR",
-    overallScore,
-    overallBand: scoreBand(overallScore),
-    methodologyVersion: methodology ? str(methodology.version) : null,
-    updatedAt: isoFromUnix(num(body.updatedAt)),
-    dimensions,
-    note: "Stablecoin-safety report card. Scores are 0–100; higher is safer.",
+    provider: "Pharos", providerUrl: "https://pharos.watch", name: "Frankencoin", symbol: "ZCHF",
+    status: card.ratingStatus === "pipeline-gap" ? "unavailable" : complete ? "available" : "partial",
+    overallGrade: str(card.grade), overallScore: card.ratingStatus === "rated" ? score : null,
+    overallBand: scoreBand(card.ratingStatus === "rated" ? score : null),
+    ratingStatus: card.ratingStatus, partialEvidence: card.partialEvidence ?? null,
+    nrReasons: card.nrReasons ?? [], reasonCodes: card.reasonCodes ?? [], gradeHold: card.gradeHold ?? null,
+    methodologyVersion: publicOnly ? str(body.methodologyVersion) : str(body.methodology?.version),
+    model: body.model, pillars, publicationStatus: publicationStatus ?? null,
+    asOf: quality.asOf, updatedAt: sourceTime(body.updatedAt), retrievedAt: observation.retrievedAt,
+    freshness: quality, source: { url: observation.url, kind: publicOnly ? "public_overall_grade" : "report_card_v9" },
+    note: publicOnly ? "Public overall safety grade; detailed pillar evidence unavailable from this feed."
+      : "Pharos v9 backing, exit and control pillars. Scores are 0–100; higher is safer. Provider not-rated and pipeline-gap are distinct from a zero score.",
   };
 }
 
 async function getPharosSection() {
+  let primary;
   try {
-    const parsed = parsePharos(await pharosReportCards());
-    if (!parsed) {
-      return { status: "unavailable", code: "empty_response", note: "Pharos returned no report card for ZCHF.", rating: null, asOf: null };
-    }
-    const hasOverall = parsed.overallScore !== null;
-    const anyDimension = parsed.dimensions.some((d) => d.score !== null);
-    const complete = hasOverall && parsed.dimensions.every((d) => d.score !== null);
-    return { ...parsed, status: complete ? "available" : hasOverall || anyDimension ? "partial" : "unavailable", asOf: parsed.updatedAt, checkedAt: new Date().toISOString() };
+    const parsed = parsePharos(await pharosReportCards(), false);
+    if (parsed && parsed.ratingStatus !== "pipeline-gap") return parsed;
+    primary = { status: "unavailable", code: parsed ? "pipeline_gap" : "invalid_report_card" };
+  } catch (e) { primary = providerFailure(e); }
+  try {
+    const parsed = parsePharos(await pharosReportCards({ publicOnly: true }), true);
+    if (parsed) return { ...parsed, primarySource: primary };
+    return { ...primary, rating: null, fallback: { status: "unavailable", code: "invalid_grade_feed" }, note: "Pharos returned no valid current-model ZCHF rating." };
   } catch (e) {
-    if (e instanceof MissingSecretError) {
-      return { ...providerFailure(e), note: "Pharos API key not configured — stablecoin-safety ratings unavailable.", rating: null };
-    }
-    return { ...providerFailure(e), rating: null, note: "Pharos data unavailable; upstream request failed." };
+    return { ...primary, fallback: providerFailure(e), rating: null, note: "Pharos report card and public grade feed unavailable." };
   }
 }
 

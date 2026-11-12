@@ -154,7 +154,7 @@ export async function getDuneStats() {
   const { values, ...health } = await duneMetrics(["zchfHolders", "fpsHolders", "mintingVolume", "savingsTvl"]);
   return {
     ...health,
-    holders: Object.values(health.queries).every((q) => q.status === "unconfigured") ? null : { zchf: values.zchfHolders?.[0] ?? null, fps: values.fpsHolders?.[0] ?? null },
+    holders: Object.values(values).every((v) => v === null) ? null : { zchf: values.zchfHolders?.[0] ?? null, fps: values.fpsHolders?.[0] ?? null },
     minting: values.mintingVolume?.slice(0, 30) ?? null,
     savingsTvl: values.savingsTvl?.slice(0, 30) ?? null,
   };

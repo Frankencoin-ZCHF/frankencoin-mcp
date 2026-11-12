@@ -45,14 +45,20 @@ const empty = z.object({}).strict();
 export const TOOLS = [
   {
     name: "get_collateral_assessments",
-    description: "Collateral risk research from frankencoin-collateral-assessments: discovers all published, draft and deprecated reports. Returns complete structured metadata (asset, author/date, links, risk scores, tail risks, proposed parameters) and summaries. Set asset to a catalogued filename ticker (case-insensitive) for the full assessment, or includeContent=true for every selected full report. document selects the complete framework, schema, template, repository overview or validation sources. Publication status is not on-chain approval; use get_collaterals/get_positions for live protocol state.",
+    description: "Collateral risk research from frankencoin-collateral-assessments: discovers all published, draft and deprecated reports. Defaults to a compact 10-report page with identity, author/date, proposed parameters and summary. Use view=full for all structured risk metadata, limit/offset to page, and pageInfo.nextOffset to continue. Set asset to a catalogued filename ticker (case-insensitive) for the full assessment, or includeContent=true for every selected full report. document selects the complete framework, schema, template, repository overview or validation sources. Publication status is not on-chain approval; use get_collaterals/get_positions for live protocol state.",
     input: z.object({
       asset: z.string().regex(/^[A-Za-z0-9_-][A-Za-z0-9_.-]{0,63}$/).optional(),
       publication: z.enum(["all", "published", "draft", "deprecated"]).default("all"),
       includeContent: bool(false),
+      view: z.enum(["summary", "full"]).default("summary"),
+      limit: intClamp(1, 50, 10),
+      offset: intClamp(0, 1_000_000, 0),
       document: z.enum(Object.keys(ASSESSMENT_DOCUMENTS)).optional(),
     }).strict(),
     params: [
+      { name: "view", type: "string", required: false, description: "summary (default) | full structured metadata; asset/includeContent always return full metadata." },
+      { name: "limit", type: "number", required: false, description: "Page size (default 10, max 50)." },
+      { name: "offset", type: "number", required: false, description: "Page offset (default 0); use pageInfo.nextOffset." },
       { name: "asset", type: "string", required: false, description: "Asset ID from the catalogue, e.g. WBTC or SPCXon; includes full source text." },
       { name: "publication", type: "string", required: false, description: "all (default) | published | draft | deprecated." },
       { name: "includeContent", type: "boolean", required: false, description: "Return full Markdown and original source for all selected assessments (default false)." },
@@ -63,10 +69,10 @@ export const TOOLS = [
   {
     name: "get_protocol_snapshot",
     description:
-      "Frankencoin (ZCHF) protocol snapshot: supply + per-chain breakdown, TVL, underlying FPS Equity price/supply/market cap/reserve/earnings (cumulative all-time), savings rates/proposals and active challenges. Separately returns FCS, the canonical governance and share token wrapping FPS 1:1 on Ethereum: API-reported FCS supply, attributable equity, binding and reference prices, or explicit unavailability. FPS metrics are not relabelled FCS metrics. Monetary figures are { chf, usd } pairs with top-level fx, except FCS totalAssetsZchf and referencePriceZchf in native ZCHF units. Best starting point for protocol questions.",
-    input: empty,
-    params: [],
-    handler: () => getProtocolSnapshot(),
+      "Frankencoin (ZCHF) protocol snapshot: supply + per-chain breakdown, TVL, underlying FPS Equity price/supply/market cap/reserve/earnings (cumulative all-time), savings rates/proposals and active challenges. Separately returns FCS, the canonical governance and share token wrapping FPS 1:1 on Ethereum: API-reported FCS supply, attributable equity, binding and reference prices, or explicit unavailability. FPS metrics are not relabelled FCS metrics. Monetary figures are { chf, usd } pairs with top-level fx, except FCS totalAssetsZchf and referencePriceZchf in native ZCHF units. Best starting point for protocol questions. Defaults to state, provenance and material warnings; includeContext=true restores full FCS mechanics/reference context.",
+    input: z.object({ includeContext: bool(false) }).strict(),
+    params: [{ name: "includeContext", type: "boolean", required: false, description: "Include full FCS mechanics and references (default false)." }],
+    handler: (a) => getProtocolSnapshot(a),
   },
   {
     name: "get_market_data",
@@ -87,18 +93,20 @@ export const TOOLS = [
   {
     name: "get_governance",
     description:
-      "FCS governance: canonical holder-facing share token, 1:1 underlying FPS relationship, Ethereum-only token with voting/delegation and cross-chain vote snapshots, dual quorum and separate binding threshold, official mechanics/migration/trade links. type=fcs returns API-reported FCS supply, attributable equity, binding and reference prices with source/availability notes; internal votes, holder votes, backing balance and eligibility are not supplied by that API. type=all includes this plus indexed approved rate changes, minters, underlying FPS Equity trades (FCS wrapper labelled) and FPS/ZCHF Dune holders, not FCS holders. Other filters include static FCS context. Pending rates use the public API open set; status=pending never returns approved history.",
+      "FCS governance: canonical holder-facing share token, 1:1 underlying FPS relationship, Ethereum-only token with voting/delegation and cross-chain vote snapshots, shared governance quorum of more than 1% and a separate binding threshold, official mechanics/migration/trade links. type=fcs returns API-reported FCS supply, attributable equity, binding and reference prices with source/availability notes; internal votes, holder votes, backing balance and eligibility are not supplied by that API. type=all includes this plus indexed approved rate changes, minters, underlying FPS Equity trades (FCS wrapper labelled) and FPS/ZCHF holders with source and scope labels, not FCS holders. Other filters include static FCS context. Pending rates use the public API open set; status=pending never returns approved history.",
     input: z.object({
+      includeContext: bool(false),
       type: z.enum(["all", "fcs", "rate_proposals", "minters", "equity_trades", "holders"]).default("all"),
       status: z.enum(["active", "denied", "all", "pending", "approved"]).default("all"),
       limit: intClamp(1, 100, 20),
     }).strict(),
     params: [
+      { name: "includeContext", type: "boolean", required: false, description: "Include full FCS reference context (default false)." },
       { name: "type", type: "string", required: false, description: "all | fcs | rate_proposals | minters | equity_trades | holders (default all). fcs isolates wrapper state from indexer activity." },
       { name: "status", type: "string", required: false, description: "For minters: active | denied | all. For rate_proposals: pending | approved | all (authoritative open state plus indexed history)." },
       { name: "limit", type: "number", required: false, description: "Max items per section (default 20, max 100)." },
     ],
-    handler: (a) => getGovernance({ type: a.type, status: a.status, limit: a.limit }),
+    handler: (a) => getGovernance(a),
   },
   {
     name: "get_positions",
@@ -205,7 +213,7 @@ export const TOOLS = [
   {
     name: "get_risk",
     description:
-      "Independent third-party risk ratings for Frankencoin (ZCHF) — the same ratings shown on frankencoin.com. 'pharos' returns the Pharos stablecoin-safety report card: an overall grade + 0–100 score plus five scored dimensions (peg stability, liquidity/exit capacity, resilience, decentralization, dependency risk). 'xerberus' returns Xerberus composite on-chain risk scores (0–100) for the Frankencoin protocol, DAO, and Ethereum savings vault. Ratings are produced by external protocols, NOT the Frankencoin DAO. Use 'source' to select (default 'all').",
+      "Independent third-party risk ratings for Frankencoin (ZCHF) — the same ratings shown on frankencoin.com. 'pharos' returns the Pharos stablecoin-safety report card: an overall grade + 0–100 score plus v9 backing, exit and control pillars; the public grade feed provides an explicit overall-only fallback when detailed evidence is unavailable. 'xerberus' returns Xerberus composite on-chain risk scores (0–100) for the Frankencoin protocol, DAO, and Ethereum savings vault. Ratings are produced by external protocols, NOT the Frankencoin DAO. Use 'source' to select (default 'all').",
     input: z.object({
       source: z.enum(["all", "pharos", "xerberus"]).default("all"),
     }).strict(),
@@ -217,7 +225,7 @@ export const TOOLS = [
   {
     name: "get_dune_stats",
     description:
-      "On-chain analytics from Dune Analytics — ZCHF holder count, FPS holder count, historical minting volume, and savings TVL over time. Check status and per-query diagnostics: unavailable metrics are null, not healthy delayed data.",
+      "Read published Dune analytics results, with explicitly scoped Frankencoin indexer alternatives for unavailable or unverified queries: Ethereum positive-balance ZCHF/FPS address counts, 30-day gross Ethereum ZCHF mint events and daily savings totals. Check sources for scope and freshness; queries/duneStatus report Dune health even when a fallback works. No query execution. Unavailable metrics are null.",
     input: empty,
     params: [],
     handler: () => getDuneStats(),

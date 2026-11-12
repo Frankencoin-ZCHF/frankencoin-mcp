@@ -15,16 +15,20 @@ function ttlFor(path) {
   return path === "/ecosystem/collateral/list" ? LONG_TTL : SHORT_TTL;
 }
 
-export function apiFetch(path) {
+export function apiObservation(path) {
   const { ttl, swr } = ttlFor(path);
   return getOrLoad(
     `fc:${path}`,
     ttl,
-    () => fetchJson(`${API_BASE}${path}`, {
+    async () => ({ data: await fetchJson(`${API_BASE}${path}`, {
       source: "frankencoin",
       timeout: 10_000,
       headers: { Accept: "application/json" },
-    }),
+    }), retrievedAt: new Date().toISOString() }),
     { swrMs: swr },
   );
+}
+
+export async function apiFetch(path) {
+  return (await apiObservation(path)).data;
 }

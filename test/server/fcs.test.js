@@ -47,6 +47,8 @@ test("REST manifest and llms discover FCS without adding a tool or relabeling FP
   }
   const gov = manifest.tools.find((t) => t.name === "get_governance");
   assert.match(gov.params.find((p) => p.name === "type").description, /fcs/);
+  assert.match(gov.description, /shared governance quorum of more than 1%/);
+  assert.doesNotMatch(gov.description, /dual quorum/);
   const llms = await (await fetch(base + "/llms.txt")).text();
   assert.match(llms, /canonical holder-facing governance and share token/i);
   assert.match(llms, /underlying Equity token/);
@@ -67,7 +69,10 @@ test("REST knowledge, governance and snapshot agree on FCS identity, links and u
     assert.equal(j.ok, true);
     assert.equal(j.result.fcs.state.totalSupply, 200);
     assert.equal(j.result.fcs.state.isBinding, false);
-    assert.deepEqual(j.result.fcs.mechanics, FCS_REFERENCE.mechanics);
+    assert.equal(j.result.fcs.mechanics, undefined);
+    const full = await get(`/api/${suffix}${suffix.includes("?") ? "&" : "?"}includeContext=true`);
+    assert.deepEqual(full.result.fcs.mechanics, FCS_REFERENCE.mechanics);
+    assert.equal(full.result.fcs.state.totalSupply, j.result.fcs.state.totalSupply);
   }
   sourceDown = true;
   for (const suffix of ["get_governance", "get_governance?type=fcs", "get_protocol_snapshot"]) {
@@ -111,4 +116,24 @@ test("no nonexistent legacy FPS hostname in repository text", () => {
     }
   }
   walk(root);
+});
+
+
+test("MCP snapshot discovery and calls support lean and expanded context", async () => {
+  const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
+  const { StreamableHTTPClientTransport } = await import("@modelcontextprotocol/sdk/client/streamableHttp.js");
+  const client = new Client({ name: "compact-test", version: "1" });
+  try {
+    await client.connect(new StreamableHTTPClientTransport(new URL(base + "/mcp")));
+    const manifest = await client.listTools();
+    assert.equal(manifest.tools.length, 17);
+    assert.ok(manifest.tools.find((t) => t.name === "get_protocol_snapshot").inputSchema.properties.includeContext);
+    for (const includeContext of [false, true]) {
+      const result = await client.callTool({ name: "get_protocol_snapshot", arguments: { includeContext } });
+      assert.notEqual(result.isError, true);
+      assert.deepEqual(result.structuredContent, JSON.parse(result.content[0].text));
+      assert.equal(Boolean(result.structuredContent.fcs.mechanics), includeContext);
+      assert.equal(result.structuredContent.fcs.address, FCS_REFERENCE.address);
+    }
+  } finally { await client.close(); }
 });

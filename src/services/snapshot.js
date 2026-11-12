@@ -11,14 +11,14 @@ import { getSavings } from "./savings.js";
 import { getChallenges } from "./positions.js";
 import { getFcs } from "./fcs.js";
 
-export async function getProtocolSnapshot() {
+export async function getProtocolSnapshot({ includeContext = false } = {}) {
   const [infoData, fpsData, prices, savings, challenges, fcs] = await Promise.all([
     apiFetch("/ecosystem/frankencoin/info"),
     apiFetch("/ecosystem/fps/info"),
     apiFetch("/prices/list"),
     getSavings(),
     getChallenges({ limit: 5 }),
-    getFcs(),
+    getFcs({ includeContext }),
   ]);
 
   // FPS USD price: /ecosystem/fps/info.token.price is CHF-denominated (despite the
@@ -53,6 +53,7 @@ export async function getProtocolSnapshot() {
   const baseRate = savings.rates.approved.find((r) => r.chainId === 1 && r.ratePpm === 10000);
   const activeChallenges = challenges.challenges.filter((c) => c.status !== "Success");
 
+  const generatedAt = new Date().toISOString();
   return {
     zchf: {
       name: infoData.erc20?.name,
@@ -99,6 +100,8 @@ export async function getProtocolSnapshot() {
       recent: activeChallenges.slice(0, 3),
     },
     fx: fxBlock(rate),
-    updatedAt: new Date().toISOString(),
+    generatedAt,
+    updatedAt: generatedAt, // deprecated response-generation alias, not source measurement time
+    freshnessNote: "generatedAt (and legacy updatedAt) is response assembly time. Use per-chain updated and fcs.state.source where supplied; other upstream measurement times are not established here. This is not one same-block protocol snapshot.",
   };
 }

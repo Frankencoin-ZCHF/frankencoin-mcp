@@ -28,8 +28,8 @@ test("marks required params with * and omits the note for param-less tools", () 
   const txt = renderLlmsTxt(TOOLS, BASE);
   // query_ponder has a required `query` param.
   assert.match(txt, /\*\*query_ponder\*\*[^\n]*_Params: `query\*`\._/);
-  // get_protocol_snapshot has no params → no _Params:_ suffix on its line.
-  const line = txt.split("\n").find((l) => l.includes("**get_protocol_snapshot**"));
+  // get_dune_stats remains parameterless.
+  const line = txt.split("\n").find((l) => l.includes("**get_dune_stats**"));
   assert.ok(line && !line.includes("_Params:"));
 });
 
