@@ -44,7 +44,7 @@ src/
 
   services/             — business logic: compose upstream calls → clean domain objects
     snapshot.js market.js savings.js governance.js positions.js
-    analytics.js content.js risk.js ponder.js
+    analytics.js content.js website.js assessments.js risk.js ponder.js
 
   server/
     mcp.js              — createMcpServer(): fresh McpServer per session, registers tools
@@ -93,12 +93,12 @@ fetch is shared across every tool that needs it. Non-authoritative — wiped on 
 economics. `get_knowledge` adds `fcs` and `fcs_migration` topics; curated references
 are shared in `src/lib/fcs.js`, state assembly in `src/services/fcs.js`. No new tool.
 See [docs/FCS.md](docs/FCS.md) for exact source commits, field units and fallbacks.
-Treat the planned FCS subdomain as not yet live, never an application/data source.
+The canonical website is https://frankencoin.com/fcs. Do not invent an FCS subdomain.
 
 ## Tools
 
 `get_protocol_snapshot`, `get_market_data`, `get_savings`, `get_governance`,
-`get_positions`, `get_challenges`, `get_collaterals`, `get_analytics`,
+`get_positions`, `get_challenges`, `get_collaterals`, `get_collateral_assessments`, `get_analytics`,
 `get_knowledge`, `get_compliance`, `get_news`, `get_insurance_products`, `get_merch`, `get_risk`,
 `get_dune_stats`, `query_ponder`.
 
@@ -259,4 +259,10 @@ Target: `mcp.frankencoin.com`, deployed on **Railway** (auto-deploys from `main`
 nixpacks, no build step, no volume). Railway injects `PORT`.
 
 Stateless between restarts — no database, no persistent state. Safe to restart any time.
-`/health` returning `{status:"ok", ...15 tools}` is the deploy gate.
+`/health` returning `{status:"ok", ...17 tools}` is the deploy gate.
+
+## Website and assessment content (v3.2)
+
+Website reads use `frankencoin-site-redesign/main`. `get_knowledge` with `topic=website` lists a fixed page catalogue; `page` and `language=en|de` return full JSON content and source health. `get_compliance` reads the redesigned jurisdiction rows/documents plus security audits.
+
+`get_collateral_assessments` discovers regular Markdown files from the fixed collateral assessments repository. Callers select a discovered asset ID, never a filesystem path or host. Preserve JSON frontmatter and full Markdown, unknown fields and original parameter units. Draft/published/deprecated is research lifecycle status, not live protocol approval. Metadata parse failures retain readable text with partial status. Supporting documents use a fixed allow-list. See `docs/data-contract-v3.2.md`.

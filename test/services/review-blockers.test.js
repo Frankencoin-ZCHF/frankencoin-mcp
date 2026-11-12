@@ -15,8 +15,9 @@ beforeEach(() => {
 
 test("R1 lock dependency artifact version agrees with resolved tarball, root bump retained", () => {
   const lock = JSON.parse(readFileSync(new URL("../../package-lock.json", import.meta.url)));
-  assert.equal(lock.version, "3.1.0");
-  assert.equal(lock.packages[""].version, "3.1.0");
+  const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url)));
+  assert.equal(lock.version, pkg.version);
+  assert.equal(lock.packages[""].version, pkg.version);
   const dependency = lock.packages["node_modules/shebang-regex"];
   assert.equal(dependency.version, "3.0.0");
   assert.ok(dependency.resolved.endsWith(`/shebang-regex-${dependency.version}.tgz`));

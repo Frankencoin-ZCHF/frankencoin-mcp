@@ -11,12 +11,14 @@ import { merchProducts, merchMetadata } from "../upstream/merch.js";
 import { observe, availability } from "../lib/provider.js";
 import { UpstreamError } from "../lib/errors.js";
 import { FCS_REFERENCE } from "../lib/fcs.js";
+import { getWebsiteContent, siteAbs, absoluteContent } from "./website.js";
 import {
-  SITE_REPO, DOCS_REPO, DOC_FILES, KNOWLEDGE_TOPICS, FPS_CONTRACT,
+  SITE_REPO, SITE_ORIGIN, DOCS_REPO, DOC_FILES, KNOWLEDGE_TOPICS, FPS_CONTRACT,
   MERCH_BASE, MERCH_STOREFRONT_MCP, MERCH_UCP_MCP,
 } from "../lib/constants.js";
 
-export async function getKnowledge({ topic = "overview" } = {}) {
+export async function getKnowledge({ topic = "overview", page, language = "en" } = {}) {
+  if (topic === "website") return getWebsiteContent({ page, language });
   if (topic === "token_addresses") return getTokenAddresses();
   if (topic === "compliance") return getCompliance();
   if (topic === "frontends") return getFrontends();
@@ -95,8 +97,9 @@ async function getLinks() {
     githubJson(SITE_REPO, "src/content/en/shared/footer.json"),
     githubJson(SITE_REPO, "src/content/en/exchanges.json"),
     githubJson(SITE_REPO, "src/content/en/use-cases.json"),
+    githubJson(SITE_REPO, "src/content/en/press.json"),
   ].map((request) => request.catch(() => null)));
-  const [footerData, exchangeData, useCaseData] = fetched.map((data) => data ?? {});
+  const [footerData, exchangeData, useCaseData, pressData] = fetched.map((data) => data ?? {});
 
   const footerLinks = {};
   for (const col of footerData.footer?.columns ?? []) {
@@ -106,17 +109,19 @@ async function getLinks() {
       ...((col.sections ?? []).flatMap((s) => s.links ?? [])),
     ].map((l) => ({
       label: l.label,
-      url: l.href?.startsWith("http") ? l.href : `https://frankencoin.com${l.href}`,
+      url: siteAbs(l.href),
       external: l.external ?? false,
     }));
   }
 
+  const allFooterLinks = Object.values(footerLinks).flat();
   const communityLinks = footerLinks.community ?? [];
   const findUrl = (label) =>
     communityLinks.find((l) => l.label.toLowerCase().includes(label.toLowerCase()))?.url ?? null;
 
   return {
     topic: "links",
+    sourceRepository: SITE_REPO,
     fcs: FCS_REFERENCE,
     app: {
       main: "https://app.frankencoin.com",
@@ -140,7 +145,7 @@ async function getLinks() {
     developers: {
       docs: "https://docs.frankencoin.com",
       api: "https://api.frankencoin.com",
-      whitepaper: "https://app.frankencoin.com/thesis-frankencoin.pdf",
+      whitepaper: allFooterLinks.find((link) => /whitepaper/i.test(link.label))?.url ?? null,
       github: "https://github.com/Frankencoin-ZCHF",
     },
     analytics: {
@@ -149,8 +154,10 @@ async function getLinks() {
       dune: "https://dune.com/frankencoin",
     },
     brand: {
-      logos: "https://github.com/Frankencoin-ZCHF/www/tree/main/media_kit",
-      guidelines: "https://frankencoin.com/Frankencoin_Brand_Guidelines.pdf",
+      page: `${SITE_ORIGIN}/press`,
+      logos: `${SITE_ORIGIN}/press`,
+      guidelines: siteAbs(pressData.assets?.guidelines?.file),
+      assets: absoluteContent(pressData.assets?.items ?? null),
     },
     footer: footerLinks,
     exchanges: (exchangeData.exchanges ?? []).map((e) => ({
@@ -164,27 +171,59 @@ async function getLinks() {
   };
 }
 
-// Prefix relative site paths with the canonical origin; leave absolute + mailto as-is.
-const SITE_ORIGIN = "https://frankencoin.com";
-function siteAbs(href) {
-  if (!href) return null;
-  if (/^(https?:|mailto:)/i.test(href)) return href;
-  // Site-hosted PDF filenames contain raw spaces — encode so the URL is directly
-  // fetchable. encodeURI is idempotent for already-encoded (%20) sequences.
-  return encodeURI(`${SITE_ORIGIN}${href.startsWith("/") ? "" : "/"}${href}`);
-}
-
 /**
  * get_compliance — legal & regulatory posture with every relevant paper/link.
- * Sourced live from the Frankencoin site repo (compliance.json + the audits block
- * of index.json). Also backs get_knowledge?topic=compliance. Informational, not legal
+ * Sourced from redesigned compliance.json and security.json (legacy index fallback).
+ * Also backs get_knowledge?topic=compliance. Informational, not legal
  * advice.
  */
 export async function getCompliance() {
-  const [c, index] = await Promise.all([
-    githubJson(SITE_REPO, "src/content/en/compliance.json"),
-    githubJson(SITE_REPO, "src/content/en/index.json"),
-  ]);
+  const primary = await observe(githubJson(SITE_REPO, "src/content/en/compliance.json"));
+  if (!primary.value) throw new UpstreamError("github");
+  const c = primary.value;
+  if (!Array.isArray(c?.rows) || !Array.isArray(c?.documents?.items)) {
+    if (!c?.swiss && !c?.eu) throw new UpstreamError("github");
+    return legacyCompliance(c, await githubJson(SITE_REPO, "src/content/en/index.json"));
+  }
+  if (!c.rows.every((r) => typeof r?.title === "string" && typeof r?.body === "string") || !c.documents.items.every((d) => typeof d?.label === "string" && typeof d?.href === "string")) throw new UpstreamError("github");
+  const security = await observe(githubJson(SITE_REPO, "src/content/en/security.json"), (v) => Array.isArray(v?.audits?.items) && v.audits.items.every((a) => typeof a?.reviewer === "string" && typeof a?.component === "string" && typeof a?.href === "string"));
+  const auditData = security.value?.audits;
+  const legacy = auditData ? null : await observe(githubJson(SITE_REPO, "src/content/en/index.json"), (v) => Array.isArray(v?.trust_security?.audits?.partners));
+  const sources = { compliance: primary.health, security: security.health, ...(legacy ? { legacyAudits: legacy.health } : {}) };
+  const rows = absoluteContent(c.rows);
+  const asText = (html = "") => html.replace(/<a\b[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/g, "[$2]($1)").replace(/<[^>]*>/g, "");
+  // The released English schema names the jurisdictions explicitly. Never put
+  // another row's legal assessment under the wrong jurisdiction after a reorder.
+  const swiss = rows.find((r) => r.title === "Switzerland");
+  const eu = rows.find((r) => r.title === "European Union");
+  const providers = rows.find((r) => r.title === "Service providers");
+  const doc = (d) => d ? { label: d.label, url: siteAbs(d.href) } : null;
+  const papers = c.documents.items.map((d) => ({ category: d.href === swiss?.cta?.href || siteAbs(d.href) === swiss?.cta?.href ? "Swiss (FINMA)" : "EU (MiCA)", ...doc(d) }));
+  const legacyAudits = legacy?.value?.trust_security?.audits;
+  const reports = auditData ? auditData.items.map((a) => ({ firm: a.reviewer, label: a.component, date: a.date ?? null, url: siteAbs(a.href) }))
+    : legacyAudits ? legacyAudits.partners.flatMap((p) => (p.sublinks?.length ? p.sublinks : [{ label: "Audit report", href: p.href }]).map((d) => ({ firm: p.altText, ...doc(d) }))).filter((r) => r.url) : null;
+  const bounty = auditData?.bounty ?? legacyAudits?.bugBounty;
+  const contact = c.cta?.primary;
+  const terminology = rows.flatMap((r) => [...(r.body ?? "").matchAll(/<a\b[^>]*href="(https:\/\/www\.21analytics\.co\/glossary\/[^" ]+)"[^>]*>(.*?)<\/a>/g)].map((m) => ({ label: m[2], url: m[1] })));
+  return {
+    topic: "compliance", status: security.value ? "available" : "partial", sources,
+    sourceRepository: SITE_REPO,
+    title: c.heroTitle?.replaceAll("|", " ") ?? "Frankencoin Compliance", intro: c.intro ?? null,
+    regulatory: {
+      swiss: { classification: null, summary: swiss ? asText(swiss.body) : null, assessor: "LEXR Law Switzerland AG", keyPoints: [], fps: null, document: doc(swiss?.cta) },
+      euMica: { classification: null, summary: eu ? asText(eu.body) : null, assessor: "LEXR Germany Rechtsanwalts GmbH", keyPoints: [], documents: papers.filter((p) => p.category === "EU (MiCA)").map(({ category, ...d }) => d) },
+      serviceProviders: providers ? { title: providers.title, summary: asText(providers.body), document: doc(providers.cta) } : null,
+    },
+    sections: rows, terminology, papers,
+    audits: { description: security.value?.hero?.subtitle ?? legacyAudits?.description ?? null, reports, bugBounty: bounty ? { label: bounty.label, description: bounty.body ?? bounty.description ?? null, url: siteAbs(bounty.href) } : null },
+    contact: { title: c.cta?.title ?? null, description: c.cta?.body ?? null, email: contact?.href?.startsWith("mailto:") ? contact.href.slice(7) : null, url: siteAbs(contact?.href) },
+    summary: c.intro ?? null, disclaimer: "This information summarizes independent legal assessments and does not constitute legal advice.",
+    compliancePageUrl: `${SITE_ORIGIN}/compliance`,
+    note: "Compliance content and audit reports come from the redesign repository. Full jurisdiction wording and document links are preserved; unavailable audit data is null.",
+  };
+}
+
+async function legacyCompliance(c, index) {
 
   const audits = index.trust_security?.audits ?? {};
 
@@ -291,7 +330,7 @@ export async function getFrontends() {
       : null,
     count: observed[0].value ? frontends.length : null,
     frontends: observed[0].value ? frontends : null,
-    addYours: "Hosting your own frontend? Add it to src/content/shared/frontends.json in the frankencoin-site repo and open a pull request to get listed.",
+    addYours: `Hosting your own frontend? Add it to src/content/shared/frontends.json in ${SITE_REPO} and open a pull request to get listed.`,
     page: "https://frankencoin.com/frontends",
     note: "Frankencoin is an open protocol with NO official frontend — each interface is operated independently by its maintainers, listed for information only (not audited, not endorsed). Verify the source before connecting a wallet. Sourced live from the Frankencoin website repository.",
   };
@@ -310,23 +349,24 @@ export async function getNews() {
     section("src/content/shared/media.json", (data) => ({
       articles: array(data, "articles", text).map((url) => {
         const meta = data.articleMetadata?.[url] ?? {};
-        return { url, title: meta.title ?? null, description: meta.description ?? null, siteName: meta.siteName ?? null, publishedDate: meta.publishedDate ?? null, image: meta.image ?? null };
+        return { url, title: meta.title ?? null, description: meta.description ?? null, siteName: meta.siteName ?? null, publishedDate: meta.publishedDate ?? null, image: siteAbs(meta.image) };
       }),
       videos: array(data, "videos", text).map((url) => {
         const meta = data.videoMetadata?.[url] ?? {};
-        return { url, title: meta.title ?? null, description: meta.description ?? null, author: meta.author ?? null, publishedDate: meta.publishedDate ?? null };
+        return { url, title: meta.title ?? null, description: meta.description ?? null, author: meta.author ?? null, publishedDate: meta.publishedDate ?? null, thumbnail: siteAbs(meta.thumbnail) };
       }),
     })),
     section("src/content/en/use-cases.json", (data) => array(data, "cases", record).map((c) => ({
-      title: c.title, partner: c.partner, category: c.category, description: c.description, url: c.link,
+      title: c.title, partner: c.partner, category: c.category, description: c.description, url: siteAbs(c.link), image: siteAbs(c.image),
     }))),
     section("src/content/en/ecosystem.json", (data) => array(data, "tabs", record).map((t) => ({
-      name: t.name, category: t.category ?? t.badge, description: t.description, url: t.href,
+      name: t.name, category: t.category ?? t.badge, description: t.description, url: siteAbs(t.href), image: siteAbs(t.image),
     }))),
   ]);
   const sources = Object.fromEntries(["media", "useCases", "ecosystem"].map((name, i) => [name, observed[i].health]));
   return {
     status: availability(sources), sources,
+    sourceRepository: SITE_REPO,
     media: observed[0].value,
     useCases: observed[1].value,
     ecosystem: observed[2].value,
@@ -335,43 +375,26 @@ export async function getNews() {
 }
 
 export async function getInsuranceProducts() {
-  const products = [
-    {
-      id: "opencover-zchf-depeg",
-      name: "OpenCover ZCHF Depeg Cover",
-      provider: "OpenCover",
-      type: "fixed_term_depeg_cover",
-      category: "Depeg cover",
-      asset: "ZCHF",
-      url: "https://opencover.com/frankencoin",
-      status: "live",
-      riskCovered: "Frankencoin ZCHF fixed-term depeg event",
-      pricing: {
-        premiumRate: "0.99% p.a.",
-        premiumPayment: "upfront",
-      },
-      capacity: {
-        underwritingCapacityUsd: 800_000,
-      },
-      purchaseFlow: {
-        summary: "Users choose a cover amount and term, then pay the premium upfront.",
-        requiresWallet: true,
-      },
-      roles: {
-        operator: "OpenCover",
-        issuerOrUnderwriter: "OpenCover / its underwriting partners",
-        frankencoinAssociation: "ecosystem listing/reference only — not issuer, underwriter, broker, or guarantor",
-      },
-      addedAt: "2026-07-17",
-      note: "Third-party cover product operated by OpenCover; not issued or underwritten by the Frankencoin Association.",
-    },
-  ];
-
+  const observed = await observe(githubJson(SITE_REPO, "src/content/en/insurance.json"), (v) => Array.isArray(v?.products) && v.products.every((p) => typeof p.title === "string" && typeof p.cta?.href === "string"));
+  const products = observed.value?.products.map((p) => {
+    const openCover = p.cta.href === "https://opencover.com/frankencoin";
+    return {
+      id: openCover ? "opencover-zchf-depeg" : p.cta.href,
+      name: p.title, provider: openCover ? "OpenCover" : p.provider,
+      type: openCover ? "fixed_term_depeg_cover" : null,
+      category: openCover ? "Depeg cover" : null, asset: "ZCHF", url: siteAbs(p.cta.href),
+      status: "listed", riskCovered: p.description,
+      pricing: { premiumRate: null, premiumPayment: null, note: "The provider quotes the premium for the selected amount and term; the website does not publish a current fixed rate." },
+      capacity: { underwritingCapacityUsd: null },
+      purchaseFlow: { summary: p.howItWorks?.steps?.map((step) => step.body).join(" ") ?? null, requiresWallet: openCover ? true : null },
+      roles: { operator: openCover ? "OpenCover" : p.provider, issuerOrUnderwriter: p.highlights?.find((h) => h.label === "Underwriter")?.value ?? null, frankencoinAssociation: "ecosystem listing/reference only — not issuer, underwriter, broker, or guarantor" },
+      details: absoluteContent(p),
+    };
+  }) ?? null;
   return {
-    feature: "insurance_products",
-    count: products.length,
-    products,
-    note: "Curated list of third-party ZCHF-related insurance products exposed as a dedicated feature. Informational only; availability, pricing, capacity, terms, and claims handling are controlled by the provider.",
+    feature: "insurance_products", status: observed.health.status, sources: { website: observed.health },
+    sourceRepository: SITE_REPO, count: products?.length ?? null, products,
+    note: "Third-party cover listings and terms sourced from the redesigned website. Provider pricing, capacity and eligibility must be checked at purchase; no stale fixed quotes are substituted.",
   };
 }
 

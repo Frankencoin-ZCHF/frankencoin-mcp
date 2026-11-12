@@ -93,7 +93,7 @@ Preserved distinctions:
 ### Released website source
 
 The canonical repository main branch was inspected at
-`444f8318b25068b46b81b8117b661a0119740fe4`, including `src/content/en/fcs.json`.
+`fe507a1f6cc9f35f90ae70c3d5aff405ea81a52a`, including `src/content/en/fcs.json`.
 The public https://frankencoin.com/fcs page responded successfully. Released site
 content supersedes the removed launch branch. Technical docs take precedence over simplified or
 inconsistent marketing copy. Documentation is fetched from the released GitBook main branch.

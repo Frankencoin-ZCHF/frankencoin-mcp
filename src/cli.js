@@ -17,6 +17,7 @@ import { getPositions, getChallenges, getCollaterals } from "./services/position
 import { getAnalytics, getDuneStats } from "./services/analytics.js";
 import { getKnowledge, getNews, getMerch, getCompliance } from "./services/content.js";
 import { getRisk } from "./services/risk.js";
+import { dispatchTool } from "./tools/dispatch.js";
 import { runPonderQuery } from "./services/ponder.js";
 
 const NO_COLOR = process.env.NO_COLOR || !process.stdout.isTTY;
@@ -184,13 +185,21 @@ const COMMANDS = {
       console.log(JSON.stringify(d, null, 2));
     },
   },
+  assessments: {
+    desc: "Collateral assessments, risk framework, schema and templates",
+    help: "frankencoin assessments [--asset WBTC] [--publication all|published|draft|deprecated] [--includeContent] [--document framework|schema|template|overview|validator|workflow]",
+    async run(flags) {
+      const args = Object.fromEntries(["asset", "publication", "includeContent", "document"].filter((key) => flags[key] !== undefined).map((key) => [key, flags[key]]));
+      console.log(JSON.stringify(await dispatchTool("get_collateral_assessments", args), null, 2));
+    },
+  },
   knowledge: {
     desc: "Documentation and reference content",
-    help: "frankencoin knowledge [--topic overview|faq|savings|governance|fcs|fcs_migration|minting|risks|token_addresses|links|...] [--json]",
+    help: "frankencoin knowledge [--topic overview|faq|savings|governance|fcs|fcs_migration|minting|risks|token_addresses|links|...] [--page association|press|...] [--language en|de] [--json]",
     async run(flags) {
-      const d = await getKnowledge({ topic: flags.topic ?? "overview" });
+      const d = await getKnowledge({ topic: flags.topic ?? "overview", page: flags.page, language: flags.language ?? "en" });
       if (flags.json) return console.log(JSON.stringify(d, null, 2));
-      if (d.content) console.log(d.content);
+      if (typeof d.content === "string") console.log(d.content);
       else console.log(JSON.stringify(d, null, 2));
     },
   },
@@ -291,7 +300,7 @@ function printHelp(cmd) {
     console.log(`\n${c.bold("Usage:")} ${COMMANDS[cmd].help}\n\n${COMMANDS[cmd].desc}\n`);
     return;
   }
-  console.log(`\n${c.bold(c.cyan("frankencoin"))} — Frankencoin (ZCHF) protocol CLI (15 tools)\n`);
+  console.log(`\n${c.bold(c.cyan("frankencoin"))} — Frankencoin (ZCHF) protocol CLI\n`);
   console.log(`${c.bold("Commands:")}\n`);
   for (const [name, def] of Object.entries(COMMANDS)) {
     console.log(`  ${c.cyan(name.padEnd(16))} ${def.desc}`);

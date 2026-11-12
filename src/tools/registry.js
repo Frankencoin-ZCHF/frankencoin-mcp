@@ -8,6 +8,8 @@
  */
 
 import { z } from "zod";
+import { KNOWLEDGE_TOPICS, WEBSITE_PAGES, ASSESSMENT_DOCUMENTS } from "../lib/constants.js";
+import { getCollateralAssessments } from "../services/assessments.js";
 import { getProtocolSnapshot } from "../services/snapshot.js";
 import { getMarketData } from "../services/market.js";
 import { getSavings } from "../services/savings.js";
@@ -41,6 +43,23 @@ const empty = z.object({}).strict();
 // ── registry ─────────────────────────────────────────────────────────────────
 
 export const TOOLS = [
+  {
+    name: "get_collateral_assessments",
+    description: "Collateral risk research from frankencoin-collateral-assessments: discovers all published, draft and deprecated reports. Returns complete structured metadata (asset, author/date, links, risk scores, tail risks, proposed parameters) and summaries. Set asset to a catalogued filename ticker (case-insensitive) for the full assessment, or includeContent=true for every selected full report. document selects the complete framework, schema, template, repository overview or validation sources. Publication status is not on-chain approval; use get_collaterals/get_positions for live protocol state.",
+    input: z.object({
+      asset: z.string().regex(/^[A-Za-z0-9_-][A-Za-z0-9_.-]{0,63}$/).optional(),
+      publication: z.enum(["all", "published", "draft", "deprecated"]).default("all"),
+      includeContent: bool(false),
+      document: z.enum(Object.keys(ASSESSMENT_DOCUMENTS)).optional(),
+    }).strict(),
+    params: [
+      { name: "asset", type: "string", required: false, description: "Asset ID from the catalogue, e.g. WBTC or SPCXon; includes full source text." },
+      { name: "publication", type: "string", required: false, description: "all (default) | published | draft | deprecated." },
+      { name: "includeContent", type: "boolean", required: false, description: "Return full Markdown and original source for all selected assessments (default false)." },
+      { name: "document", type: "string", required: false, description: "Read a supporting document instead of asset reports: " + Object.keys(ASSESSMENT_DOCUMENTS).join(" | ") },
+    ],
+    handler: (a) => getCollateralAssessments(a),
+  },
   {
     name: "get_protocol_snapshot",
     description:
@@ -140,14 +159,16 @@ export const TOOLS = [
   {
     name: "get_knowledge",
     description:
-      "Frankencoin explanatory/reference content. Topics: overview (default), what_is, faq, savings, governance (FCS vetoes/delegation and cross-chain vote snapshots), fcs (FCS mechanics and underlying FPS distinction), fcs_migration (FPS/WFPS migration), pool_shares (FCS investing and underlying FPS economics), minting, opening_positions, auctions, risks, reserve, api, compliance, frontends, token_addresses (including Ethereum-only FCS contract), links (official docs, CoW Swap and legacy FPS page). FCS references survive unavailable live docs. The canonical FCS website is https://frankencoin.com/fcs; current official documentation takes precedence over historical audit summaries.",
+      "Frankencoin explanatory/reference content. Topics: overview (default), what_is, faq, savings, governance (FCS vetoes/delegation and cross-chain vote snapshots), fcs (FCS mechanics and underlying FPS distinction), fcs_migration (FPS/WFPS migration), pool_shares (FCS investing and underlying FPS economics), minting, opening_positions, auctions, risks, reserve, api, compliance, frontends, token_addresses (including Ethereum-only FCS contract), links (official docs, CoW Swap and legacy FPS page). FCS references survive unavailable live docs. Use topic=website to list redesign pages, then page=<page id> and language=en|de for complete website content including association, press, security, glossary and integrations. The canonical FCS website is https://frankencoin.com/fcs; current official documentation takes precedence over historical audit summaries.",
     // topic is a permissive string: an unknown topic returns { error, availableTopics }
     // from the handler (NOT a 400) and never builds a path from the raw value (SPEC/T28).
-    input: z.object({ topic: z.string().max(64).default("overview") }).strict(),
+    input: z.object({ topic: z.string().max(64).default("overview"), page: z.string().max(64).optional(), language: z.enum(["en", "de"]).default("en") }).strict(),
     params: [
-      { name: "topic", type: "string", required: false, description: "overview | what_is | faq | savings | governance | fcs | fcs_migration | minting | opening_positions | auctions | risks | reserve | pool_shares | api | compliance | frontends | token_addresses | links (default overview)." },
+      { name: "topic", type: "string", required: false, description: KNOWLEDGE_TOPICS.join(" | ") + " (default overview)." },
+      { name: "page", type: "string", required: false, description: "For topic=website only; omit to list pages. " + Object.keys(WEBSITE_PAGES).join(" | ") },
+      { name: "language", type: "string", required: false, description: "Website content language: en (default) | de. GitBook documentation remains in its source language." },
     ],
-    handler: (a) => getKnowledge({ topic: a.topic }),
+    handler: (a) => getKnowledge(a),
   },
   {
     name: "get_news",
@@ -160,7 +181,7 @@ export const TOOLS = [
   {
     name: "get_insurance_products",
     description:
-      "ZCHF-related third-party insurance products exposed as a dedicated ecosystem feature. Returns live/curated insurance products, including provider, category/type (e.g. depeg cover), covered risk, URL, pricing, capacity, purchase flow, and Frankencoin Association role disclaimer. Use this for OpenCover ZCHF depeg cover and future ZCHF insurance integrations — not get_news.",
+      "ZCHF-related third-party insurance products exposed as a dedicated ecosystem feature. Returns website-sourced insurance listings, including provider, covered risks and exclusions, URL, purchase flow, and Frankencoin Association role. Pricing and capacity are null when the site publishes no current quote. Use this for OpenCover ZCHF depeg cover and future ZCHF insurance integrations — not get_news.",
     input: empty,
     params: [],
     handler: () => getInsuranceProducts(),

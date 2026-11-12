@@ -41,16 +41,16 @@ function call(path, { method = "GET", headers = {}, body, xff } = {}) {
   });
 }
 
-test("/health is lean, says 16 tools, no webhook mention", async () => {
+test("/health is lean, says 17 tools, no webhook mention", async () => {
   const r = await call("/health");
   assert.equal(r.status, 200);
   const j = await r.json();
   assert.equal(j.status, "ok");
-  assert.equal(j.toolCount, 16);
+  assert.equal(j.toolCount, 17);
   assert.doesNotMatch(JSON.stringify(j), /webhook|17 tools/i);
 });
 
-test("/llms.txt → 200 text/plain, cacheable, lists all 16 tools", async () => {
+test("/llms.txt → 200 text/plain, cacheable, lists all 17 tools", async () => {
   const r = await call("/llms.txt");
   assert.equal(r.status, 200);
   assert.match(r.headers.get("content-type"), /text\/plain/);
@@ -59,7 +59,7 @@ test("/llms.txt → 200 text/plain, cacheable, lists all 16 tools", async () => 
   assert.match(txt, /^# Frankencoin MCP Server/);
   assert.ok(txt.includes("**query_ponder**"));
   assert.ok(txt.includes("**get_insurance_products**"));
-  assert.match(txt, /## Tools \(16\)/);
+  assert.match(txt, /## Tools \(17\)/);
 });
 
 test("/llms.txt rejects non-GET → 405 with Allow", async () => {

@@ -59,7 +59,7 @@ curl -X POST https://mcp.frankencoin.com/api/query_ponder \
   -d '{"query":"{ analyticDailyLogs(limit:3){ items { date fpsTotalSupply totalEquity } } }"}'
 ```
 
-Data-contract corrections and migration notes: [v3.1](docs/data-contract-v3.1.md). Optional-provider health is separate from transport success; `ok:true` does not mean all metrics are available.
+Data-contract corrections and migration notes: [v3.2 website and assessments](docs/data-contract-v3.2.md) · [v3.1](docs/data-contract-v3.1.md). Optional-provider health is separate from transport success; `ok:true` does not mean all metrics are available.
 
 Every REST response is a JSON envelope: `{ "ok": true, "tool": "<name>", "result": { … } }`.
 
@@ -71,6 +71,8 @@ npx frankencoin-mcp market
 npx frankencoin-mcp positions --detail --limit 10
 npx frankencoin-mcp analytics --type trades --limit 5
 npx frankencoin-mcp knowledge --topic governance
+npx frankencoin-mcp knowledge --topic website --page association --language de
+npx frankencoin-mcp assessments --asset WBTC
 npx frankencoin-mcp ponder '{ equityTrades(limit:3){ items { kind trader shares } } }'
 ```
 
@@ -93,8 +95,9 @@ Organised by **what the agent needs**, not where the data comes from — one too
 | `get_positions` | Minting positions; `detail=true` for full on-chain data, else a lightweight address list |
 | `get_challenges` | Liquidation challenges with collateral details, pricing, and position context |
 | `get_collaterals` | Accepted collateral types across all chains |
+| `get_collateral_assessments` | Full collateral research, structured risk scores and proposed parameters, drafts/published/deprecated reports, risk framework, schema and template |
 | `get_analytics` | Historical time-series, FPS trades, minter history, rate-change timeline (`type` selector) |
-| `get_knowledge` | Docs & reference: FCS mechanics (`fcs`), migration (`fcs_migration`), FAQ, guides, exact token addresses and links (`topic` selector) |
+| `get_knowledge` | Docs & reference: FCS mechanics (`fcs`), migration (`fcs_migration`), FAQ, guides, exact token addresses and links, and complete redesigned website content (`topic=website`, `page`, `language=en|de`) |
 | `get_compliance` | Legal & regulatory posture — Swiss FINMA + EU MiCA classifications, legal opinions, MiCA white paper, ESMA register, security audits, bug bounty |
 | `get_news` | Press articles, videos, use cases, ecosystem partners |
 | `get_insurance_products` | ZCHF-related third-party insurance products such as OpenCover ZCHF depeg cover |
@@ -106,6 +109,26 @@ Organised by **what the agent needs**, not where the data comes from — one too
 Parameter details live in each tool's MCP `inputSchema` (via `tools/list`) and in `GET /api`.
 
 ---
+
+## Website content and collateral research (v3.2)
+
+Website data now follows [`frankencoin-site-redesign/main`](https://github.com/Frankencoin-ZCHF/frankencoin-site-redesign), including the redesigned compliance, security, press and insurance schemas. Existing technical documentation topics still use GitBook.
+
+```bash
+# Discover website pages, then read one complete page in either language
+curl 'https://mcp.frankencoin.com/api/get_knowledge?topic=website'
+curl 'https://mcp.frankencoin.com/api/get_knowledge?topic=website&page=association&language=de'
+
+# Discover all collateral reports, including their publication status
+curl 'https://mcp.frankencoin.com/api/get_collateral_assessments'
+curl 'https://mcp.frankencoin.com/api/get_collateral_assessments?asset=WBTC'
+curl 'https://mcp.frankencoin.com/api/get_collateral_assessments?publication=draft&includeContent=true'
+curl 'https://mcp.frankencoin.com/api/get_collateral_assessments?document=framework'
+```
+
+Assessments are discovered from [`frankencoin-collateral-assessments/main`](https://github.com/Frankencoin-ZCHF/frankencoin-collateral-assessments). New reports appear after the GitHub cache refreshes (6-hour TTL plus 6-hour stale-while-revalidate). Full source text and all JSON metadata are retained; proposed parameters and research publication status do not imply live collateral approval. Supporting documents include `overview`, `framework`, `schema`, `template`, `validator` and `workflow`.
+
+Website copy can contain dated figures and runtime placeholders; use protocol tools for live metrics. Missing content has explicit availability status. German content falls back to English where needed, with missing language sources reported.
 
 ## FCS and underlying FPS
 
