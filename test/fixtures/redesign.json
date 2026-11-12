@@ -1,0 +1,2320 @@
+{
+  "src/content/shared/media.json": {
+    "_comment": "This file contains media content (articles and videos) and manual metadata overrides. Open Graph data is fetched by default for articles. Only add manual overrides when you need to override specific fields.",
+    "articles": [
+      "https://www.tippinpoint.ch/erst-die-blockchain-macht-hayeks-vision-moglich/",
+      "https://www.allnews.ch/content/produits/un-stablecoin-en-francs-suisses-arrive-sur-kraken",
+      "https://drive.google.com/file/d/15Vmha0vSnlxsjrFMCIGfBcWPw9lW7b-W/view",
+      "https://www.thenextvertical.com/can-the-swiss-franc-go-on-chain-interview-with-johannes-kern-managing-director-at-frankencoin-association/",
+      "https://www.moneytoday.ch/news/internationale-kryptoboerse-listet-ab-sofort-frankencoin",
+      "https://www.finews.ch/news/finanzplatz/73899-frankencoin-listing-kraken-kryptoboerse",
+      "https://www.tippinpoint.ch/kraken-nimmt-schweizer-stablecoin-ins-angebot-auf/",
+      "https://www.moneytoday.ch/news/frankencoin-will-in-europa-terrain-besetzen",
+      "https://www.finews.ch/news/finanzplatz/72735-frankencoin-association-stablecoin-johannes-kern-mica-whitepaper-kryptoboerse-eu-zchf-schweizer-franken-finanzplatz-schweiz",
+      "https://crispybull.com/frankencoin-johannes-kern-swiss-franc-stablecoin/",
+      "https://cryptoadventure.com/vitalik-linked-wallet-buys-zchf-why-frankencoin-fits-his-stablecoin-thesis/",
+      "https://cointelegraph.com/news/allunity-swiss-franc-stablecoin-chfau-mica",
+      "https://www.nzz.ch/wirtschaft/der-digitale-franken-ist-da-aber-er-stammt-aus-deutschland-schweizer-anbieter-haben-keine-chance-ld.1926730",
+      "https://www.tippinpoint.ch/artikel/78597/den_zins_des_stablecoins_entfesseln.html",
+      "https://www.finews.ch/news/finanzplatz/70983-stablecoin-frankencoin-plusplus-finanzprodukte-etp-treasury-liquiditaetsbewirtschaftung-mietkaution-finanzplatz-schweiz",
+      "https://www.finews.ch/news/finanzplatz/70924-frankencoin-association-advisory-board-stablecoin-andre-scherrer-cedric-waldburger-eric-sarasin-philip-hopf-rene-keller-blockchain",
+      "https://www.tippinpoint.ch/artikel/78308/der_franken-stablecoin_wird_zahlungsmittel_und_macht_das_bankkonto_ueberfluessig_.html",
+      "https://www.tippinpoint.ch/artikel/77293/bitcoin-suisse-praesident_luzius_meisser_lanciert_mit_dem_frankencoin_einen_alternativen_digitalen_franken_.html",
+      "https://www.finews.ch/news/finanzplatz/68422-frankencoin-mt-pelerin-integration-johannes-kern-arnaud-salomon-zchf-stablecoin",
+      "https://agefi.com/de/nachrichten/unternehmen/der-erste-stablecoin-in-schweizer-franken-kann-jetzt-als-zahlungsmittel-in-der-schweiz-genutzt-werden",
+      "https://www.btc-echo.de/news/krypto-news-dach-frankencoin-stablecoin-haertesten-waehrung-europa-217105/",
+      "https://www.leaderdigital.ch/specials/investsg-2025-mit-energie-nachhaltigkeit-621/zwischen-bau-immobilien-und-fintech-14153.html",
+      "https://www.schweizeraktien.net/blog/2024/06/17/aktionariat-ein-neuer-handelsplatz-fuer-aktien-token-und-darin-integriert-der-frankencoin-63687/",
+      "https://www.20min.ch/story/tether-und-co-werden-stablecoins-die-naechste-finanzkrise-ausloesen-103387106",
+      "https://www.nzz.ch/wirtschaft/kunden-von-spar-schweiz-koennen-bereits-in-ueber-100-laeden-mit-kryptowaehrungen-bezahlen-ld.1898731",
+      "https://www.letemps.ch/cyber/crypto/le-bitcoin-continue-de-battre-des-records-porte-par-un-contexte-qui-lui-est-de-plus-en-plus-favorable",
+      "https://agefi.com/actualites/entreprises/frankencoin-valeur-locative-swatch-les-trois-mots-cles-de-la-semaine",
+      "https://agefi.com/actualites/trajectoires/johannes-kern-nomme-directeur-general-de-la-frankencoin-association",
+      "https://agefi.com/actualites/entreprises/le-frankencoin-desormais-disponible-sur-mt-pelerin",
+      "https://www.finews.ch/news/finanzplatz/71537-luzius-meisser-stablecoin-frankencoin-sbf-krypto-finig-allunity-finma-sif-bundesrat-micar-tether-bitcoin-finanzsystem-geldschoepfung-smartcontracts-dezentral-staking-lending-gold"
+    ],
+    "videos": [
+      "https://www.youtube.com/watch?v=564k9sNoM_c",
+      "https://www.youtube.com/watch?v=gDuZ6baS98g",
+      "https://www.youtube.com/watch?v=qpSljn2UCBA",
+      "https://www.youtube.com/watch?v=ExuQRdgLfLY",
+      "https://www.youtube.com/watch?v=9-fBHEPSu7c",
+      "https://www.youtube.com/watch?v=2HOu1-F1jFk",
+      "https://www.youtube.com/watch?v=iVn_po_1-sY",
+      "https://www.youtube.com/watch?v=99EkLfdEE58&t=3465s",
+      "https://www.youtube.com/watch?v=Vey3nY8oKQs",
+      "https://www.youtube.com/watch?v=Onm3gOQCXlM",
+      "https://www.youtube.com/watch?v=eg_sqXwIfQk",
+      "https://www.youtube.com/watch?v=HHD0cWCfBS4",
+      "https://www.youtube.com/watch?v=xASCsQotwZk",
+      "https://www.youtube.com/watch?v=Xp3kf3RORmc",
+      "https://www.youtube.com/watch?v=GNYixPzeW3I",
+      "https://www.youtube.com/watch?v=05lqIc8nvWY",
+      "https://www.youtube.com/watch?v=SKBjuVndCZ8",
+      "https://www.youtube.com/watch?v=otCYU2AduGY",
+      "https://www.youtube.com/watch?v=uvpNgTYQUXc",
+      "https://youtu.be/YF_a7A7lwoQ"
+    ],
+    "articleMetadata": {
+      "https://www.tippinpoint.ch/erst-die-blockchain-macht-hayeks-vision-moglich/": {
+        "title": "Erst die Blockchain macht Hayeks-Vision möglich",
+        "description": "Schweizer Unternehmen präsentieren ihre Version von «guten Währungen», 50 Jahre nachdem der österreichische Ökonom die Grundlagen definiert hat.",
+        "image": "https://storage.ghost.io/c/11/7a/117a3396-8af6-43a4-8dc5-f891a0cee13d/content/images/2026/10/Franken_2606177_070613-1.jpg",
+        "siteName": "TippinPoint",
+        "publishedDate": "Oct 30, 2026"
+      },
+      "https://www.allnews.ch/content/produits/un-stablecoin-en-francs-suisses-arrive-sur-kraken": {
+        "title": "Un stablecoin en francs suisses arrive sur Kraken",
+        "description": "«L’infrastructure financière de demain ne doit pas se construire uniquement en dollars», explique Johannes Kern, directeur général de la Frankencoin Association. «Un franc suisse numérique doit en faire partie.»",
+        "image": "https://www.allnews.ch/sites/default/files/styles/large/public/Johannes_Kern.jpg?h=ac301170&itok=ZVYwpIDK",
+        "siteName": "Allnews",
+        "publishedDate": "Oct 8, 2026"
+      },
+      "https://drive.google.com/file/d/15Vmha0vSnlxsjrFMCIGfBcWPw9lW7b-W/view": {
+        "title": "Im Treasury angekommen",
+        "description": "Matthias Nadler, CTO bei Plusplus AG, erläutert, wie Unternehmen Stablecoins im Treasury-Management einsetzen können. Beitrag auf Seite 3 der Verlagsbeilage «Krypto» zur Finanz und Wirtschaft Nr. 81.",
+        "image": "/images/media/fuw-im-treasury-angekommen-20261017.webp",
+        "siteName": "Finanz und Wirtschaft – Verlagsbeilage «Krypto»",
+        "publishedDate": "Oct 17, 2026"
+      },
+      "https://www.thenextvertical.com/can-the-swiss-franc-go-on-chain-interview-with-johannes-kern-managing-director-at-frankencoin-association/": {
+        "title": "Can the Swiss Franc Go On-Chain?",
+        "description": "Johannes Kern turns the usual institutional-crypto debate around: instead of asking how crypto can fit into traditional finance, he argues that decentralized systems should be compelling enough for traditional finance to adopt them.",
+        "image": "https://storage.ghost.io/c/66/69/666997ad-b6ef-4453-964f-03eab7c2c978/content/images/size/w1200/2026/10/D1-panel-16-grey-background-v2.jpg",
+        "siteName": "The Next Vertical",
+        "publishedDate": "Jun 3, 2026"
+      },
+      "https://www.moneytoday.ch/news/internationale-kryptoboerse-listet-ab-sofort-frankencoin": {
+        "title": "Internationale Kryptobörse listet ab sofort Frankencoin",
+        "description": "Der Frankencoin gehört neu zum Handelsangebot von Kraken – ein wichtiger Schritt zu grösserer Reichweite für den Schweizer Stablecoin.",
+        "image": "https://www.moneytoday.ch/fileadmin/_processed_/d/b/csm_Frankcoin_Kraken_1df9c5d268.jpg",
+        "siteName": "MoneyToday",
+        "publishedDate": "Oct 9, 2026"
+      },
+      "https://www.finews.ch/news/finanzplatz/73899-frankencoin-listing-kraken-kryptoboerse": {
+        "title": "Frankencoin wird an internationalen Kryptobörse gelistet",
+        "description": "Die Kryptobörse Kraken nimmt Frankencoin (ZCHF) in ihr Handelsangebot auf. Mit dem Listing erhält der dezentrale Schweizer-Franken-Stablecoin Zugang zu einer internationalen Kryptobörse.",
+        "image": "https://www.finews.ch/images/news/2026/10/frankencoin.jpg",
+        "siteName": "finews.ch",
+        "publishedDate": "Oct 8, 2026"
+      },
+      "https://www.tippinpoint.ch/kraken-nimmt-schweizer-stablecoin-ins-angebot-auf/": {
+        "title": "Kraken nimmt Schweizer Stablecoin ins Angebot auf",
+        "description": "Die Kryptoplattform Kraken nimmt den Frankencoin (ZCHF) in ihr Handelsangebot auf. Damit wird die Kryptowährung erstmals über eine grosse internationale Kryptobörse zugänglich.",
+        "image": "https://storage.ghost.io/c/11/7a/117a3396-8af6-43a4-8dc5-f891a0cee13d/content/images/2026/10/Coin_Franken_2606173_090615.webp",
+        "siteName": "TippinPoint",
+        "publishedDate": "Oct 8, 2026"
+      },
+      "https://www.moneytoday.ch/news/frankencoin-will-in-europa-terrain-besetzen": {
+        "title": "Frankencoin will in Europa Terrain besetzen",
+        "description": "Der grösste Schweizer-Franken-Stablecoin breitet seine Flügel aus und will sich über regulierte Kryptobörsen verstärkt in Europa etablieren.",
+        "image": "https://www.moneytoday.ch/fileadmin/_processed_/9/0/csm_Johannes_Kern_Frankencoin_c01e4ae5b2.jpg",
+        "siteName": "MoneyToday",
+        "publishedDate": "Jul 1, 2026"
+      },
+      "https://www.finews.ch/news/finanzplatz/72735-frankencoin-association-stablecoin-johannes-kern-mica-whitepaper-kryptoboerse-eu-zchf-schweizer-franken-finanzplatz-schweiz": {
+        "title": "Frankencoin sichert sich Zugang zum EU-Markt",
+        "description": "Der an die Schweizer Währung gekoppelte Frankencoin (ZCHF) kann auch künftig an Kryptobörsen in der EU gelistet werden. Die Frankencoin Association hat für den Stablecoin das MiCA-Whitepaper im europäischen Register publiziert, kurz vor Ablauf der Übergangsfrist.",
+        "image": "https://www.finews.ch/images/news/2026/06/Johannes-Kern.jpg",
+        "siteName": "finews.ch",
+        "publishedDate": "Jun 30, 2026"
+      },
+      "https://www.nzz.ch/wirtschaft/der-digitale-franken-ist-da-aber-er-stammt-aus-deutschland-schweizer-anbieter-haben-keine-chance-ld.1926730": {
+        "title": "Der digitale Franken kommt aus Deutschland. Schweizer Anbieter haben keine Chance",
+        "description": "Strenge Geldwäschereivorgaben verunmöglichen es Schweizer Firmen, einen Franken-Stablecoin zu lancieren. Nun bringt ein deutsches Unternehmen einen digitalen Franken auf den Markt – gestützt auf EU-Recht.",
+        "siteName": "NZZ",
+        "publishedDate": "Feb 27, 2026"
+      },
+      "https://www.tippinpoint.ch/artikel/78597/den_zins_des_stablecoins_entfesseln.html": {
+        "title": "Den Zins des Stablecoins entfesseln",
+        "description": "Die Schweiz tritt mit Verspätung in den Stablecoin-Markt ein. Die hohen Renditen der Stablecoins fliessen an schlecht regulierte ausländische Firmen. Frankencoin und Plusplus AG wollen das ändern.",
+        "image": "https://www.tippinpoint.ch/bilder/artikel/Illustrationen/2026/mid/Stablecoin_260243_210233.jpg",
+        "siteName": "TippinPoint",
+        "publishedDate": "Feb 13, 2026"
+      },
+      "https://www.finews.ch/news/finanzplatz/70983-stablecoin-frankencoin-plusplus-finanzprodukte-etp-treasury-liquiditaetsbewirtschaftung-mietkaution-finanzplatz-schweiz": {
+        "title": "Die ersten Finanzprodukte auf den grössten Franken-Stablecoin",
+        "description": "Das Fintech Plusplus lanciert die ersten Finanzprodukte auf Basis von Frankencoin (ZCHF), dem grössten Schweizer-Franken-Stablecoin. Die Angebote umfassen eine Treasury-Lösung für Unternehmen und ein ETP für institutionelle und private Investoren.",
+        "image": "https://www.finews.ch/images/cache/ff1a8ccd13c2dbbe3996d02e581e713c_w646_h388_cp.jpg",
+        "siteName": "finews.ch",
+        "publishedDate": "Jan 28, 2026"
+      },
+      "https://www.finews.ch/news/finanzplatz/70924-frankencoin-association-advisory-board-stablecoin-andre-scherrer-cedric-waldburger-eric-sarasin-philip-hopf-rene-keller-blockchain": {
+        "title": "Franken-Stablecoin-Vereinigung setzt Beirat ein",
+        "description": "Die Frankencoin Association hat einen fünfköpfigen Beirat eingesetzt, um die nächste Entwicklungsphase des Schweizer Stablecoin-Ökosystems zu begleiten.",
+        "image": "https://www.finews.ch/images/cache/63e1071a2c45c4689f939402875f80fd_w646_h388_cp.jpg",
+        "siteName": "finews.ch",
+        "publishedDate": "Jan 22, 2026"
+      },
+      "https://www.tippinpoint.ch/artikel/78308/der_franken-stablecoin_wird_zahlungsmittel_und_macht_das_bankkonto_ueberfluessig_.html": {
+        "title": "Der Franken-Stablecoin wird Zahlungsmittel und macht das Bankkonto überflüssig",
+        "description": "Eine Gruppe von Kryptodienstleistern lanciert ein System mit Visakarte, Rendite und Cashback. Das neue Zahlungssystem soll wie die Lösungen von Revolut oder Neon funktionieren.",
+        "publishedDate": "Sep 23, 2025",
+        "image": "https://www.tippinpoint.ch/bilder/artikel/Illustrationen/2025/mid/Zahlen_Zahlsystem_Stablecoin_2509266_070910.jpg",
+        "siteName": "TippinPoint"
+      },
+      "https://www.tippinpoint.ch/artikel/77293/bitcoin-suisse-praesident_luzius_meisser_lanciert_mit_dem_frankencoin_einen_alternativen_digitalen_franken_.html": {
+        "title": "Bitcoin Suisse-Präsident Luzius Meisser lanciert mit dem Frankencoin einen alternativen digitalen Franken",
+        "description": "Der Krypto-Pionier bringt einen Stablecoin heraus, der den Frankenkurs eins-zu-eins abbildet. Dieser hat Ähnlichkeiten zu Pascale Bruderers Swiss Stablecoin. Ist aber trotzdem anders.",
+        "publishedDate": "Mar 15, 2024",
+        "image": "https://www.tippinpoint.ch/bilder/artikel/Personen/2023/mid/Luzius_Meisser_2312342_061232.jpg",
+        "siteName": "TippinPoint"
+      },
+      "https://agefi.com/de/nachrichten/unternehmen/der-erste-stablecoin-in-schweizer-franken-kann-jetzt-als-zahlungsmittel-in-der-schweiz-genutzt-werden": {
+        "title": "Der erste Stablecoin in Schweizer Franken kann jetzt als Zahlungsmittel in der Schweiz genutzt werden",
+        "description": "Akteure der Kryptoszene haben gemeinsam daran gearbeitet, den Frankencoin zu einer digitalen Währung für Einkäufe zu machen – ganz ohne Bankkonto.",
+        "image": "https://imagedelivery.net/6fxMw1R4OmixGeeEW8gKng/agefi.com/app/articles/GWjHkLg22CaNJve42GY5BjV8DQQ1ZJHsQ3WVnHk0/width=1080,quality=75,format=auto",
+        "siteName": "AGEFI",
+        "publishedDate": "Sep 29, 2025"
+      },
+      "https://www.letemps.ch/cyber/crypto/le-bitcoin-continue-de-battre-des-records-porte-par-un-contexte-qui-lui-est-de-plus-en-plus-favorable": {
+        "description": "La cryptomonnaie a progressé de 30% depuis le début de l'année, alors que le dollar a perdu 10% sur la même période. Le Congrès américain débat actuellement de trois projets de loi qui pourraient renforcer l'attractivité de cette devise numérique à terme",
+        "title": "Le bitcoin continue de battre des records, porté par un contexte qui lui est de plus en plus favorable",
+        "image": "https://letemps-17455.kxcdn.com/photos/5408ef1b-83da-4272-b653-ee95019f2160/giant.avif",
+        "siteName": "Le Temps",
+        "publishedDate": "Jul 15, 2025"
+      },
+      "https://agefi.com/actualites/entreprises/frankencoin-valeur-locative-swatch-les-trois-mots-cles-de-la-semaine": {
+        "description": "Vous n'avez pas eu le temps de suivre toute l'actualité économique et financière ces derniers jours? Voici les trois informations qui ont marqué cette semaine.",
+        "title": "Frankencoin, valeur locative, Swatch: les trois mots-clés de la semaine",
+        "image": "https://imagedelivery.net/6fxMw1R4OmixGeeEW8gKng/agefi.com/app/articles/5GbyVLSdRalu0KPw0pr9TYtxVpZgVrHWp385M8Fr/width=1080,quality=75,format=auto",
+        "siteName": "AGEFI",
+        "publishedDate": "Oct 4, 2025"
+      },
+      "https://agefi.com/actualites/trajectoires/johannes-kern-nomme-directeur-general-de-la-frankencoin-association": {
+        "description": "Le nouveau directeur supervisera la direction stratégique et opérationnelle de l'organisation zougoise.",
+        "title": "Johannes Kern nommé directeur général de la Frankencoin Association",
+        "image": "https://imagedelivery.net/6fxMw1R4OmixGeeEW8gKng/agefi.com/app/articles/I1Yp7lQ3fhbdbnQ7t3Awka5SJUje22sbSImxULKe/width=1080,quality=75,format=auto",
+        "siteName": "AGEFI",
+        "publishedDate": "Nov 26, 2024"
+      },
+      "https://agefi.com/actualites/entreprises/le-frankencoin-desormais-disponible-sur-mt-pelerin": {
+        "description": "Le stablecoin adossé au franc entame un partenariat avec la plateforme neuchâteloise régulée par la Finma, pour élargir sa base d'utilisateurs.",
+        "title": "Le frankencoin désormais disponible sur Mt Pelerin ",
+        "image": "https://imagedelivery.net/6fxMw1R4OmixGeeEW8gKng/agefi.com/app/articles/LwAD9TZzgFds6QfgKZsnZXJf6Rqjo1eVuKN3CLGq/width=1080,quality=75,format=auto",
+        "siteName": "AGEFI",
+        "publishedDate": "Jul 16, 2025"
+      },
+      "https://www.btc-echo.de/news/krypto-news-dach-frankencoin-stablecoin-haertesten-waehrung-europa-217105/": {
+        "siteName": "BTC-ECHO"
+      },
+      "https://www.schweizeraktien.net/blog/2024/06/17/aktionariat-ein-neuer-handelsplatz-fuer-aktien-token-und-darin-integriert-der-frankencoin-63687/": {
+        "publishedDate": "Jun 17, 2024",
+        "siteName": "schweizeraktien.net"
+      },
+      "https://cryptoadventure.com/vitalik-linked-wallet-buys-zchf-why-frankencoin-fits-his-stablecoin-thesis/": {
+        "title": "Vitalik-Linked Wallet Buys ZCHF – Why Frankencoin Fits His Stablecoin Thesis",
+        "description": "A wallet linked to Vitalik Buterin has purchased ZCHF, aligning with his vision for decentralized, non-USD stablecoins. The article explores why Frankencoin fits Ethereum's co-founder's stablecoin thesis.",
+        "image": "/images/media/cryptoadventure-vitalik-zchf.svg",
+        "siteName": "CryptoAdventure",
+        "publishedDate": "Mar 31, 2026"
+      },
+      "https://cointelegraph.com/news/allunity-swiss-franc-stablecoin-chfau-mica": {
+        "title": "AllUnity Launches Swiss Franc Stablecoin CHFAU",
+        "description": "Deutsche Bank-backed AllUnity launches MiCA-compliant CHFAU. Frankencoin (ZCHF) named the largest CHF stablecoin with $38.6M combined market cap.",
+        "siteName": "CoinTelegraph",
+        "publishedDate": "Feb 26, 2026"
+      },
+      "https://www.finews.ch/news/finanzplatz/71537-luzius-meisser-stablecoin-frankencoin-sbf-krypto-finig-allunity-finma-sif-bundesrat-micar-tether-bitcoin-finanzsystem-geldschoepfung-smartcontracts-dezentral-staking-lending-gold": {
+        "title": "Luzius Meisser: «Wir müssen zurück zu einer liberalen Rechtsordnung»",
+        "description": "Luzius Meisser, Erfinder des Frankencoins, über die restriktive Finma-Haltung zu Stablecoins, den Wettbewerb mit Allunity, die Schweizer Rechtsordnung und die Zukunft dezentraler Stablecoins.",
+        "siteName": "finews.ch",
+        "publishedDate": "Mar 17, 2026"
+      },
+      "https://crispybull.com/frankencoin-johannes-kern-swiss-franc-stablecoin/": {
+        "title": "Exclusive: The Swiss Franc, Rebuilt for the Digital Age",
+        "description": "Johannes Kern, managing director at the Frankencoin Association, on why a Swiss franc stablecoin might just win.",
+        "siteName": "CrispyBull",
+        "publishedDate": "Jun 5, 2026"
+      },
+      "https://www.finews.ch/news/finanzplatz/68422-frankencoin-mt-pelerin-integration-johannes-kern-arnaud-salomon-zchf-stablecoin": {
+        "siteName": "finews.ch"
+      },
+      "https://www.leaderdigital.ch/specials/investsg-2025-mit-energie-nachhaltigkeit-621/zwischen-bau-immobilien-und-fintech-14153.html": {
+        "siteName": "LEADER"
+      },
+      "https://www.20min.ch/story/tether-und-co-werden-stablecoins-die-naechste-finanzkrise-ausloesen-103387106": {
+        "siteName": "20 Minuten"
+      },
+      "https://www.nzz.ch/wirtschaft/kunden-von-spar-schweiz-koennen-bereits-in-ueber-100-laeden-mit-kryptowaehrungen-bezahlen-ld.1898731": {
+        "siteName": "NZZ"
+      }
+    },
+    "videoMetadata": {
+      "https://www.youtube.com/watch?v=564k9sNoM_c": {
+        "title": "Johannes Kern, Frankencoin | Optimistic Governance: Build an Actually Decentralized Stablecoin",
+        "description": "What does it take for a decentralized stablecoin’s governance to resist capture by a small number of voters? In this talk, Johannes Kern (Frankencoin Association) examines how optimistic governance is designed to keep a decentralized stablecoin resilient and accountable.",
+        "author": "Stable Summit",
+        "publishedDate": "Oct 16, 2026",
+        "thumbnail": "/images/video-thumbnails/564k9sNoM_c.jpg"
+      },
+      "https://www.youtube.com/watch?v=gDuZ6baS98g": {
+        "title": "How to Borrow Onchain Against Illiquid RWAs Without Oracles — Paolo DI Stefano | Frankencoin",
+        "description": "Paolo DI Stefano discusses borrowing onchain against illiquid real-world assets without oracles using Frankencoin.",
+        "author": "ETH Belgrade",
+        "publishedDate": "Oct 4, 2026",
+        "thumbnail": "/images/video-thumbnails/gDuZ6baS98g.jpg"
+      },
+      "https://www.youtube.com/watch?v=qpSljn2UCBA": {
+        "title": "Frankencoin - présentation et épargne",
+        "description": "Frankencoin est un stablecoin répliquant la valeur du Franc Suisse sous le ticker ZCHF.",
+        "author": "Alpha Omega",
+        "publishedDate": "Oct 4, 2026",
+        "thumbnail": "/images/video-thumbnails/qpSljn2UCBA.jpg"
+      },
+      "https://www.youtube.com/watch?v=ExuQRdgLfLY": {
+        "title": "Can Stablecoins, CBDCs and Tokenised Deposits Coexist | EBC12",
+        "description": "Panel discussion from the European Blockchain Convention (EBC12) on whether stablecoins, CBDCs and tokenised deposits can coexist.",
+        "author": "European Blockchain Convention",
+        "publishedDate": "Oct 1, 2026",
+        "thumbnail": "/images/video-thumbnails/ExuQRdgLfLY.jpg"
+      },
+      "https://www.youtube.com/watch?v=9-fBHEPSu7c": {
+        "title": "The Benefits of Not Needing an Oracle for Introducing a New Collateral - with Paolo Di Stefano",
+        "description": "Paolo Di Stefano, Frankencoin's Director of Collateral Management, explains how the protocol evaluates and onboards new collateral without relying on price oracles.",
+        "author": "Frankencoin",
+        "publishedDate": "Aug 6, 2026",
+        "thumbnail": "/images/video-thumbnails/9-fBHEPSu7c.jpg"
+      },
+      "https://www.youtube.com/watch?v=2HOu1-F1jFk": {
+        "title": "The oracle-free stablecoin: how Frankencoin holds a Swiss franc peg | Fireside with Frankencoin",
+        "description": "Johannes Kern explains how Frankencoin's decentralized, over-collateralized Swiss-franc stablecoin works, including its oracle-free auction-based liquidation model and path to payments, savings and self-custody.",
+        "author": "Range",
+        "publishedDate": "Aug 19, 2026",
+        "thumbnail": "/images/video-thumbnails/2HOu1-F1jFk.jpg"
+      },
+      "https://www.youtube.com/watch?v=iVn_po_1-sY": {
+        "title": "Episode #8 Frankencoin",
+        "description": "Johannes Kern joins Trading Strategy to discuss Frankencoin's optimistic governance, oracle-free collateralised debt model, protocol risk management and sustainable vaults.",
+        "author": "Trading Strategy",
+        "publishedDate": "Aug 12, 2026",
+        "thumbnail": "/images/video-thumbnails/iVn_po_1-sY.jpg"
+      },
+      "https://www.youtube.com/watch?v=99EkLfdEE58&t=3465s": {
+        "title": "ETHConf Crypto Startup Showdown – Frankencoin Pitch",
+        "description": "Frankencoin's ETHConf Crypto Startup Showdown pitch, timestamped to the Frankencoin segment at 57:45.",
+        "author": "ETHGlobal",
+        "publishedDate": "Jul 5, 2026",
+        "thumbnail": "/images/video-thumbnails/99EkLfdEE58.jpg"
+      },
+      "https://www.youtube.com/watch?v=Vey3nY8oKQs": {
+        "title": "EU auf dem falschen Dampfer: Bitcoin-Guru über Finanzpolitik, Künstliche Intelligenz und die Schweiz",
+        "description": "Dr. Luzius Meisser discusses European financial policy, Bitcoin as digital gold, artificial intelligence, and Switzerland's position in a changing financial system.",
+        "author": "DIE WELTWOCHE",
+        "publishedDate": "May 17, 2026",
+        "thumbnail": "/images/video-thumbnails/Vey3nY8oKQs.jpg"
+      },
+      "https://www.youtube.com/watch?v=Onm3gOQCXlM": {
+        "title": "Die größte Veränderung unseres Geldsystems läuft bereits!",
+        "description": "Philip Hopf interviews Dr. Luzius Meisser about stablecoins, Tether, financial freedom, and Frankencoin as a decentralized Swiss franc stablecoin.",
+        "author": "HKCM",
+        "publishedDate": "May 31, 2026",
+        "thumbnail": "/images/video-thumbnails/Onm3gOQCXlM.jpg"
+      },
+      "https://www.youtube.com/watch?v=eg_sqXwIfQk": {
+        "title": "Johannes Kern, Frankencoin | The Other 3%, Why the World Needs a Stablecoin That Isn't the Dollar",
+        "description": "Johannes Kern explains why the world needs credible non-USD stablecoins and how Frankencoin brings the Swiss franc onchain as a decentralized alternative.",
+        "author": "Stable Summit",
+        "publishedDate": "Jun 11, 2026",
+        "thumbnail": "/images/video-thumbnails/eg_sqXwIfQk.jpg"
+      },
+      "https://www.youtube.com/watch?v=Xp3kf3RORmc": {
+        "title": "Stablecoins & The Swiss Franc",
+        "description": "Johannes Kern, Managing Director of the Frankencoin Association, discusses stablecoins and the Swiss franc with WHVP.",
+        "author": "WHVP",
+        "publishedDate": "Mar 26, 2026",
+        "thumbnail": "/images/video-thumbnails/Xp3kf3RORmc.jpg"
+      },
+      "https://www.youtube.com/watch?v=GNYixPzeW3I": {
+        "title": "Decentralized Credit and Stablecoins, the Potential for Swiss Banking | Luzius Meisser",
+        "description": "Luzius Meisser presents on decentralized credit and stablecoins, exploring the potential for Swiss banking at Crypto Valley Conference.",
+        "author": "Crypto Valley",
+        "publishedDate": "Mar 8, 2026",
+        "thumbnail": "/images/video-thumbnails/GNYixPzeW3I.jpg"
+      },
+      "https://www.youtube.com/watch?v=05lqIc8nvWY": {
+        "title": "Frankencoin 2025 Recap Interview - with Managing Director Johannes Kern",
+        "description": "Earlier this December, DAdvisoor sat down with Johannes Kern, the Managing Director of the Frankencoin Association, to talk about Frankencoin, the advancements made in 2025, and what's on the horizon for 2026.",
+        "author": "Frankencoin",
+        "publishedDate": "Dec 31, 2025",
+        "thumbnail": "/images/video-thumbnails/05lqIc8nvWY.jpg"
+      },
+      "https://www.youtube.com/watch?v=uvpNgTYQUXc": {
+        "title": "Onchain FX: Opportunities & Challenges for the next phase of DeFi Stablecoins - Panel",
+        "description": "This panel explores the evolution of onchain foreign exchange and stablecoins beyond the US dollar. The discussion dives deep into how local stablecoins are reshaping global finance.",
+        "author": "Stable Summit",
+        "publishedDate": "Dec 1, 2025",
+        "thumbnail": "/images/video-thumbnails/uvpNgTYQUXc.jpg"
+      },
+      "https://www.youtube.com/watch?v=SKBjuVndCZ8": {
+        "title": "A Real Stable Stablecoin: The Cultural Roots of a Sound Currency",
+        "description": "\"The Swiss franc dodged every shady financial trend for 150 years.\" - Johannes Kern, Managing Director, Frankencoin. Frankencoin is built on the Swiss franc, combining cultural heritage with modern blockchain technology.",
+        "author": "Stable Summit",
+        "publishedDate": "Jul 15, 2025",
+        "thumbnail": "/images/video-thumbnails/SKBjuVndCZ8.jpg"
+      },
+      "https://youtu.be/YF_a7A7lwoQ": {
+        "title": "In welche Währung muss man jetzt \"Krypto\"-Gewinne umschichten (Interview mit Johannes Kern)",
+        "description": "Interview with Johannes Kern about cryptocurrency gains and the importance of stable currencies in the current market environment.",
+        "author": "Marc Steiner Investment Academy",
+        "publishedDate": "Jul 2, 2025",
+        "thumbnail": "/images/video-thumbnails/YF_a7A7lwoQ.jpg"
+      },
+      "https://www.youtube.com/watch?v=otCYU2AduGY": {
+        "title": "Bridging TradFi and DeFi: RWA-Backed Stables (Panel)",
+        "description": "Panel discussion featuring Jacob Laufer (M^0), Johannes Kern (Frankencoin Association), and Jennifer Senha exploring the intersection of traditional finance and DeFi through real-world asset-backed stablecoins.",
+        "author": "Stable Summit",
+        "publishedDate": "Mar 14, 2025",
+        "thumbnail": "/images/video-thumbnails/otCYU2AduGY.jpg"
+      },
+      "https://www.youtube.com/watch?v=HHD0cWCfBS4": {
+        "title": "Dr. Luzius Meisser, Frankencoin Association | The Macro Mechanics Behind Decentralized Credit",
+        "description": "Luzius Meisser explores how decentralized credit systems create money onchain, how DeFi stablecoins reshape capital allocation, and why freer financial infrastructure matters for long-term growth.",
+        "author": "Stable Summit",
+        "publishedDate": "Mar 28, 2026",
+        "thumbnail": "/images/video-thumbnails/HHD0cWCfBS4.jpg"
+      },
+      "https://www.youtube.com/watch?v=xASCsQotwZk": {
+        "title": "Panel | Institutional Use Cases and Adoption Limits of Non-USD Stablecoins",
+        "description": "Johannes Kern joins Stable Summit panelists to discuss where non-USD stablecoins fit in institutional treasury, settlement, and balance sheet workflows — and what still blocks broader adoption.",
+        "author": "Stable Summit",
+        "publishedDate": "Mar 27, 2026",
+        "thumbnail": "/images/video-thumbnails/xASCsQotwZk.jpg"
+      }
+    }
+  },
+  "src/content/shared/frontends.json": {
+    "frontends": [
+      {
+        "name": "app.frankencoin.com",
+        "url": "https://app.frankencoin.com",
+        "creator": "Frankencoin Association",
+        "creatorUrl": "https://github.com/Frankencoin-ZCHF",
+        "repo": "https://github.com/Frankencoin-ZCHF/frankencoin-dapp",
+        "notes": "Maintained by the Frankencoin Association. Mint and repay positions, use the savings module and trade Frankencoin Shares (FCS). Source code, API and indexer are public.",
+        "features": {
+          "openSource": true,
+          "ownDomain": true,
+          "selfHostedApi": true,
+          "selfHostedIndexer": true
+        },
+        "association": true
+      },
+      {
+        "name": "zchf.app",
+        "url": "https://zchf.app",
+        "creator": "dnbjn",
+        "creatorUrl": "https://github.com/dnbjn",
+        "repo": "https://github.com/dnbjn/frankencoin-dapp",
+        "notes": "Self-hosted frontend, API, and Ponder indexer. Reworked UI with dark/light mode, added host information on the Earn page, and routes indexer access through a failover-enabled API. Deployed on Railway behind a Cloudflare Tunnel.",
+        "features": {
+          "openSource": true,
+          "ownDomain": true,
+          "selfHostedApi": true,
+          "selfHostedIndexer": true
+        }
+      },
+      {
+        "name": "frankencoin.win",
+        "url": "https://frankencoin.win",
+        "creator": "DiumPay",
+        "creatorUrl": "https://github.com/DiumPay/zchf-app",
+        "repo": "https://github.com/DiumPay/zchf-app",
+        "notes": "Independent open-source frontend by DiumPay. Multi-language support, fast and lightweight. Features include a non-custodial, no-KYC cross-chain swap for ZCHF users.",
+        "features": {
+          "openSource": true,
+          "ownDomain": true,
+          "selfHostedApi": true,
+          "selfHostedIndexer": true
+        }
+      },
+      {
+        "name": "frankenterminal.app",
+        "url": "https://www.frankenterminal.app/",
+        "creator": "xdecentralix",
+        "creatorUrl": "https://github.com/xdecentralix",
+        "repo": "https://github.com/xdecentralix/frankenterminal-dapp",
+        "notes": "Independent open-source fork of the canonical dapp with a cypherpunk-terminal aesthetic (dark-mode only). Self-hosted frontend, API, and Ponder indexer, deployed on Railway.",
+        "features": {
+          "openSource": true,
+          "ownDomain": true,
+          "selfHostedApi": true,
+          "selfHostedIndexer": true
+        }
+      }
+    ]
+  },
+  "src/content/en/home.json": {
+    "hero": {
+      "title": "The Swiss franc,|on-chain.",
+      "subtitle": "Digital Swiss francs, ZCHF. Save, borrow and pay with a decentralized currency backed by collateral you can see.",
+      "primary": {
+        "label": "Start saving at {rate}",
+        "href": "https://app.frankencoin.com/savings"
+      },
+      "secondary": {
+        "label": "Borrow francs",
+        "href": "/use-cases/borrow"
+      },
+      "ticker": {
+        "rate": "Savings rate",
+        "supply": "In circulation",
+        "collateral": "Collateral per ZCHF",
+        "since": "Live since"
+      },
+      "announcement": {
+        "tag": "New",
+        "label": "Frankencoin Shares are live",
+        "href": "/fcs"
+      },
+      "tickerLinks": {
+        "supply": "https://defillama.com/stablecoin/frankencoin",
+        "collateral": "/transparency",
+        "rate": "/use-cases/save-in-chf"
+      },
+      "routes": {
+        "label": "No ZCHF yet?",
+        "items": [
+          {
+            "label": "Buy by bank transfer, 0% fees",
+            "href": "https://www.mtpelerin.com/buy-zchf-frankencoin"
+          },
+          {
+            "label": "Swap from USDC or ETH",
+            "href": "https://swap.cow.fi/#/1/swap/USDC/ZCHF"
+          },
+          {
+            "label": "Buy on Kraken",
+            "href": "https://www.kraken.com/prices/frankencoin"
+          }
+        ]
+      }
+    },
+    "trust": [
+      "Legal opinions under Swiss law and MiCA",
+      "8 audits by 4 firms",
+      "Live since 2023, no significant depeg",
+      "8 chains via Chainlink CCIP"
+    ],
+    "logos": "Used by",
+    "products": {
+      "title": "One franc. Four ways to use it.",
+      "save": {
+        "label": "Save",
+        "title": "Earn {rate} on Swiss francs",
+        "body": "Deposit ZCHF in the savings module. Interest accrues every block, withdraw any time.",
+        "cta": "Start saving",
+        "href": "/use-cases/save-in-chf",
+        "stat": "per year"
+      },
+      "borrow": {
+        "label": "Borrow",
+        "title": "Francs against BTC, ETH, gold or shares",
+        "body": "Keep your exposure and mint ZCHF at fixed terms. No credit check.",
+        "cta": "See live terms",
+        "href": "/use-cases/borrow",
+        "ltv": "up to {ltv} loan-to-value",
+        "rate": "from {rate} a year"
+      },
+      "invest": {
+        "label": "Invest",
+        "title": "Own a share of the system",
+        "body": "FCS, Frankencoin Shares, is the protocol's equity: a share of the reserve and a vote on how it is run. Its value can rise or fall.",
+        "cta": "Explore FCS",
+        "href": "/fcs",
+        "roe": {
+          "stat": "Protocol return on equity",
+          "all": "All",
+          "since": "Since launch, compound annual rate",
+          "year": "Calendar year {year}",
+          "ytd": "{year} so far, annualized"
+        }
+      },
+      "pay": {
+        "label": "Pay",
+        "title": "Spend it like francs",
+        "body": "At Spar stores, with a GnosisPay card, or by bank transfer through a personal IBAN.",
+        "cta": "See where",
+        "href": "/ecosystem"
+      }
+    },
+    "proof": {
+      "title": "Backed by collateral|you can see.",
+      "subtitle": "Borrowers lock assets in public contracts to mint ZCHF, so every franc is backed by more than a franc of collateral. Weak positions are challenged and auctioned, and borrowers' interest pays savers first.",
+      "supply": "ZCHF in circulation",
+      "collateral": "Collateral value (CHF)",
+      "ratio": "Collateral per ZCHF",
+      "equity": "Protocol equity",
+      "cta": "Open the transparency page",
+      "href": "/transparency",
+      "how": "How it works",
+      "howHref": "/how-it-works",
+      "coins": "Backed by {n} collateral types, every one on-chain"
+    },
+    "doors": {
+      "title": "Pick your path."
+    },
+    "media": {
+      "title": "What people write about Frankencoin."
+    },
+    "faq": {
+      "title": "Short answers.",
+      "more": "All questions",
+      "href": "/faq"
+    },
+    "final": {
+      "title": "Swiss francs. On-chain. Yours.",
+      "subtitle": "Start with any amount. No account with Frankencoin, no lock-up, your own keys.",
+      "primary": {
+        "label": "Start now",
+        "href": "https://app.frankencoin.com/savings"
+      },
+      "secondary": {
+        "label": "Talk to us",
+        "href": "mailto:info@frankencoin.com"
+      }
+    },
+    "dollar": {
+      "label": "See the full comparison, 1971 to today",
+      "href": "/use-cases/save-in-chf#fifty"
+    }
+  },
+  "src/content/en/association.json": {
+    "meta": {
+      "title": "The Frankencoin Association",
+      "description": "The Swiss non-profit that promotes Frankencoin and a digital Swiss franc. It does not issue ZCHF and does not control the protocol. Board, advisory board and membership."
+    },
+    "hero": {
+      "title": "The Frankencoin|Association",
+      "subtitle": "A Swiss non-profit that promotes Frankencoin and a digital Swiss franc. The Association does not issue ZCHF and does not control the protocol.",
+      "primary": {
+        "label": "Become a member",
+        "href": "mailto:johannes@frankencoin.com"
+      },
+      "secondary": {
+        "label": "Read the whitepaper",
+        "href": "https://www.zora.uzh.ch/entities/publication/b1bff836-6852-457d-93e6-496807db37fa"
+      }
+    },
+    "why": {
+      "title": "Why the Swiss franc",
+      "subtitle": "Switzerland is built to keep its money safe and stable. That is the asset.",
+      "items": [
+        {
+          "title": "Debt brake.",
+          "description": "Written into the constitution and voted by the people. Spending follows revenue."
+        },
+        {
+          "title": "AAA.",
+          "description": "Top rating from all three major agencies."
+        },
+        {
+          "title": "Independent central bank.",
+          "description": "Its mandate is price stability, not elections."
+        },
+        {
+          "title": "Neutral since 1815.",
+          "description": "When the world is uncertain, capital comes here."
+        }
+      ],
+      "note": "Since 1971 the dollar has lost about 80% of its value against the franc. Yet the franc is around 1% of world payments and only 0.015% of stablecoins. The Swiss Bankers Association puts the potential for CHF stablecoins at CHF 2.8–3.0bn at today's market size."
+    },
+    "today": {
+      "title": "Frankencoin today",
+      "items": [
+        {
+          "value": "34.6m",
+          "label": "ZCHF in circulation, pegged 1:1 since 2023"
+        },
+        {
+          "value": "#5",
+          "label": "Largest non-dollar stablecoin worldwide"
+        },
+        {
+          "value": "#2",
+          "label": "Lender against tokenized stocks onchain"
+        },
+        {
+          "value": "CHF 51.8m",
+          "label": "Collateral locked"
+        },
+        {
+          "value": "450m",
+          "label": "ZCHF traded per year"
+        },
+        {
+          "value": "Kraken, ether.fi",
+          "label": "Listed and live, with more integrations on the way"
+        }
+      ],
+      "note": "Figures as of November 2026."
+    },
+    "people": {
+      "title": "Switzerland's most exclusive circle",
+      "board": {
+        "title": "Board and management",
+        "items": [
+          {
+            "name": "Dr. Luzius Meisser",
+            "photo": "/images/team/luzius-meisser.jpg",
+            "linkedin": "https://www.linkedin.com/in/luziusmeisser",
+            "bio": "Inventor of Frankencoin and board member. Former chairman of Bitcoin Suisse and founder of the Bitcoin Association Switzerland."
+          },
+          {
+            "name": "Johannes Kern",
+            "photo": "/images/team/johannes-kern.jpg",
+            "linkedin": "https://www.linkedin.com/in/johanneskern93",
+            "bio": "Managing Director. A decade between traditional finance and crypto. Took Frankencoin to MiCA, Kraken and Swiss retail."
+          },
+          {
+            "name": "Jan Hürlimann",
+            "photo": "/images/team/jan-huerlimann.jpg",
+            "linkedin": "https://www.linkedin.com/in/jan-h%C3%BCrlimann-05264610b",
+            "bio": "Board member. Entrepreneur and investor across construction, real estate and fintech."
+          }
+        ]
+      },
+      "advisers": {
+        "title": "Advisory board",
+        "items": [
+          {
+            "name": "Eric Sarasin",
+            "photo": "/images/team/eric-sarasin.jpg",
+            "linkedin": "https://www.linkedin.com/in/eric-sarasin/",
+            "bio": "28 years at Bank Sarasin, last as deputy CEO."
+          },
+          {
+            "name": "René Keller",
+            "photo": "/images/team/rene-keller.jpg",
+            "linkedin": "https://www.linkedin.com/in/rene-w-keller",
+            "bio": "Former member of the FINMA executive board. Adviser at Bain."
+          },
+          {
+            "name": "Cédric Waldburger",
+            "photo": "/images/team/cedric-waldburger.jpg",
+            "linkedin": "https://www.linkedin.com/in/cedricwaldburger",
+            "bio": "Co-founder of Dfinity, founder of Tomahawk VC."
+          },
+          {
+            "name": "André Scherrer",
+            "photo": "/images/team/andre-scherrer.jpg",
+            "linkedin": "https://www.linkedin.com/in/andr%C3%A9-scherrer-%F0%9F%87%BF%F0%9F%87%A6-85297886",
+            "bio": "COO of Spar Switzerland."
+          },
+          {
+            "name": "Philip Hopf",
+            "photo": "/images/team/philip-hopf.jpg",
+            "linkedin": "https://www.linkedin.com/in/philip-hopf-871b921a8",
+            "bio": "Macro investor and leading German-language finance voice."
+          }
+        ]
+      }
+    },
+    "membership": {
+      "title": "What the Association does",
+      "subtitle": "The Frankencoin Association promotes a stable Swiss franc and a digital Swiss economy, at home and globally. Membership is by invitation.",
+      "role": "The Association is not the issuer of ZCHF and does not control the Frankencoin protocol. ZCHF is created by users who lock collateral in autonomous smart contracts on Ethereum. Changes to the protocol are decided by the holders of Frankencoin Shares (FCS) through on-chain governance, open to anyone. The Association holds no custody of user funds.",
+      "roleMore": "Under MiCA, ZCHF is a crypto-asset with no identifiable issuer. The Association has published a MiCA-format white paper for ZCHF, which is listed in ESMA's interim MiCA register.",
+      "roleLink": {
+        "label": "Legal opinions, MiCA white paper and register entry",
+        "href": "/compliance"
+      },
+      "items": [
+        {
+          "title": "Promoting a stable franc and a digital Swiss economy, globally.",
+          "description": "We spread the word globally that institutions and everyday savers can have access to the most stable economy in the world, and even take part in its digital future."
+        },
+        {
+          "title": "Education.",
+          "description": "Talks, workshops and plain-language material on how stablecoins work, what makes Frankencoin different and how to use Swiss franc money on-chain safely."
+        },
+        {
+          "title": "Members' meeting in Zug.",
+          "description": "Once a year, with the board and the advisory board: the state of the protocol, the agenda ahead and the people behind it."
+        },
+        {
+          "title": "Private events and meetings.",
+          "description": "In the most sought-after rooms at the year's key global gatherings, with the association's network."
+        },
+        {
+          "title": "Helping members in the Swiss market.",
+          "description": "Curated, vetted introductions to leading businesses, institutions and regulatory expertise, with hands-on help turning them into lasting relationships."
+        }
+      ]
+    },
+    "contact": {
+      "title": "Contact",
+      "text": "In uncertain times, the world runs to the Swiss franc. Own its digital future.",
+      "name": "Johannes Kern",
+      "role": "Managing Director",
+      "email": "johannes@frankencoin.com",
+      "cta": "Become a member"
+    }
+  },
+  "src/content/de/association.json": {
+    "meta": {
+      "title": "Der Frankencoin-Verein",
+      "description": "Der Schweizer Verein, der Frankencoin und einen digitalen Schweizer Franken fördert. Er gibt ZCHF nicht heraus und kontrolliert das Protokoll nicht. Vorstand, Beirat und Mitgliedschaft."
+    },
+    "hero": {
+      "title": "Der Frankencoin-|Verein",
+      "subtitle": "Ein Schweizer Verein ohne Erwerbszweck, der Frankencoin und einen digitalen Schweizer Franken fördert. Der Verein gibt ZCHF nicht heraus und kontrolliert das Protokoll nicht.",
+      "primary": {
+        "label": "Mitglied werden",
+        "href": "mailto:johannes@frankencoin.com"
+      },
+      "secondary": {
+        "label": "Whitepaper lesen",
+        "href": "https://www.zora.uzh.ch/entities/publication/b1bff836-6852-457d-93e6-496807db37fa"
+      }
+    },
+    "why": {
+      "title": "Warum der Schweizer Franken",
+      "subtitle": "Die Schweiz ist darauf gebaut, ihr Geld sicher und stabil zu halten. Das ist der Wert.",
+      "items": [
+        {
+          "title": "Schuldenbremse.",
+          "description": "In der Verfassung verankert und vom Volk beschlossen. Die Ausgaben folgen den Einnahmen."
+        },
+        {
+          "title": "AAA.",
+          "description": "Bestnote von allen drei grossen Ratingagenturen."
+        },
+        {
+          "title": "Unabhängige Nationalbank.",
+          "description": "Ihr Auftrag ist Preisstabilität, nicht Wahlen."
+        },
+        {
+          "title": "Neutral seit 1815.",
+          "description": "Wenn die Welt unsicher ist, kommt das Kapital hierher."
+        }
+      ],
+      "note": "Seit 1971 hat der Dollar rund 80% seines Werts gegenüber dem Franken verloren. Dennoch macht der Franken etwa 1% des weltweiten Zahlungsverkehrs und nur 0,015% der Stablecoins aus. Die Schweizerische Bankiervereinigung beziffert das Potenzial für CHF-Stablecoins bei heutiger Marktgrösse auf CHF 2,8–3,0 Mrd."
+    },
+    "today": {
+      "title": "Frankencoin heute",
+      "items": [
+        {
+          "value": "34,6 Mio.",
+          "label": "ZCHF im Umlauf, seit 2023 1:1 gebunden"
+        },
+        {
+          "value": "#5",
+          "label": "Grösster Nicht-Dollar-Stablecoin weltweit"
+        },
+        {
+          "value": "#2",
+          "label": "Kreditgeber gegen tokenisierte Aktien on-chain"
+        },
+        {
+          "value": "CHF 51,8 Mio.",
+          "label": "Hinterlegte Sicherheiten"
+        },
+        {
+          "value": "450 Mio.",
+          "label": "ZCHF gehandelt pro Jahr"
+        },
+        {
+          "value": "Kraken, ether.fi",
+          "label": "Gelistet und live, weitere Integrationen folgen"
+        }
+      ],
+      "note": "Zahlen per November 2026."
+    },
+    "people": {
+      "title": "Der exklusivste Kreis der Schweiz",
+      "board": {
+        "title": "Vorstand und Geschäftsführung",
+        "items": [
+          {
+            "name": "Dr. Luzius Meisser",
+            "photo": "/images/team/luzius-meisser.jpg",
+            "linkedin": "https://www.linkedin.com/in/luziusmeisser",
+            "bio": "Erfinder von Frankencoin und Vorstandsmitglied. Ehemaliger Verwaltungsratspräsident von Bitcoin Suisse und Gründer der Bitcoin Association Switzerland."
+          },
+          {
+            "name": "Johannes Kern",
+            "photo": "/images/team/johannes-kern.jpg",
+            "linkedin": "https://www.linkedin.com/in/johanneskern93",
+            "bio": "Geschäftsführer. Ein Jahrzehnt zwischen traditioneller Finanzwelt und Krypto. Brachte Frankencoin zu MiCA, Kraken und zu Schweizer Privatkunden."
+          },
+          {
+            "name": "Jan Hürlimann",
+            "photo": "/images/team/jan-huerlimann.jpg",
+            "linkedin": "https://www.linkedin.com/in/jan-h%C3%BCrlimann-05264610b",
+            "bio": "Vorstandsmitglied. Unternehmer und Investor in Bau, Immobilien und Fintech."
+          }
+        ]
+      },
+      "advisers": {
+        "title": "Beirat",
+        "items": [
+          {
+            "name": "Eric Sarasin",
+            "photo": "/images/team/eric-sarasin.jpg",
+            "linkedin": "https://www.linkedin.com/in/eric-sarasin/",
+            "bio": "28 Jahre bei der Bank Sarasin, zuletzt als stellvertretender CEO."
+          },
+          {
+            "name": "René Keller",
+            "photo": "/images/team/rene-keller.jpg",
+            "linkedin": "https://www.linkedin.com/in/rene-w-keller",
+            "bio": "Ehemaliges Mitglied der FINMA-Geschäftsleitung. Berater bei Bain."
+          },
+          {
+            "name": "Cédric Waldburger",
+            "photo": "/images/team/cedric-waldburger.jpg",
+            "linkedin": "https://www.linkedin.com/in/cedricwaldburger",
+            "bio": "Mitgründer von Dfinity, Gründer von Tomahawk VC."
+          },
+          {
+            "name": "André Scherrer",
+            "photo": "/images/team/andre-scherrer.jpg",
+            "linkedin": "https://www.linkedin.com/in/andr%C3%A9-scherrer-%F0%9F%87%BF%F0%9F%87%A6-85297886",
+            "bio": "COO von Spar Schweiz."
+          },
+          {
+            "name": "Philip Hopf",
+            "photo": "/images/team/philip-hopf.jpg",
+            "linkedin": "https://www.linkedin.com/in/philip-hopf-871b921a8",
+            "bio": "Makro-Investor und eine der führenden deutschsprachigen Finanzstimmen."
+          }
+        ]
+      }
+    },
+    "membership": {
+      "title": "Was der Verein tut",
+      "subtitle": "Der Frankencoin-Verein fördert einen stabilen Schweizer Franken und eine digitale Schweizer Wirtschaft, im Inland und weltweit. Die Mitgliedschaft erfolgt auf Einladung.",
+      "role": "Der Verein ist nicht der Emittent von ZCHF und kontrolliert das Frankencoin-Protokoll nicht. ZCHF wird von Nutzern geschaffen, die Sicherheiten in autonomen Smart Contracts auf Ethereum hinterlegen. Über Änderungen am Protokoll entscheiden die Inhaber von Frankencoin Shares (FCS) in der On-Chain-Governance, die allen offensteht. Der Verein verwahrt keine Kundengelder.",
+      "roleMore": "Unter MiCA ist ZCHF ein Krypto-Asset ohne identifizierbaren Emittenten. Der Verein hat ein White Paper im MiCA-Format für ZCHF veröffentlicht, das im vorläufigen MiCA-Register der ESMA geführt wird.",
+      "roleLink": {
+        "label": "Rechtsgutachten, MiCA-White-Paper und Registereintrag",
+        "href": "/de/compliance"
+      },
+      "items": [
+        {
+          "title": "Einen stabilen Franken und eine digitale Schweizer Wirtschaft weltweit fördern.",
+          "description": "Wir machen weltweit bekannt, dass Institutionen und gewöhnliche Sparer Zugang zur stabilsten Volkswirtschaft der Welt haben und sogar an ihrer digitalen Zukunft teilhaben können."
+        },
+        {
+          "title": "Bildung.",
+          "description": "Vorträge, Workshops und verständliches Material dazu, wie Stablecoins funktionieren, was Frankencoin unterscheidet und wie man den Schweizer Franken on-chain sicher nutzt."
+        },
+        {
+          "title": "Mitgliederversammlung in Zug.",
+          "description": "Einmal im Jahr, mit Vorstand und Beirat: der Stand des Protokolls, die Agenda und die Menschen dahinter."
+        },
+        {
+          "title": "Private Anlässe und Treffen.",
+          "description": "In den begehrtesten Räumen an den wichtigsten globalen Treffen des Jahres, mit dem Netzwerk des Vereins."
+        },
+        {
+          "title": "Mitglieder im Schweizer Markt unterstützen.",
+          "description": "Kuratierte, geprüfte Kontakte zu führenden Unternehmen, Institutionen und regulatorischer Expertise, mit tatkräftiger Hilfe, daraus dauerhafte Beziehungen zu machen."
+        }
+      ]
+    },
+    "contact": {
+      "title": "Kontakt",
+      "text": "In unsicheren Zeiten flüchtet die Welt in den Schweizer Franken. Gestalten Sie seine digitale Zukunft mit.",
+      "name": "Johannes Kern",
+      "role": "Geschäftsführer",
+      "email": "johannes@frankencoin.com",
+      "cta": "Mitglied werden"
+    }
+  },
+  "src/content/en/compliance.json": {
+    "heroTitle": "Classified in Switzerland.|Documented for the EU.",
+    "intro": "Two independent legal assessments by LEXR describe how ZCHF and the pool shares fit Swiss and EU law. This page summarises them; the documents themselves are linked below.",
+    "rows": [
+      {
+        "title": "Switzerland",
+        "body": "According to the assessment by LEXR Law Switzerland AG (August 2024), ZCHF qualifies as a payment token and a currency-linked stablecoin under FINMA's guidelines, not as a security, and using it to pay for goods and services is generally outside Swiss financial market law. The same assessment classifies the pool shares (FPS) as a utility token that gives access to governance.",
+        "cta": {
+          "label": "Swiss legal classification (PDF)",
+          "href": "/2024-08-14_Frankencoin_Swiss_Regulatory_Classification.pdf"
+        }
+      },
+      {
+        "title": "European Union",
+        "body": "According to the opinion by LEXR Germany Rechtsanwalts GmbH (February 2026), ZCHF is a crypto-asset under the <a href=\"https://www.21analytics.co/glossary/markets-in-crypto-assets-mica/\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-[var(--color-brand-swiss)] underline underline-offset-2 hover:no-underline\">Markets in Crypto-Assets Regulation (MiCA)</a> with no identifiable issuer, so the issuer duties of MiCA Titles II to IV do not apply to it. A MiCA-format white paper for ZCHF has been published and appears in ESMA's interim MiCA register. The register entry records the white paper; it is not an approval or endorsement by ESMA or any authority. Terms: <a href=\"https://www.21analytics.co/glossary/asset-referenced-token-art/\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-[var(--color-brand-swiss)] underline underline-offset-2 hover:no-underline\">asset-referenced tokens (ART)</a> and <a href=\"https://www.21analytics.co/glossary/electronic-money-token-emt/\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-[var(--color-brand-swiss)] underline underline-offset-2 hover:no-underline\">electronic money tokens (EMT)</a>.",
+        "cta": {
+          "label": "EU MiCA legal opinion (PDF)",
+          "href": "/20260209 ZCHF MiCA Frankencoin Association Public Summary FINAL.pdf"
+        }
+      },
+      {
+        "title": "Service providers",
+        "body": "Exchanges, custodians and other crypto-asset service providers that handle ZCHF remain subject to their own licensing, anti-money-laundering and consumer-protection obligations in their jurisdiction. The assessments describe the token, not the obligations of the businesses that offer it.",
+        "cta": {
+          "label": "ZCHF MiCA white paper",
+          "href": "https://storage.googleapis.com/exponential-science-project1.appspot.com/IXBRL/ZCHF%20-%2029-05-2026/ZCHF-viewer.xhtml#f-fact_9"
+        }
+      }
+    ],
+    "documents": {
+      "title": "Documents",
+      "items": [
+        {
+          "label": "Swiss legal classification (PDF)",
+          "href": "/2024-08-14_Frankencoin_Swiss_Regulatory_Classification.pdf"
+        },
+        {
+          "label": "EU MiCA legal opinion (PDF)",
+          "href": "/20260209 ZCHF MiCA Frankencoin Association Public Summary FINAL.pdf"
+        },
+        {
+          "label": "ZCHF MiCA white paper",
+          "href": "https://storage.googleapis.com/exponential-science-project1.appspot.com/IXBRL/ZCHF%20-%2029-05-2026/ZCHF-viewer.xhtml#f-fact_9"
+        },
+        {
+          "label": "ESMA interim MiCA register",
+          "href": "https://www.esma.europa.eu/esmas-activities/digital-finance-and-innovation/markets-crypto-assets-regulation-mica#InterimMiCARegister"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Questions from your compliance team?",
+      "body": "The Frankencoin Association works with regulated intermediaries that want to offer ZCHF products.",
+      "primary": {
+        "label": "compliance@frankencoin.com",
+        "href": "mailto:compliance@frankencoin.com"
+      },
+      "secondary": {
+        "label": "Security and audits",
+        "href": "/security"
+      }
+    }
+  },
+  "src/content/en/security.json": {
+    "meta": {
+      "title": "Frankencoin security: audits, bug bounty and independent ratings",
+      "description": "Audits by ChainSecurity, Code4rena, Decurity and BlockBite, a bug bounty run by Compass Security, and independent risk ratings from Xerberus and Pharos."
+    },
+    "hero": {
+      "title": "Audited, rated,|and open to anyone who finds a bug.",
+      "subtitle": "Each Frankencoin component is audited before launch, a bug bounty pays for responsible disclosure, and two independent providers rate the system from public data."
+    },
+    "summary": [
+      {
+        "title": "{n} audits, 4 firms",
+        "description": "ChainSecurity, Code4rena, Decurity and BlockBite. Reports linked below.",
+        "href": "#audits",
+        "cta": "Audit list"
+      },
+      {
+        "title": "Bug bounty",
+        "description": "Run by Compass Security for bugs that affect the system's stability.",
+        "href": "https://bugbounty.compass-security.com/service-details.html?id=18",
+        "cta": "Bounty details"
+      },
+      {
+        "title": "Independent ratings",
+        "description": "Xerberus and Pharos, with their own scales and reports.",
+        "href": "#ratings",
+        "cta": "Ratings"
+      },
+      {
+        "title": "Open source",
+        "description": "All contracts are public and verified on every chain.",
+        "href": "https://github.com/Frankencoin-ZCHF/Frankencoin",
+        "cta": "GitHub"
+      }
+    ],
+    "audits": {
+      "title": "Audits",
+      "cols": {
+        "reviewer": "Reviewer",
+        "component": "Component",
+        "date": "Completed",
+        "report": "Report"
+      },
+      "reportLabel": "Report",
+      "items": [
+        {
+          "reviewer": "ChainSecurity",
+          "component": "Uniswap Liquidity Amplifier",
+          "date": "2026-07-30",
+          "href": "https://www.chainsecurity.com/security-audit/frankencoin-uniswap-liquidity-amplifier"
+        },
+        {
+          "reviewer": "ChainSecurity",
+          "component": "FPS2 pool shares (FCS)",
+          "date": "2026-07-14",
+          "href": "https://reports.chainsecurity.com/Frankencoin/ChainSecurity_Frankencoin_FPS2_Audit.pdf"
+        },
+        {
+          "reviewer": "ChainSecurity",
+          "component": "CCIP cross-chain bridge",
+          "date": "2025-05-15",
+          "href": "https://www.chainsecurity.com/security-audit/frankencoin-ccip-bridge"
+        },
+        {
+          "reviewer": "ChainSecurity",
+          "component": "v2024: MintingHub, PositionRoller, Savings",
+          "date": "2024-11-28",
+          "href": "https://www.chainsecurity.com/security-audit/frankencoin-v2024"
+        },
+        {
+          "reviewer": "Decurity",
+          "component": "Frankencoin contracts",
+          "date": "2024",
+          "href": "https://github.com/Decurity/audits/blob/master/Frankencoin/frankencoin-audit-report-2024-1.1.pdf"
+        },
+        {
+          "reviewer": "ChainSecurity",
+          "component": "Frankencoin smart contracts (v1)",
+          "date": "2023-10-30",
+          "href": "https://www.chainsecurity.com/security-audit/frankencoin-smart-contracts"
+        },
+        {
+          "reviewer": "Code4rena",
+          "component": "Frankencoin v1 audit contest",
+          "date": "2023-04",
+          "href": "https://code4rena.com/reports/2023-04-frankencoin"
+        },
+        {
+          "reviewer": "BlockBite",
+          "component": "Frankencoin v1 contracts",
+          "date": "2023-03",
+          "href": "/AuditReport-Frankencoin.pdf"
+        }
+      ],
+      "bounty": {
+        "body": "Found something the audits missed? The Frankencoin Association pays bounties for bugs that affect the stability of the system. The programme is run by Compass Security.",
+        "label": "Bug bounty programme",
+        "href": "https://bugbounty.compass-security.com/service-details.html?id=18"
+      }
+    },
+    "ratings": {
+      "title": "Independent ratings",
+      "subtitle": "Xerberus and Pharos are not affiliated with Frankencoin. Each row shows the provider's own scale and links to its report.",
+      "cols": {
+        "provider": "Provider",
+        "subject": "Rated",
+        "score": "Score",
+        "scale": "Scale",
+        "source": "Source"
+      },
+      "xerberus": {
+        "scale": "0 to 100, higher is better",
+        "report": "Xerberus report",
+        "subjects": {
+          "protocol": "Frankencoin protocol",
+          "dao": "Frankencoin DAO",
+          "savings": "Savings vault (Ethereum)"
+        }
+      },
+      "pharos": {
+        "subject": "ZCHF safety score",
+        "scale": "Grade F to A+, score 0 to 100",
+        "report": "Pharos report card",
+        "updated": "Updated"
+      },
+      "unavailable": "n/a"
+    },
+    "related": {
+      "title": "Legal classification and cover",
+      "items": [
+        {
+          "title": "Compliance",
+          "description": "Swiss and EU legal assessments of ZCHF and the pool shares.",
+          "href": "/compliance",
+          "cta": "Compliance"
+        },
+        {
+          "title": "Depeg cover",
+          "description": "Optional third-party cover for ZCHF holders.",
+          "href": "/insurance",
+          "cta": "Insurance"
+        },
+        {
+          "title": "Transparency",
+          "description": "Live supply, collateral and reserve.",
+          "href": "/transparency",
+          "cta": "Transparency"
+        }
+      ]
+    }
+  },
+  "src/content/en/press.json": {
+    "meta": {
+      "title": "Frankencoin press kit",
+      "description": "Logos, brand guidelines, a short description to quote, press releases and the press contact for Frankencoin (ZCHF)."
+    },
+    "hero": {
+      "title": "Press kit",
+      "subtitle": "A description you can quote, logos, the brand guidelines, press releases and who to contact."
+    },
+    "boiler": {
+      "title": "About Frankencoin",
+      "text": "Frankencoin (ZCHF) is a decentralized stablecoin that tracks the Swiss franc. It is issued by smart contracts against on-chain collateral rather than by a company, has been live since 2023 and is available on eight blockchains. Frankencoin Shares (FCS) represent the protocol's equity. The Frankencoin Association in Switzerland supports its development.",
+      "note": "Reuse as is or shorten; please do not describe ZCHF as bank-issued or as backed by bank deposits."
+    },
+    "assets": {
+      "title": "Logos and guidelines",
+      "subtitle": "SVG files. The brand guidelines set colours, clear space and what not to do with the logo.",
+      "items": [
+        {
+          "label": "Frankencoin logo",
+          "note": "Wordmark, colour, for light backgrounds",
+          "file": "/press/frankencoin_logo.svg",
+          "bg": "light"
+        },
+        {
+          "label": "Frankencoin logo, white",
+          "note": "For dark backgrounds",
+          "file": "/press/frankencoin_logo_white.svg",
+          "bg": "dark"
+        },
+        {
+          "label": "Frankencoin logo, mono white",
+          "note": "Single colour, for dark backgrounds",
+          "file": "/press/frankencoin_logo_mono_white.svg",
+          "bg": "dark"
+        },
+        {
+          "label": "ZCHF coin icon",
+          "note": "The stablecoin",
+          "file": "/press/coin_logo_frankencoin.svg",
+          "bg": "light"
+        },
+        {
+          "label": "FCS coin icon",
+          "note": "Frankencoin Shares, the current equity token",
+          "file": "/press/coin_logo_fcs_trans.svg",
+          "bg": "light"
+        },
+        {
+          "label": "FPS coin icon",
+          "note": "Frankencoin Pool Shares, the legacy equity token",
+          "file": "/press/coin_logo_fps.svg",
+          "bg": "light"
+        }
+      ],
+      "guidelines": {
+        "label": "Brand guidelines (PDF)",
+        "file": "/press/frankencoin_brand_guidelines.pdf"
+      }
+    },
+    "releases": {
+      "title": "Press releases",
+      "empty": "No press releases are published here yet. Announcements are posted on X and Telegram; coverage is collected on the news page.",
+      "newsLabel": "News and media coverage",
+      "newsHref": "/news",
+      "_comment": "Each item: { \"date\": \"YYYY-MM-DD\", \"title\": \"...\", \"href\": \"/press/....pdf or URL\", \"summary\": \"one sentence\" }. The list is intentionally empty until the Association publishes releases.",
+      "items": []
+    },
+    "contact": {
+      "title": "Press contact",
+      "text": "For interviews, quotes and background.",
+      "email": "info@frankencoin.com"
+    }
+  },
+  "src/content/en/use-cases.json": {
+    "heroTitle": "Where ZCHF|is used today",
+    "title": "Where ZCHF is used today",
+    "intro": "Services that take, hold or pay out Frankencoin, grouped by what you want to do. Each card says the concrete route.",
+    "filterAll": "All",
+    "categories": [
+      "Buy and sell ZCHF",
+      "Payments",
+      "DeFi",
+      "Business"
+    ],
+    "cases": [
+      {
+        "title": "Buy and sell ZCHF",
+        "partner": "Kraken",
+        "description": "Buy, sell and trade ZCHF on Kraken, with the option to withdraw to your own wallet.",
+        "category": "Buy and sell ZCHF",
+        "image": "/images/kraken-logo.png",
+        "link": "https://www.kraken.com/buy/zchf"
+      },
+      {
+        "title": "Swiss IBAN and card payments",
+        "partner": "ether.fi",
+        "description": "Fund your personal Swiss IBAN to receive ZCHF in ether.fi, spend it with the card or use it as borrowing collateral. Send CHF back to a Swiss bank account in your own name.",
+        "category": "Payments",
+        "image": "/images/etherfi-logo.png",
+        "link": "https://www.ether.fi/app/cash/bank/chf"
+      },
+      {
+        "title": "Pay at the till",
+        "partner": "Spar Switzerland",
+        "description": "Pay at the checkout of over 100 Spar stores in Switzerland: the cashier shows a QR code, you confirm from a wallet that holds ZCHF.",
+        "category": "Payments",
+        "image": "/images/spar.png",
+        "link": "https://presse.spar.ch/de/spar-schweiz/allgemein/neu%3A-jetzt-bei-spar-mit-krypto-waehrung-bezahlen/"
+      },
+      {
+        "title": "Online checkout",
+        "partner": "PrivCart",
+        "description": "Merchants add a crypto checkout to Shopify, WooCommerce, BigCommerce or a custom shop. Customers pay in ZCHF; the merchant withdraws to a wallet they control.",
+        "category": "Payments",
+        "image": "/images/privcart-logo.webp",
+        "link": "https://privcart.com/"
+      },
+      {
+        "title": "Buy with a bank transfer, pay bills",
+        "partner": "Mt Pelerin",
+        "description": "Buy ZCHF by bank transfer to your own wallet, or link the wallet to a personal IBAN to receive transfers and pay Swiss QR bills in ZCHF.",
+        "category": "Payments",
+        "image": "/images/mt-pelerin-logo.png",
+        "link": "https://www.mtpelerin.com/buy-zchf-frankencoin"
+      },
+      {
+        "title": "Visa card",
+        "partner": "Zeal with Gnosis Pay",
+        "description": "Zeal is the wallet app, Gnosis Pay issues the Visa debit card. Hold ZCHF in Zeal and spend it anywhere Visa is accepted; the card settles from your ZCHF balance.",
+        "category": "Payments",
+        "image": "/images/zeal.png",
+        "link": "https://www.zeal.app/"
+      },
+      {
+        "title": "Protocol savings",
+        "partner": "Frankencoin protocol",
+        "description": "Deposit ZCHF in the protocol's savings module to earn the rate set by governance. Interest starts after an initial waiting period; you can withdraw at any time.",
+        "category": "DeFi",
+        "image": "/images/Icon-Invest.svg",
+        "link": "https://app.frankencoin.com/savings"
+      },
+      {
+        "title": "Recurring savings plan",
+        "partner": "urble",
+        "description": "Set up a recurring savings plan in ZCHF or BTC, for yourself or for someone else. Funds stay in your own wallet and the ZCHF part earns the protocol savings rate.",
+        "category": "DeFi",
+        "image": "/images/urble-logo.png",
+        "link": "https://urble.io/"
+      },
+      {
+        "title": "Savings app with IBAN",
+        "partner": "Rebind",
+        "description": "Fund a personal IBAN by bank transfer or deposit digital assets, allocate to a ZCHF, EUR or USD strategy, and withdraw when you need the money.",
+        "category": "DeFi",
+        "image": "/images/rebind-logo.png",
+        "link": "https://rebind.co/"
+      },
+      {
+        "title": "Lend or borrow ZCHF",
+        "partner": "Morpho",
+        "description": "Supply ZCHF to earn interest from borrowers, or borrow ZCHF against crypto collateral, in Morpho's lending markets on Ethereum and Base.",
+        "category": "DeFi",
+        "image": "/images/morpho.png",
+        "link": "https://morpho.org/"
+      },
+      {
+        "title": "Borrow crvUSD against svZCHF",
+        "partner": "Curve LlamaLend",
+        "description": "Deposit savings-vault tokens (svZCHF) as collateral and borrow crvUSD in Curve's isolated Ethereum market. Rates and liquidation terms are set by that market.",
+        "category": "DeFi",
+        "image": "/images/full-curve-dao-logo.jpg",
+        "link": "https://www.curve.finance/lend/ethereum/markets/0xFd85e847cDd2549f213E276e4B57B0690169F043"
+      },
+      {
+        "title": "Index fund component",
+        "partner": "Sagix Club Edelweiss",
+        "description": "ZCHF is one of the components of the ixEDEL index fund on Reserve Protocol, alongside gold, Bitcoin and yield-bearing stablecoins.",
+        "category": "DeFi",
+        "image": "/images/sagix-ixedel.jpg",
+        "link": "https://app.reserve.org/ethereum/index-dtf/0xe4a10951f962e6cb93cb843a4ef05d2f99db1f94/overview"
+      },
+      {
+        "title": "Tokenized shares",
+        "partner": "Aktionariat",
+        "description": "Buy and sell tokenized shares of Swiss companies, and take part in their capital raises, with ZCHF as the settlement currency.",
+        "category": "Business",
+        "image": "/images/aktionariat-Compressify.io.webp",
+        "link": "https://www.aktionariat.com/"
+      },
+      {
+        "title": "Payroll",
+        "partner": "Quitt",
+        "description": "Run payroll, social insurance and pension contributions for employees and settle the wages in ZCHF.",
+        "category": "Business",
+        "image": "/images/quitt-logo.svg",
+        "link": "https://www.quitt.ch/"
+      },
+      {
+        "title": "Company treasury and rental deposits",
+        "partner": "Plusplus",
+        "description": "Treasury products for companies built on ZCHF, including rental deposits held in ZCHF.",
+        "category": "Business",
+        "image": "/images/logo_plusplus.avif",
+        "link": "https://www.plusplus.swiss/"
+      },
+      {
+        "title": "Custody",
+        "partner": "Bitcoin Suisse",
+        "description": "Hold ZCHF in custody with Bitcoin Suisse, a Swiss crypto financial services provider, instead of in your own wallet.",
+        "category": "Business",
+        "image": "/images/bitcoin-suisse.png",
+        "link": "https://www.bitcoinsuisse.com/"
+      },
+      {
+        "title": "Institutional custody",
+        "partner": "Copper",
+        "description": "Institutions hold ZCHF in Copper's custody and can deploy it to DeFi from there, next to the rest of their digital assets.",
+        "category": "Business",
+        "image": "/images/CopperLogoDark.png",
+        "link": "https://copper.co/"
+      }
+    ],
+    "more": {
+      "title": "Looking for something else?",
+      "links": [
+        {
+          "label": "Exchanges and wallets",
+          "href": "/for/exchanges-wallets"
+        },
+        {
+          "label": "Full ecosystem list",
+          "href": "/ecosystem"
+        }
+      ]
+    }
+  },
+  "src/content/en/ecosystem.json": {
+    "header": {
+      "title": "Frankencoin|ecosystem",
+      "subtitle": "Services that let you buy, pay with, save or hold ZCHF, grouped by what you want to do.",
+      "eyebrow": "Ecosystem"
+    },
+    "intro": {
+      "title": "Browse projects using Frankencoin.",
+      "subtitle": "Building something?",
+      "cta": {
+        "label": "Add your project",
+        "href": "https://github.com/Frankencoin-ZCHF/frankencoin-site"
+      }
+    },
+    "submit": {
+      "title": "Add a project",
+      "text": "This list is maintained in the public website repository. Add an entry to src/content/en/ecosystem.json and open a pull request.",
+      "cta": {
+        "label": "Open the repository on GitHub",
+        "href": "https://github.com/Frankencoin-ZCHF/frankencoin-site"
+      },
+      "fileHref": "https://github.com/Frankencoin-ZCHF/frankencoin-site/blob/main/src/content/en/ecosystem.json",
+      "fileLabel": "ecosystem.json"
+    },
+    "useCases": {
+      "text": "For the concrete route through each service, see",
+      "linkLabel": "Use cases",
+      "href": "/use-cases"
+    },
+    "categories": [
+      "Buy and sell ZCHF",
+      "Pay",
+      "Save and earn",
+      "Wallets",
+      "Trade on-chain",
+      "For businesses"
+    ],
+    "tabs": [
+      {
+        "href": "https://www.kraken.com/buy/zchf",
+        "name": "Kraken",
+        "image": "/images/kraken-logo.png",
+        "imageAlt": "Kraken logo",
+        "category": "Buy and sell ZCHF",
+        "description": "Buy, sell and trade ZCHF on Kraken, with the option to withdraw to your own wallet.",
+        "linkLabel": "kraken.com"
+      },
+      {
+        "href": "https://www.mtpelerin.com/buy-zchf-frankencoin",
+        "name": "Mt Pelerin",
+        "image": "/images/mt-pelerin-logo.png",
+        "imageAlt": "Mt Pelerin logo",
+        "category": "Buy and sell ZCHF",
+        "description": "Buy and sell ZCHF by bank transfer to your own wallet; optional personal IBAN for receiving transfers and paying QR bills.",
+        "linkLabel": "mtpelerin.com"
+      },
+      {
+        "href": "https://dfx.swiss/",
+        "name": "DFX",
+        "image": "/images/Vectors-Wrapper_3.svg",
+        "imageAlt": "DFX logo",
+        "category": "Buy and sell ZCHF",
+        "description": "Buy and sell ZCHF by bank transfer or card, delivered to MetaMask, Rabby, hardware wallets or any WalletConnect wallet.",
+        "linkLabel": "dfx.swiss"
+      },
+      {
+        "href": "https://frankencoin.app/",
+        "name": "Frankencoin App",
+        "image": "/images/Frankencoin-App-Logo-Compressify.io.webp",
+        "imageAlt": "Frankencoin App logo",
+        "category": "Buy and sell ZCHF",
+        "description": "Self-custody mobile wallet run by DFX: buy ZCHF by bank transfer, send and receive payments.",
+        "linkLabel": "frankencoin.app"
+      },
+      {
+        "href": "https://www.ether.fi/app/cash/bank/chf",
+        "name": "ether.fi",
+        "image": "/images/etherfi-logo.png",
+        "imageAlt": "ether.fi logo",
+        "category": "Pay",
+        "description": "Personal Swiss IBAN for CHF transfers, card spending and borrowing against ZCHF, all in one app.",
+        "linkLabel": "ether.fi"
+      },
+      {
+        "href": "https://presse.spar.ch/de/spar-schweiz/allgemein/neu%3A-jetzt-bei-spar-mit-krypto-waehrung-bezahlen/",
+        "name": "Spar Switzerland",
+        "image": "/images/spar.png",
+        "imageAlt": "Spar logo",
+        "category": "Pay",
+        "description": "Pay with ZCHF at the checkout of over 100 Spar stores in Switzerland.",
+        "linkLabel": "spar.ch"
+      },
+      {
+        "href": "https://www.zeal.app/",
+        "name": "Zeal with Gnosis Pay",
+        "image": "/images/zeal.png",
+        "imageAlt": "Zeal logo",
+        "category": "Pay",
+        "description": "Wallet app (Zeal) with a Visa debit card (Gnosis Pay) that spends from your ZCHF balance.",
+        "linkLabel": "zeal.app"
+      },
+      {
+        "href": "https://privcart.com/",
+        "name": "PrivCart",
+        "image": "/images/privcart-logo.webp",
+        "imageAlt": "PrivCart logo",
+        "category": "Pay",
+        "description": "Crypto checkout for Shopify, WooCommerce, BigCommerce and custom shops; customers pay in ZCHF.",
+        "linkLabel": "privcart.com"
+      },
+      {
+        "href": "https://ammer.cash/",
+        "name": "Ammer.cash",
+        "image": "/images/ammer_pay_logo-Compressify.io.webp",
+        "imageAlt": "Ammer logo",
+        "category": "Pay",
+        "description": "Point-of-sale app and cards for merchants to accept crypto payments, including ZCHF, via QR code or card.",
+        "linkLabel": "ammer.cash"
+      },
+      {
+        "href": "https://urble.io/",
+        "name": "urble",
+        "image": "/images/urble-logo.png",
+        "imageAlt": "urble logo",
+        "category": "Save and earn",
+        "description": "Recurring savings plans in ZCHF or BTC from your own wallet; the ZCHF part earns the protocol savings rate.",
+        "linkLabel": "urble.io"
+      },
+      {
+        "href": "https://rebind.co/",
+        "name": "Rebind",
+        "image": "/images/rebind-logo.png",
+        "imageAlt": "Rebind logo",
+        "category": "Save and earn",
+        "description": "Savings app with a personal IBAN and ZCHF, EUR and USD strategies.",
+        "linkLabel": "rebind.co"
+      },
+      {
+        "href": "https://morpho.org/",
+        "name": "Morpho",
+        "image": "/images/morpho.png",
+        "imageAlt": "Morpho logo",
+        "category": "Save and earn",
+        "description": "Lend ZCHF for interest or borrow ZCHF against crypto collateral, on Ethereum and Base.",
+        "linkLabel": "morpho.org"
+      },
+      {
+        "href": "https://www.curve.finance/lend/ethereum/markets/0xFd85e847cDd2549f213E276e4B57B0690169F043",
+        "name": "Curve LlamaLend",
+        "image": "/images/full-curve-dao-logo.jpg",
+        "imageAlt": "Curve logo",
+        "category": "Save and earn",
+        "description": "Borrow crvUSD against savings-vault tokens (svZCHF) in an isolated Ethereum market.",
+        "linkLabel": "curve.finance"
+      },
+      {
+        "href": "https://app.reserve.org/ethereum/index-dtf/0xe4a10951f962e6cb93cb843a4ef05d2f99db1f94/overview",
+        "name": "ixEDEL (Sagix Club Edelweiss)",
+        "image": "/images/sagix-ixedel.jpg",
+        "imageAlt": "ixEDEL logo",
+        "category": "Save and earn",
+        "description": "Index fund on Reserve Protocol that holds ZCHF alongside gold, Bitcoin and yield-bearing stablecoins.",
+        "linkLabel": "app.reserve.org"
+      },
+      {
+        "href": "https://zippy.app/",
+        "name": "Zippy",
+        "image": "/images/zippy-1-Compressify.io.webp",
+        "imageAlt": "Zippy logo",
+        "category": "Wallets",
+        "description": "Mobile wallet with social recovery; send to phone contacts, buy and sell with card or IBAN.",
+        "linkLabel": "zippy.app"
+      },
+      {
+        "href": "https://app.uniswap.org/",
+        "name": "Uniswap",
+        "image": "/images/Uniswap_Logo_and_Wordmark-1-Compressify.io.webp",
+        "imageAlt": "Uniswap logo",
+        "category": "Trade on-chain",
+        "description": "Swap ZCHF against other tokens on Ethereum and the other chains where ZCHF is deployed.",
+        "linkLabel": "uniswap.org"
+      },
+      {
+        "href": "https://www.aktionariat.com/tokenized-companies",
+        "name": "Aktionariat",
+        "image": "/images/aktionariat-Compressify.io_1.webp",
+        "imageAlt": "Aktionariat logo",
+        "category": "For businesses",
+        "description": "Tokenized shares of Swiss companies, bought, sold and issued with ZCHF as the settlement currency.",
+        "linkLabel": "aktionariat.com"
+      },
+      {
+        "href": "https://www.quitt.ch/",
+        "name": "Quitt",
+        "image": "/images/quitt-logo.svg",
+        "imageAlt": "Quitt logo",
+        "category": "For businesses",
+        "description": "Payroll, social insurance and pension administration with wages settled in ZCHF.",
+        "linkLabel": "quitt.ch"
+      },
+      {
+        "href": "https://www.plusplus.swiss/",
+        "name": "Plusplus",
+        "image": "/images/logo_plusplus.avif",
+        "imageAlt": "Plusplus logo",
+        "category": "For businesses",
+        "description": "Treasury products for companies built on ZCHF, including rental deposits.",
+        "linkLabel": "plusplus.swiss"
+      },
+      {
+        "href": "https://www.bitcoinsuisse.com/",
+        "name": "Bitcoin Suisse",
+        "image": "/images/bitcoin-suisse.png",
+        "imageAlt": "Bitcoin Suisse logo",
+        "category": "For businesses",
+        "description": "Custody of ZCHF with a Swiss crypto financial services provider.",
+        "linkLabel": "bitcoinsuisse.com"
+      },
+      {
+        "href": "https://copper.co/",
+        "name": "Copper",
+        "image": "/images/CopperLogoDark.png",
+        "imageAlt": "Copper logo",
+        "category": "For businesses",
+        "description": "Institutional custody for ZCHF with DeFi access from the custody account.",
+        "linkLabel": "copper.co"
+      }
+    ]
+  },
+  "src/content/en/exchanges.json": {
+    "eyebrow": "Where to Get Frankencoin",
+    "title": "Exchanges & On-Ramps",
+    "intro": "Frankencoin (ZCHF) is available on a range of platforms—from regulated Swiss on-ramps to decentralized exchanges. Whether you prefer a bank transfer or a direct swap, there is a convenient way to obtain ZCHF.",
+    "exchanges": [
+      {
+        "name": "Kraken",
+        "description": "Buy, sell and trade ZCHF on Kraken, with the option to withdraw to your own wallet.",
+        "type": "Exchange",
+        "image": "/images/kraken-logo.png",
+        "link": "https://www.kraken.com/buy/zchf",
+        "linkLabel": "Trade on Kraken"
+      },
+      {
+        "name": "ether.fi",
+        "description": "Receive ZCHF by transferring CHF to your personal Swiss IBAN in ether.fi, or send CHF back to a Swiss bank account in your own name.",
+        "type": "On-Ramp & Wallet",
+        "image": "/images/etherfi-logo.png",
+        "link": "https://www.ether.fi/app/cash/bank/chf",
+        "linkLabel": "Get ZCHF with ether.fi"
+      },
+      {
+        "name": "Mt Pelerin",
+        "description": "Swiss-regulated on-ramp: buy ZCHF directly with a bank transfer via your personal IBAN. Fully compliant and beginner-friendly.",
+        "type": "On-Ramp",
+        "image": "/images/mt-pelerin-logo.png",
+        "link": "https://www.mtpelerin.com/buy-zchf-frankencoin",
+        "linkLabel": "Buy ZCHF"
+      },
+      {
+        "name": "DFX",
+        "description": "Swiss-based service for buying and selling ZCHF with bank transfers. Simple, compliant, and non-custodial—your keys, your coins.",
+        "type": "On-Ramp",
+        "image": "/images/DFX-Logos.svg",
+        "link": "https://dfx.swiss/app?type=buy&asset-out=ZCHF",
+        "linkLabel": "Buy ZCHF"
+      },
+      {
+        "name": "Curve",
+        "description": "Leading decentralized exchange optimized for stablecoins. Swap ZCHF with low slippage and deep liquidity on Ethereum.",
+        "type": "DEX",
+        "image": "/images/full-curve-dao-logo.jpg",
+        "link": "https://curve.fi/#/ethereum/swap?from=0xdac17f958d2ee523a2206206994597c13d831ec7&to=0xB58E61C3098d85632Df34EecfB899A1Ed80921cB",
+        "linkLabel": "Swap on Curve"
+      },
+      {
+        "name": "Uniswap",
+        "description": "The most widely used decentralized exchange. Trade ZCHF permissionlessly on Ethereum and other networks with full transparency.",
+        "type": "DEX",
+        "image": "/images/Uniswap_Logo_and_Wordmark-1-Compressify.io.webp",
+        "link": "https://app.uniswap.org/swap?outputCurrency=0xB58E61C3098d85632Df34EecfB899A1Ed80921cB",
+        "linkLabel": "Swap on Uniswap"
+      },
+      {
+        "name": "Enso",
+        "description": "Intent-based swap routing across DeFi liquidity. Swap USDC into ZCHF through optimized execution paths on Ethereum.",
+        "type": "DEX Aggregator",
+        "image": "/images/enso-logo.png",
+        "link": "https://happypath.enso.build/swap?fromChain=1&fromToken=0xdac17f958d2ee523a2206206994597c13d831ec7&toChain=1&toToken=0xb58e61c3098d85632df34eecfb899a1ed80921cb&slippage=25",
+        "linkLabel": "Swap on Enso"
+      },
+      {
+        "name": "CowSwap",
+        "description": "MEV-protected decentralized exchange. Batch auctions find you the best available price for your ZCHF trades automatically.",
+        "type": "DEX",
+        "image": "/images/Cow-Swap-logo.svg",
+        "link": "https://swap.cow.fi/#/1/swap/USDT/ZCHF",
+        "linkLabel": "Swap on CowSwap"
+      }
+    ]
+  },
+  "src/content/en/token.json": {
+    "hero": {
+      "title": "Tokens and|contract addresses",
+      "subtitle": "The contract addresses of ZCHF, Frankencoin Shares (FCS) and the savings vaults on every network they are deployed on."
+    },
+    "tokens": {
+      "title": "ZCHF, the Swiss franc stablecoin",
+      "subtitle": "ERC-20 token. Issued on Ethereum; the same address on the other networks is the bridged token. Transfer between networks through the app.",
+      "header": {
+        "label": "Network",
+        "title": "Contract address",
+        "actions": "Get it"
+      },
+      "actions": {
+        "copyTextTooltip": "Copy address",
+        "copiedLabel": "Copied",
+        "explorer": "Explorer",
+        "advanced": "Advanced: write to the contract on the explorer"
+      },
+      "chains": [
+        {
+          "name": "Ethereum",
+          "image": "/images/Frame-427322444-Compressify.io.webp",
+          "contract": "0xB58E61C3098d85632Df34EecfB899A1Ed80921cB",
+          "explorerBaseUrl": "https://etherscan.io/token",
+          "actions": [
+            {
+              "label": "Buy with fiat",
+              "fiatProviders": [
+                {
+                  "href": "https://app.dfx.swiss/?mode=frankencoin-buy-ethereum/",
+                  "image": "/images/DFX-Logos.svg",
+                  "name": "DFX"
+                },
+                {
+                  "href": "https://www.mtpelerin.com/buy-zchf-frankencoin",
+                  "image": "/images/Mt-Pelerin-Logo.svg",
+                  "name": "Mt Pelerin"
+                }
+              ]
+            },
+            {
+              "label": "Swap",
+              "href": "https://happypath.enso.build/swap?fromChain=1&fromToken=0xdac17f958d2ee523a2206206994597c13d831ec7&toChain=1&toToken=0xb58e61c3098d85632df34eecfb899a1ed80921cb&slippage=25",
+              "image": "/images/enso-logo.png",
+              "name": "Enso"
+            }
+          ]
+        },
+        {
+          "name": "Polygon",
+          "image": "/images/coin-icons-Compressify.io_1.webp",
+          "contract": "0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553",
+          "explorerBaseUrl": "https://polygonscan.com/address",
+          "actions": [
+            {
+              "label": "Bridge",
+              "href": "https://app.frankencoin.com/transfer?chain=polygon",
+              "image": "/images/Frankencoin-eth-poly.webp"
+            }
+          ]
+        },
+        {
+          "name": "Arbitrum",
+          "image": "/images/coin-icons-Compressify.io.webp",
+          "contract": "0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553",
+          "explorerBaseUrl": "https://arbiscan.io/address",
+          "actions": [
+            {
+              "label": "Bridge",
+              "href": "https://app.frankencoin.com/transfer?chain=arbitrum",
+              "image": "/images/Frankencoin-eth-arb.webp"
+            }
+          ]
+        },
+        {
+          "name": "Optimism",
+          "image": "/images/coin-icons-Compressify.io_1_1.webp",
+          "contract": "0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553",
+          "explorerBaseUrl": "https://optimistic.etherscan.io/address",
+          "actions": [
+            {
+              "label": "Bridge",
+              "href": "https://app.frankencoin.com/transfer?chain=optimism",
+              "image": "/images/Frankencoin-eth-opt.webp"
+            }
+          ]
+        },
+        {
+          "name": "Base",
+          "image": "/images/coin-icons-Compressify.io_1_1_1.webp",
+          "contract": "0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553",
+          "explorerBaseUrl": "https://basescan.org/address",
+          "actions": [
+            {
+              "label": "Bridge",
+              "href": "https://app.frankencoin.com/transfer?chain=base",
+              "image": "/images/Frankencoin-eth-base.webp"
+            }
+          ]
+        },
+        {
+          "name": "Avalanche",
+          "image": "/images/Frankencoin-on-Avalanche.webp",
+          "contract": "0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553",
+          "explorerBaseUrl": "https://avascan.info/blockchain/all/address",
+          "actions": [
+            {
+              "label": "Bridge",
+              "href": "https://app.frankencoin.com/transfer?chain=avalanche",
+              "image": "/images/Frankencoin-eth-avax.webp"
+            }
+          ]
+        },
+        {
+          "name": "Gnosis",
+          "image": "/images/coin-icons-Compressify.io_1_1_1.webp",
+          "contract": "0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553",
+          "explorerBaseUrl": "https://gnosisscan.io/address",
+          "actions": [
+            {
+              "label": "Bridge",
+              "href": "https://app.frankencoin.com/transfer?chain=gnosis",
+              "image": "/images/Frankencoin-on-Gnosis.webp"
+            }
+          ]
+        },
+        {
+          "name": "Sonic",
+          "image": "/images/Frankencoin-on-Sonic.webp",
+          "contract": "0xD4dD9e2F021BB459D5A5f6c24C12fE09c5D45553",
+          "explorerBaseUrl": "https://sonicscan.org/address",
+          "actions": [
+            {
+              "label": "Bridge",
+              "href": "https://app.frankencoin.com/transfer?chain=sonic",
+              "image": "/images/Frankencoin-eth-sonic.webp"
+            }
+          ]
+        }
+      ]
+    },
+    "fcs": {
+      "title": "FCS, Frankencoin Shares",
+      "subtitle": "Equity token of the protocol: holders carry its risks, receive its profits and vote. Ethereum only.",
+      "chain": {
+        "name": "Ethereum",
+        "image": "/images/fcs.png",
+        "contract": "0xDb861830D9Ae2d1fCF99fA0cfd3973de382B0B5b",
+        "explorerBaseUrl": "https://etherscan.io/address",
+        "actions": [
+          {
+            "label": "Swap On-chain",
+            "image": "/images/Cow-Swap-logo.svg",
+            "href": "https://swap.cow.fi/#/1/swap/ZCHF/0xDb861830D9Ae2d1fCF99fA0cfd3973de382B0B5b"
+          },
+          {
+            "label": "Write to contract",
+            "image": "/images/logo-etherscan.svg",
+            "href": "https://etherscan.io/address/0xdb861830d9ae2d1fcf99fa0cfd3973de382b0b5b#writeContract",
+            "advanced": true
+          }
+        ]
+      }
+    },
+    "svzchf": {
+      "title": "svZCHF, the savings vaults",
+      "subtitle": "ERC-4626 vault tokens that wrap a savings deposit: your svZCHF grows in value as interest accrues. One vault per network.",
+      "chains": [
+        {
+          "name": "Ethereum",
+          "image": "/images/Coin_Logo_Frankencoin_saved.svg",
+          "contract": "0xE5F130253fF137f9917C0107659A4c5262abf6b0",
+          "explorerBaseUrl": "https://etherscan.io/token",
+          "actions": [
+            {
+              "label": "Swap (Bungee)",
+              "image": "/images/Bungee Full Logo Black.svg",
+              "href": "https://www.bungee.exchange/?fromChainId=1&fromTokenAddress=0xE5F130253fF137f9917C0107659A4c5262abf6b0&toChainId=1&toTokenAddress=0xB58E61C3098d85632Df34EecfB899A1Ed80921cB"
+            },
+            {
+              "label": "Write to contract",
+              "image": "/images/logo-etherscan.svg",
+              "href": "https://etherscan.io/token/0xE5F130253fF137f9917C0107659A4c5262abf6b0#writeContract",
+              "advanced": true
+            }
+          ]
+        },
+        {
+          "name": "Base",
+          "image": "/images/Coin_Logo_Frankencoin_saved.svg",
+          "contract": "0xa09EBdf8A01b9ef04149319D64F83b9C01a5b585",
+          "explorerBaseUrl": "https://basescan.org/address",
+          "actions": [
+            {
+              "label": "Swap (Bungee)",
+              "image": "/images/Bungee Full Logo Black.svg",
+              "href": "https://www.bungee.exchange/?fromChainId=8453&fromTokenAddress=0xa09EBdf8A01b9ef04149319D64F83b9C01a5b585&toChainId=8453&toTokenAddress=0xd4dd9e2f021bb459d5a5f6c24c12fe09c5d45553"
+            },
+            {
+              "label": "Write to contract",
+              "image": "/images/Frankencoin-eth-base.webp",
+              "href": "https://basescan.org/address/0xa09EBdf8A01b9ef04149319D64F83b9C01a5b585#writeContract",
+              "advanced": true
+            }
+          ]
+        },
+        {
+          "name": "Gnosis",
+          "image": "/images/Coin_Logo_Frankencoin_saved.svg",
+          "contract": "0x6165946250dd04740ab1409217e95a4f38374fe9",
+          "explorerBaseUrl": "https://gnosisscan.io/token",
+          "actions": [
+            {
+              "label": "Swap (Bungee)",
+              "image": "/images/Bungee Full Logo Black.svg",
+              "href": "https://www.bungee.exchange/?fromChainId=100&fromTokenAddress=0x6165946250dd04740ab1409217e95a4f38374fe9&toChainId=100&toTokenAddress=0xd4dd9e2f021bb459d5a5f6c24c12fe09c5d45553"
+            },
+            {
+              "label": "Write to contract",
+              "image": "/images/logo-gnosis.svg",
+              "href": "https://gnosisscan.io/address/0x6165946250dd04740ab1409217e95a4f38374fe9?tab=write_contract",
+              "advanced": true
+            }
+          ]
+        },
+        {
+          "name": "Optimism",
+          "image": "/images/Coin_Logo_Frankencoin_saved.svg",
+          "contract": "0x20191448fcC813d34D0BDeae5Cdb1E89B3Fb7b8E",
+          "explorerBaseUrl": "https://optimistic.etherscan.io/address",
+          "actions": [
+            {
+              "label": "Swap (Bungee)",
+              "image": "/images/Bungee Full Logo Black.svg",
+              "href": "https://www.bungee.exchange/?fromChainId=10&fromTokenAddress=0x20191448fcC813d34D0BDeae5Cdb1E89B3Fb7b8E&toChainId=10&toTokenAddress=0xd4dd9e2f021bb459d5a5f6c24c12fe09c5d45553"
+            },
+            {
+              "label": "Write to contract",
+              "image": "/images/Frankencoin-eth-opt.webp",
+              "href": "https://optimistic.etherscan.io/address/0x20191448fcC813d34D0BDeae5Cdb1E89B3Fb7b8E#writeContract",
+              "advanced": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "src/content/en/frontends.json": {
+    "seo": {
+      "title": "Frankencoin frontends — independent ZCHF interfaces",
+      "description": "Frankencoin is an open protocol. Browse the interfaces for minting, saving and trading ZCHF, each run by its own operator, with source code and hosting details."
+    },
+    "header": {
+      "title": "Frankencoin|frontends",
+      "subtitle": "Frankencoin is an open protocol: anyone can build and host an interface to it. The ones listed here are each run by their own operator; one of them is maintained by the Frankencoin Association."
+    },
+    "note": {
+      "title": "Before you connect a wallet",
+      "body": "Every frontend talks to the same contracts, but it is the operator who hosts the site. Check that the domain in your address bar matches the one listed here, and prefer an operator you know, for example the frontend maintained by the Frankencoin Association. The protocol does not audit or warrant these interfaces."
+    },
+    "associationLabel": "Maintained by the Frankencoin Association",
+    "addYours": {
+      "before": "Hosting your own frontend? Add it to ",
+      "linkLabel": "frontends.json",
+      "after": " and open a pull request to get listed."
+    },
+    "labels": {
+      "frontend": "Frontend",
+      "creator": "Operator",
+      "repo": "Source code",
+      "live": "Open",
+      "features": "Hosting",
+      "openSource": "Open source",
+      "ownDomain": "Own domain",
+      "selfHostedApi": "Own API",
+      "selfHostedIndexer": "Own indexer",
+      "yes": "yes",
+      "no": "no"
+    }
+  },
+  "src/content/en/insurance.json": {
+    "seo": {
+      "title": "Insurance & Cover — Protect your ZCHF | Frankencoin",
+      "description": "Optional third-party cover for Frankencoin (ZCHF) holders. Depeg Cover, underwritten by Nexus Mutual and available through OpenCover, pays out if ZCHF trades 10% or more below 1 CHF for seven consecutive days."
+    },
+    "header": {
+      "title": "Cover against a ZCHF depeg.|Optional, from a third party.",
+      "subtitle": "Depeg Cover is underwritten by Nexus Mutual and sold through OpenCover. It pays if ZCHF trades at least 10% below 1 CHF for seven consecutive days. It is not issued by the Frankencoin Association."
+    },
+    "products": [
+      {
+        "title": "ZCHF Depeg Cover",
+        "provider": "Underwritten by Nexus Mutual · Sold through OpenCover",
+        "description": "The cover pays holders of ZCHF if the token trades at least 10% below its 1 CHF reference value for seven consecutive days. Cover amount, term and price are set when you buy; the exact terms are in OpenCover's cover wording.",
+        "highlights": [
+          {
+            "label": "Underwriter",
+            "value": "Nexus Mutual"
+          },
+          {
+            "label": "Sold through",
+            "value": "OpenCover"
+          },
+          {
+            "label": "Covered event",
+            "value": "ZCHF at least 10% below 1 CHF for 7 consecutive days"
+          }
+        ],
+        "covered": {
+          "title": "What is covered",
+          "items": [
+            "A sustained ZCHF depeg: at least 10% below the 1 CHF reference value for seven consecutive days.",
+            "ZCHF held in the covered wallet when the event begins."
+          ]
+        },
+        "excluded": {
+          "title": "What is not covered",
+          "items": [
+            "Assets other than ZCHF.",
+            "Technical issues that do not themselves cause the depeg.",
+            "Bugs or events known or disclosed before the cover began.",
+            "\"Rug pull\" scenarios where protocol controllers take funds within their permissions.",
+            "ZCHF held for less than 72 hours before the covered event (OpenCover's wording)."
+          ]
+        },
+        "eligibility": {
+          "title": "Who can buy",
+          "body": "Anyone with a wallet that holds ZCHF. OpenCover applies its own eligibility rules and may exclude some jurisdictions; check them before paying."
+        },
+        "howItWorks": {
+          "title": "How to buy cover",
+          "steps": [
+            {
+              "title": "Open OpenCover",
+              "body": "Open the ZCHF cover page on OpenCover and connect the wallet that holds your ZCHF."
+            },
+            {
+              "title": "Choose amount and term",
+              "body": "Set how much ZCHF to cover and for how long. The price is quoted before you confirm."
+            },
+            {
+              "title": "Pay and keep the proof",
+              "body": "Pay the premium and receive an on-chain proof of cover. Keep the ZCHF in the covered wallet."
+            }
+          ]
+        },
+        "cta": {
+          "label": "Check cover and eligibility",
+          "href": "https://opencover.com/frankencoin"
+        },
+        "learnMore": {
+          "label": "Covered risks and exclusions",
+          "href": "https://opencover.com/depeg-cover-covered-risks-and-exclusions/"
+        }
+      }
+    ]
+  },
+  "src/content/en/shared/footer.json": {
+    "footer": {
+      "columns": [
+        {
+          "title": "About",
+          "links": [
+            {
+              "label": "What is Frankencoin",
+              "href": "/what-is-frankencoin"
+            },
+            {
+              "label": "Association",
+              "href": "/association"
+            },
+            {
+              "label": "Use Cases",
+              "href": "/use-cases"
+            },
+            {
+              "label": "Governance / FCS",
+              "href": "/governance"
+            },
+            {
+              "label": "FAQ",
+              "href": "/faq"
+            },
+            {
+              "label": "Glossary",
+              "href": "/glossary"
+            },
+            {
+              "label": "Press kit",
+              "href": "/press"
+            }
+          ],
+          "sections": [
+            {
+              "title": "Brand Assets",
+              "links": [
+                {
+                  "label": "Logos",
+                  "href": "https://github.com/Frankencoin-ZCHF/www/tree/main/media_kit",
+                  "external": true
+                },
+                {
+                  "label": "Brand Guidelines",
+                  "href": "/Frankencoin_Brand_Guidelines.pdf",
+                  "external": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Tokens",
+          "links": [
+            {
+              "label": "Frankencoin Shares (FCS)",
+              "href": "/fcs"
+            },
+            {
+              "label": "Token Info",
+              "href": "/token"
+            },
+            {
+              "label": "Insurance",
+              "href": "/insurance"
+            },
+            {
+              "label": "DeFiLlama",
+              "href": "https://defillama.com/protocol/frankencoin",
+              "external": true
+            },
+            {
+              "label": "CoinGecko",
+              "href": "https://www.coingecko.com/en/coins/frankencoin",
+              "external": true
+            },
+            {
+              "label": "Dune Dashboard",
+              "href": "https://dune.com/frankencoin",
+              "external": true
+            }
+          ]
+        },
+        {
+          "title": "Developers",
+          "links": [
+            {
+              "label": "Documentation",
+              "href": "https://docs.frankencoin.com",
+              "external": true
+            },
+            {
+              "label": "API",
+              "href": "https://api.frankencoin.com",
+              "external": true
+            },
+            {
+              "label": "MCP Server",
+              "href": "https://mcp.frankencoin.com",
+              "external": true
+            },
+            {
+              "label": "Frankencoin Whitepaper",
+              "href": "https://www.zora.uzh.ch/entities/publication/b1bff836-6852-457d-93e6-496807db37fa",
+              "external": true
+            },
+            {
+              "label": "GitHub",
+              "href": "https://github.com/Frankencoin-ZCHF",
+              "external": true
+            }
+          ]
+        },
+        {
+          "title": "Community",
+          "links": [
+            {
+              "label": "X (Twitter)",
+              "href": "https://x.com/frankencoinzchf",
+              "external": true
+            },
+            {
+              "label": "Telegram",
+              "href": "https://t.me/frankencoinzchf",
+              "external": true
+            },
+            {
+              "label": "Telegram Updates",
+              "href": "https://t.me/frankencoinzchf_updates",
+              "external": true
+            },
+            {
+              "label": "LinkedIn",
+              "href": "https://www.linkedin.com/company/frankencoin/",
+              "external": true
+            },
+            {
+              "label": "YouTube",
+              "href": "https://www.youtube.com/@frankencoinzchf",
+              "external": true
+            },
+            {
+              "label": "Discussion Forum",
+              "href": "https://github.com/Frankencoin-ZCHF/Frankencoin/discussions",
+              "external": true
+            },
+            {
+              "label": "Frontends",
+              "href": "/frontends"
+            },
+            {
+              "label": "Upcoming Events",
+              "href": "https://luma.com/frankencoin",
+              "external": true
+            },
+            {
+              "label": "Merch",
+              "href": "https://merch.frankencoin.com",
+              "external": true
+            }
+          ]
+        }
+      ],
+      "copyright": "© {year} Frankencoin Association. All rights reserved.",
+      "disclaimer": "Figures on this site are live protocol data and past history. Nothing here is investment, legal or tax advice. Past performance does not predict future results."
+    }
+  },
+  "src/content/en/faq-page.json": {
+    "meta": {
+      "title": "Frankencoin FAQ",
+      "description": "Answers about ZCHF, the savings rate, borrowing, FCS, compliance and risk."
+    },
+    "hero": {
+      "title": "Questions,|answered.",
+      "subtitle": "Can't find yours? Ask in the Telegram group or write to info@frankencoin.com."
+    },
+    "nextHead": {
+      "title": "Read on."
+    },
+    "next": [
+      {
+        "title": "How it works",
+        "description": "Minting, the peg, challenges and auctions, and where the income goes.",
+        "href": "/how-it-works",
+        "cta": "Read"
+      },
+      {
+        "title": "Glossary",
+        "description": "The terms used on this site and in the app, one line each.",
+        "href": "/glossary",
+        "cta": "Open"
+      }
+    ]
+  },
+  "src/content/en/faq.json": {
+    "title": "Frequently Asked Questions",
+    "categories": [
+      {
+        "category": "Basics",
+        "questions": [
+          {
+            "question": "What is Frankencoin?",
+            "answer": "Frankencoin (ZCHF) is a decentralized stablecoin that tracks the Swiss franc. It is not issued by a company: anyone can mint it against collateral worth more than the ZCHF they create, and the collateral stays visible on-chain. See [What is Frankencoin](/what-is-frankencoin)."
+          },
+          {
+            "question": "What is a stablecoin?",
+            "answer": "A digital token designed to hold a stable value against a reference currency. For ZCHF the reference is the Swiss franc; each ZCHF is backed by collateral worth more than one franc."
+          },
+          {
+            "question": "How is Frankencoin different from a bank account in CHF?",
+            "answer": "A bank balance is a claim on one bank. ZCHF is a token you hold in your own wallet, backed by collateral anyone can inspect on-chain, and no institution can freeze it. It is not a deposit and is not covered by deposit insurance."
+          },
+          {
+            "question": "How is Frankencoin different from USDT or USDC?",
+            "answer": "USDT and USDC are issued by companies against reserves they hold, and the issuer can freeze balances. ZCHF is issued by smart contracts against on-chain collateral, tracks the franc rather than the dollar, and has no issuer who can freeze it. See the [comparison](/compare)."
+          }
+        ]
+      },
+      {
+        "category": "How it Works",
+        "questions": [
+          {
+            "question": "Is Frankencoin backed 1:1 by Swiss francs?",
+            "answer": "No. The franc is the reference currency, not the backing. Each ZCHF is backed by collateral (BTC, ETH, tokenized gold or shares) worth more than one franc. See [How it works](/how-it-works)."
+          },
+          {
+            "question": "What does 'over-collateralized' mean?",
+            "answer": "The collateral is worth more than the ZCHF minted against it. To mint 100 ZCHF, a borrower might lock ETH worth 150 francs. The extra 50 francs is the buffer that absorbs price drops before the system is at risk."
+          },
+          {
+            "question": "What happens if the collateral loses value?",
+            "answer": "Each position has a liquidation price. If the collateral falls below it, anyone can challenge the position and its collateral is sold at [auction](https://docs.frankencoin.com/positions/auctions) to repay the debt. If an auction does not cover the debt, the shortfall is taken from the protocol [reserve](https://docs.frankencoin.com/reserve)."
+          },
+          {
+            "question": "How do FCS and FPS differ?",
+            "answer": "FCS (Frankencoin Shares) is the share and governance token: a claim on the reserve plus a vote. FPS (Frankencoin Pool Shares) is the earlier equity token that FCS wraps one-to-one; existing FPS can be wrapped into FCS. See [FCS](/fcs)."
+          },
+          {
+            "question": "Can Frankencoin lose its peg to the Swiss franc?",
+            "answer": "ZCHF can trade slightly above or below one franc. Because borrowers owe exactly one franc of debt per ZCHF, deviations are arbitrage opportunities that pull the price back. There is no issuer who redeems at one franc on demand."
+          }
+        ]
+      },
+      {
+        "category": "Using Frankencoin",
+        "questions": [
+          {
+            "question": "Where can I use Frankencoin?",
+            "answer": "In Spar stores in Switzerland, via Gnosis Pay and Zeal for card payments, with Mt Pelerin for bank transfers, in payroll with Quitt and in DeFi on Morpho and Curve. See all [use cases](/use-cases)."
+          },
+          {
+            "question": "How do I get Frankencoin?",
+            "answer": "Buy it on an exchange or DEX, convert francs through Mt Pelerin or DFX, or mint it yourself against collateral in the [app](https://app.frankencoin.com/mint). See [exchanges and wallets](/for/exchanges-wallets)."
+          },
+          {
+            "question": "Can I earn interest on my Frankencoin?",
+            "answer": "Yes, by depositing ZCHF in the [savings module](https://app.frankencoin.com/savings), which pays the protocol rate set by governance. Holding ZCHF in a wallet does not earn anything by itself. The rate can change and is not guaranteed. See [Save in CHF](/use-cases/save-in-chf)."
+          }
+        ]
+      },
+      {
+        "category": "Compliance & Risk",
+        "questions": [
+          {
+            "question": "Is Frankencoin regulated?",
+            "answer": "Legal assessments obtained by the Frankencoin Association classify ZCHF as a payment token under Swiss law and as a crypto-asset under MiCA, with some provisions not applying to a protocol without an issuer. The protocol itself is not licensed or supervised. See [Compliance](/compliance)."
+          },
+          {
+            "question": "What are the risks?",
+            "answer": "Smart contract bugs, a sharp fall in collateral prices that liquidations cannot cover, ZCHF trading away from one franc, and thin liquidity when you want to sell. The contracts are [audited](/security), but no system is risk-free."
+          },
+          {
+            "question": "What is the Frankencoin Association?",
+            "answer": "A Swiss non-profit based in Zug that supports development and the ecosystem and serves as a [point of contact](mailto:hello@frankencoin.com). It does not control the protocol."
+          },
+          {
+            "question": "Has Frankencoin been audited?",
+            "answer": "Yes, by Code4rena, Blockbite and ChainSecurity. The reports are on the [Security](/security) page."
+          }
+        ]
+      }
+    ]
+  }
+}

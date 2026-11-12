@@ -39,9 +39,9 @@ async function get(path) {
 }
 
 test("REST manifest and llms discover FCS without adding a tool or relabeling FPS", async () => {
-  assert.equal((await get("/health")).toolCount, 16);
+  assert.equal((await get("/health")).toolCount, 17);
   const manifest = await get("/api");
-  assert.equal(manifest.tools.length, 16);
+  assert.equal(manifest.tools.length, 17);
   for (const name of ["get_governance", "get_protocol_snapshot", "get_knowledge"]) {
     assert.match(manifest.tools.find((t) => t.name === name).description, /FCS/);
   }

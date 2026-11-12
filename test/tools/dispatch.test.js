@@ -1,5 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const redesign = JSON.parse(readFileSync(new URL("../fixtures/redesign.json", import.meta.url)));
 
 // Hermetic: disable cache, no secrets, inject a fake fetch (never touches network).
 process.env.CACHE_ENABLED = "false";
@@ -22,7 +24,7 @@ function githubContent(obj) {
 
 setFetchImpl(async (url, opts = {}) => {
   calls.push({ url, body: opts.body });
-  if (url.includes("api.github.com/repos/")) return githubContent({});
+  if (url.includes("api.github.com/repos/")) return githubContent(url.includes("/insurance.json") ? redesign["src/content/en/insurance.json"] : {});
   if (url.includes("/positions/open")) return res({ num: 2, addresses: ["0xaaa", "0xbbb"] });
   if (url.includes("/ecosystem/collateral/list")) return res({ list: [{ chainId: 1, address: "0xC02a", name: "WETH", symbol: "WETH", decimals: 18 }] });
   if (url.includes("/prices/list")) return res([]);
@@ -135,8 +137,10 @@ test("get_insurance_products exposes OpenCover ZCHF depeg cover under insurance_
   assert.ok(product, "OpenCover cover product should be present");
   assert.equal(product.id, "opencover-zchf-depeg");
   assert.equal(product.url, "https://opencover.com/frankencoin");
-  assert.equal(product.pricing.premiumRate, "0.99% p.a.");
-  assert.equal(product.capacity.underwritingCapacityUsd, 800_000);
+  assert.equal(product.pricing.premiumRate, null);
+  assert.equal(product.capacity.underwritingCapacityUsd, null);
+  assert.equal(product.roles.issuerOrUnderwriter, "Nexus Mutual");
+  assert.ok(product.details.excluded.items.length > 0);
   assert.match(product.roles.frankencoinAssociation, /not issuer, underwriter, broker, or guarantor/i);
 });
 

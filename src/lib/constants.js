@@ -25,8 +25,18 @@ export const MERCH_UCP_MCP = `${MERCH_BASE}/api/ucp/mcp`;
 export const PHAROS_BASE = "https://api.pharos.watch";
 export const XERBERUS_BASE = "https://api.xerberus.io/public/v1";
 
-export const SITE_REPO = "Frankencoin-ZCHF/frankencoin-site";
+export const SITE_REPO = "Frankencoin-ZCHF/frankencoin-site-redesign";
+export const SITE_ORIGIN = "https://frankencoin.com";
 export const DOCS_REPO = "Frankencoin-ZCHF/gitbook";
+export const ASSESSMENTS_REPO = "Frankencoin-ZCHF/frankencoin-collateral-assessments";
+export const ASSESSMENT_DOCUMENTS = {
+  overview: "README.md",
+  framework: "framework/collateral-risk-framework.md",
+  schema: "schema/collateral-assessment.schema.json",
+  template: "templates/assessment-template.md",
+  validator: "scripts/validate.js",
+  workflow: ".github/workflows/validate.yml",
+};
 
 export const CHAIN_NAMES = {
   1: "Ethereum",
@@ -122,8 +132,47 @@ export const DOC_FILES = {
 export const KNOWLEDGE_TOPICS = [
   "overview", "what_is", "faq", "savings", "governance", "minting",
   "opening_positions", "auctions", "risks", "reserve", "pool_shares", "fcs", "fcs_migration",
-  "api", "compliance", "frontends", "token_addresses", "links",
+  "api", "compliance", "frontends", "token_addresses", "links", "website",
 ];
+
+// Fixed content catalogue, independent of caller-supplied paths. Existing GitBook
+// topics remain unchanged; topic=website exposes the complete redesign copy.
+export const WEBSITE_PAGES = {
+  home: { file: "home", route: "/", related: { details: "index", faq: "faq", ecosystem: "ecosystem" } },
+  what_is: { file: "what-is-frankencoin", route: "/what-is-frankencoin" },
+  how_it_works: { file: "how-it-works", route: "/how-it-works" },
+  save_in_chf: { file: "save-in-chf", route: "/use-cases/save-in-chf" },
+  borrow: { file: "borrow", route: "/use-cases/borrow" },
+  savers: { file: "savers", route: "/for/savers" },
+  treasuries: { file: "treasuries", route: "/for/treasuries" },
+  exchanges_wallets: { file: "exchanges-wallets", route: "/for/exchanges-wallets" },
+  developers: { file: "developers", route: "/for/developers" },
+  integrate: { file: "integrate", route: "/integrate" },
+  collateral: { file: "collateral", route: "/integrate/collateral" },
+  referral: { file: "referral", route: "/referral" },
+  fcs: { file: "fcs", route: "/fcs" },
+  governance: { file: "governance", route: "/governance" },
+  transparency: { file: "transparency", route: "/transparency" },
+  security: { file: "security", route: "/security" },
+  compliance: { file: "compliance", route: "/compliance" },
+  insurance: { file: "insurance", route: "/insurance" },
+  compare: { file: "compare", route: "/compare" },
+  dollar: { file: "dollar", route: null },
+  faq: { file: "faq-page", route: "/faq", related: { questions: "faq" } },
+  glossary: { file: "glossary", route: "/glossary" },
+  use_cases: { file: "use-cases", route: "/use-cases" },
+  ecosystem: { file: "ecosystem", route: "/ecosystem" },
+  exchanges: { file: "exchanges", route: null },
+  token_addresses: { file: "token", route: "/token" },
+  frontends: { file: "frontends", route: "/frontends", shared: { listings: "frontends" } },
+  news: { file: "news", route: "/news", shared: { media: "media" } },
+  press: { file: "press", route: "/press" },
+  association: { file: "association", route: "/association" },
+  navigation: { file: "shared/nav", route: null },
+  footer: { file: "shared/footer", route: null },
+  site: { file: "shared/site", route: null },
+  ui: { file: "shared/ui", route: null },
+};
 
 // Ponder root-field allowlist for query_ponder (SECURITY §2.2 Q-allowlist / §1).
 export const PONDER_ENTITIES = new Set([

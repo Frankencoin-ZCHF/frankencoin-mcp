@@ -151,9 +151,9 @@ test("FCS knowledge topics expose exact mechanics and released canonical links",
   assert.match(mechanics.fcs.mechanics.delegation, /non-subtractive and transitive/);
   assert.match(mechanics.fcs.mechanics.exit, /binding.*wrapper.*90-day/);
   assert.match(mechanics.fcs.mechanics.exit, /at least.*average.*either binding state/);
-  assert.equal(mechanics.fcs.sources.website.repository, "Frankencoin-ZCHF/frankencoin-site");
+  assert.equal(mechanics.fcs.sources.website.repository, "Frankencoin-ZCHF/frankencoin-site-redesign");
   assert.equal(mechanics.fcs.sources.website.branch, "main");
-  assert.equal(mechanics.fcs.sources.website.commit, "444f8318b25068b46b81b8117b661a0119740fe4");
+  assert.equal(mechanics.fcs.sources.website.commit, "fe507a1f6cc9f35f90ae70c3d5aff405ea81a52a");
   assert.equal(mechanics.fcs.sources.mechanics.commit, "c1f229e3b26050367aafcb55da294342b4cae382");
   assert.ok(mechanics.fcs.links.explorer.endsWith(FCS));
   assert.equal(mechanics.fcs.links.mechanics, mechanics.docsUrl);

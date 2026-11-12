@@ -21,10 +21,10 @@ export const FCS_REFERENCE = {
   },
   sources: {
     website: {
-      repository: "Frankencoin-ZCHF/frankencoin-site",
+      repository: "Frankencoin-ZCHF/frankencoin-site-redesign",
       branch: "main",
-      commit: "444f8318b25068b46b81b8117b661a0119740fe4",
-      url: "https://github.com/Frankencoin-ZCHF/frankencoin-site/blob/444f8318b25068b46b81b8117b661a0119740fe4/src/content/en/fcs.json",
+      commit: "fe507a1f6cc9f35f90ae70c3d5aff405ea81a52a",
+      url: "https://github.com/Frankencoin-ZCHF/frankencoin-site-redesign/blob/fe507a1f6cc9f35f90ae70c3d5aff405ea81a52a/src/content/en/fcs.json",
       note: "Released website content; the canonical page is https://frankencoin.com/fcs. Technical documentation takes precedence over simplified website positioning.",
     },
     documentation: {

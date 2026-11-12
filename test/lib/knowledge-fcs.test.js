@@ -7,7 +7,7 @@ test('FCS discovery uses the released canonical website and no invented planned 
   assert.equal(FCS_REFERENCE.links.website, 'https://frankencoin.com/fcs');
   assert.equal(FCS_REFERENCE.plannedLinks, undefined);
   assert.equal(FCS_REFERENCE.sources.website.branch, 'main');
-  assert.equal(FCS_REFERENCE.sources.website.commit, '444f8318b25068b46b81b8117b661a0119740fe4');
+  assert.equal(FCS_REFERENCE.sources.website.commit, 'fe507a1f6cc9f35f90ae70c3d5aff405ea81a52a');
   assert.match(FCS_REFERENCE.sources.website.url, /src\/content\/en\/fcs\.json$/);
   const forbidden = ['fcs', 'frankencoin', 'com'].join('.');
   for (const file of ['README.md','CLAUDE.md','docs/FCS.md']) {
