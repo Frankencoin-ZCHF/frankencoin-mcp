@@ -139,7 +139,10 @@ async function getLinks() {
       const url = new URL(safe);
       if (url.origin !== "https://app.frankencoin.com") continue;
       const field = appPaths[url.pathname];
-      if (field && app[field] === null) app[field] = url.href;
+      if (field && app[field] === null) {
+        // Publish the general app entry point even if the source preselects a network.
+        app[field] = url.origin + url.pathname;
+      }
     }
   }
   collectAppLinks(fetched);
