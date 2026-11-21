@@ -31,6 +31,8 @@ test("website and collateral research have the same complete content over REST a
       ["get_knowledge", { topic: "website", page: "association", language: "de" }],
       ["get_compliance", {}],
       ["get_collateral_assessments", { asset: "WBTC" }],
+      ["get_collateral_assessments", {}],
+      ["get_collateral_assessments", { view: "full", limit: 5, offset: 10 }],
       ["get_collateral_assessments", { document: "framework" }],
     ]) {
       const mcp = await client.callTool({ name, arguments: args });

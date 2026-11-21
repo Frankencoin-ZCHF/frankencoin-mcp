@@ -1,30 +1,17 @@
-/**
- * Pharos client (api.pharos.watch) — stablecoin-safety report cards. Degradable:
- * throws MissingSecretError WITHOUT touching the network when no key is configured,
- * so the risk service catches it and degrades (ARCHITECTURE §C, like coingecko/dune).
- * Long cache + SWR (Pharos recomputes ~hourly; the site uses a 1h TTL). Secret header
- * only on the Pharos host; redirect:"error" so the key never travels cross-host.
- */
-
+/** Versioned report cards plus the public, overall-only safety grade feed. */
 import { fetchJson } from "./client.js";
+import { withProviderCooldown } from "./cooldown.js";
 import { getOrLoad } from "../cache.js";
 import { config } from "../config.js";
 import { PHAROS_BASE } from "../lib/constants.js";
 import { MissingSecretError } from "../lib/errors.js";
 
-// async so the missing-secret case is a REJECTED promise (not a synchronous throw
-// that would escape a surrounding Promise.allSettled/all in the service).
-export async function pharosReportCards() {
-  if (!config.pharosKey) throw new MissingSecretError("pharos");
-  return getOrLoad(
-    "pharos:report-cards",
-    60 * 60_000,
-    () => fetchJson(`${PHAROS_BASE}/api/report-cards`, {
-      source: "pharos",
-      timeout: 8_000,
-      redirect: "error",
-      headers: { "X-API-Key": config.pharosKey, Accept: "application/json" },
-    }),
-    { swrMs: 15 * 60_000 },
-  );
+export async function pharosReportCards({ publicOnly = false } = {}) {
+  if (!publicOnly && !config.pharosKey) throw new MissingSecretError("pharos");
+  const url = publicOnly ? `${PHAROS_BASE}/api/safety-grades` : `${PHAROS_BASE}/api/report-cards/v9`;
+  return getOrLoad(`pharos:${publicOnly ? "grades" : "v9"}`, 60 * 60_000, () => withProviderCooldown(`pharos:${publicOnly ? "grades" : "v9"}`, async () => ({
+    data: await fetchJson(url, { source: "pharos", timeout: 8_000, retries: 0, redirect: "error",
+      headers: { ...(publicOnly ? {} : { "X-API-Key": config.pharosKey }), Accept: "application/json", "User-Agent": "frankencoin-mcp" } }),
+    retrievedAt: new Date().toISOString(), url,
+  })), { swrMs: 15 * 60_000 });
 }

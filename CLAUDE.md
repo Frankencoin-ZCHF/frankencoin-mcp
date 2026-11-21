@@ -65,9 +65,9 @@ Both MCP (`server/mcp.js`) and REST (`server/http.js`) call the same `dispatchTo
 
 ### Key design decisions
 
-**One McpServer instance per session.** The SDK's `McpServer` is stateful and binds to
-one transport. HTTP mode calls `createMcpServer()` per session, not once globally.
-Intentional — do not refactor to a shared singleton.
+**MCP lifecycle.** The official v2 SDK creates a server per modern HTTP request,
+per legacy session and per stdio connection. Both protocol generations share the
+tool, prompt and resource registrations in `src/server/mcp.js`.
 
 **No auth.** Public read-only API. Do not add auth unless explicitly requested.
 
@@ -266,3 +266,10 @@ Stateless between restarts — no database, no persistent state. Safe to restart
 Website reads use `frankencoin-site-redesign/main`. `get_knowledge` with `topic=website` lists a fixed page catalogue; `page` and `language=en|de` return full JSON content and source health. `get_compliance` reads the redesigned jurisdiction rows/documents plus security audits.
 
 `get_collateral_assessments` discovers regular Markdown files from the fixed collateral assessments repository. Callers select a discovered asset ID, never a filesystem path or host. Preserve JSON frontmatter and full Markdown, unknown fields and original parameter units. Draft/published/deprecated is research lifecycle status, not live protocol approval. Metadata parse failures retain readable text with partial status. Supporting documents use a fixed allow-list. See `docs/data-contract-v3.2.md`.
+
+
+## Provider and compact response contracts (v3.3)
+
+Read `docs/data-contract-v3.3.md` for the current contract; older rebuild/data-contract documents describe prior versions. Keep 17 tools. Snapshot/governance default to compact FCS context, with full reference opt-in via `includeContext`. Assessments default to 10 summaries; full metadata/content remains opt-in and paginated.
+
+Dune uses GET published results, never execute/poll. Fallbacks retain Dune diagnostics and explicitly label Ponder scope, units and unknown synchronization freshness. Pharos v9 has backing/exit/control pillars, with a keyless overall-only grade fallback. Do not restore v8 dimensions or fabricate pillar grades. CHFAU RPC reads use the canonical block hash and validate chain/uint256 replies. FCS measurement block comes from API metadata, never from local retrieval time. Cached observations preserve their original `retrievedAt`. See the tests for degraded and stale cases.

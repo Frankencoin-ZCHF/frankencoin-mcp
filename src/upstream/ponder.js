@@ -33,6 +33,7 @@ async function run(query) {
  * @param {string} query
  * @param {number} [ttl] cache TTL ms (45 s for internal service queries, 20 s for user query_ponder)
  */
-export function ponderQuery(query, ttl = 45_000) {
-  return getOrLoad(`ponder:${hash(query)}`, ttl, () => run(query));
+export function ponderObservation(query, ttl = 45_000) {
+  return getOrLoad(`ponder:${hash(query)}`, ttl, async () => ({ data: await run(query), retrievedAt: new Date().toISOString() }));
 }
+export async function ponderQuery(query, ttl = 45_000) { return (await ponderObservation(query, ttl)).data; }

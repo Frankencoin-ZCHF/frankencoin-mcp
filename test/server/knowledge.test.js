@@ -34,10 +34,15 @@ test('SDK knowledge results preserve document fields in both MCP representations
     const tool = manifest.tools.find(t=>t.name==='get_knowledge');
     assert.equal(tool.inputSchema.additionalProperties,false);
     assert.equal(tool.inputSchema.properties.topic.default,'overview');
+    const overview=await client.callTool({name:'get_knowledge',arguments:{}});
+    const guide=overview.structuredContent.gettingStarted;
+    assert.deepEqual([...guide.matchAll(/^- \*\*(\w+)/gm)].map(m=>m[1]),['Buy','Pay','Save','Borrow','Invest']);
+    assert.equal((await (await fetch(base+'/api/get_knowledge')).json()).result.gettingStarted,guide);
     for(const topic of Object.keys(DOC_FILES)) {
       const mcp=await client.callTool({name:'get_knowledge',arguments:{topic}});
       assert.equal(mcp.structuredContent.content,doc);
       assert.equal(mcp.structuredContent.topic,topic);
+      assert.equal(mcp.structuredContent.gettingStarted,['overview','what_is'].includes(topic)?guide:undefined);
       assert.deepEqual(mcp.structuredContent, JSON.parse(mcp.content[0].text));
       const rest=await (await fetch(base+`/api/get_knowledge?topic=${topic}`)).json();
       assert.equal(rest.result.content,mcp.structuredContent.content);

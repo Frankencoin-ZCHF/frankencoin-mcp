@@ -3,22 +3,36 @@
  * Warm caches mean a repeated snapshot may issue zero outbound calls.
  */
 
-import { apiFetch } from "../upstream/frankencoin.js";
-import { chainName } from "../lib/constants.js";
+import { UpstreamError } from "../lib/errors.js";
+import { sourceTime } from "../lib/freshness.js";
+import { API_BASE, chainName } from "../lib/constants.js";
+import { apiFetch, apiObservation } from "../upstream/frankencoin.js";
 import { money, moneyPair, round } from "../lib/numbers.js";
 import { chfUsdRateFromPrices, fxBlock } from "./fx.js";
 import { getSavings } from "./savings.js";
 import { getChallenges } from "./positions.js";
 import { getFcs } from "./fcs.js";
 
-export async function getProtocolSnapshot() {
+export async function getProtocolSnapshot({ includeContext = false, view = "full" } = {}) {
+  if (view === "overview") {
+    const path = "/ecosystem/frankencoin/info";
+    const { data, retrievedAt } = await apiObservation(path);
+    if (data?.erc20?.symbol !== "ZCHF" || !Number.isFinite(data.token?.supply)) throw new UpstreamError("frankencoin");
+    return {
+      view, zchf: { totalSupply: data.token.supply, tvl: moneyPair(data.tvl?.chf, data.tvl?.usd),
+        chains: Object.entries(data.chains ?? {}).map(([id, chain]) => ({
+          chainId: Number(id), chainName: chainName(id), supply: chain.supply ?? null, updatedAt: sourceTime(chain.updated),
+        })) },
+      source: { url: API_BASE + path, retrievedAt },
+    };
+  }
   const [infoData, fpsData, prices, savings, challenges, fcs] = await Promise.all([
     apiFetch("/ecosystem/frankencoin/info"),
     apiFetch("/ecosystem/fps/info"),
     apiFetch("/prices/list"),
     getSavings(),
-    getChallenges({ limit: 5 }),
-    getFcs(),
+    getChallenges({ limit: 3, activeOnly: true }),
+    getFcs({ includeContext }),
   ]);
 
   // FPS USD price: /ecosystem/fps/info.token.price is CHF-denominated (despite the
@@ -51,8 +65,8 @@ export async function getProtocolSnapshot() {
   // Lead vs base rate on Ethereum (10000 PPM = 1%).
   const leadRate = savings.rates.approved.find((r) => r.chainId === 1 && r.ratePpm > 10000);
   const baseRate = savings.rates.approved.find((r) => r.chainId === 1 && r.ratePpm === 10000);
-  const activeChallenges = challenges.challenges.filter((c) => c.status !== "Success");
 
+  const generatedAt = new Date().toISOString();
   return {
     zchf: {
       name: infoData.erc20?.name,
@@ -96,9 +110,11 @@ export async function getProtocolSnapshot() {
     challenges: {
       total: challenges.total,
       active: challenges.active,
-      recent: activeChallenges.slice(0, 3),
+      recent: challenges.challenges,
     },
     fx: fxBlock(rate),
-    updatedAt: new Date().toISOString(),
+    generatedAt,
+    updatedAt: generatedAt, // deprecated response-generation alias, not source measurement time
+    freshnessNote: "generatedAt (and legacy updatedAt) is response assembly time. Use per-chain updated and fcs.state.source where supplied; other upstream measurement times are not established here. This is not one same-block protocol snapshot.",
   };
 }

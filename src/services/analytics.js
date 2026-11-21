@@ -6,6 +6,7 @@
  * (the old server threw). Unifies it with get_governance?type=holders.
  */
 
+import { walletFlows } from "./wallet-flows.js";
 import { ponderQuery } from "../upstream/ponder.js";
 import { duneMetrics } from "./dune.js";
 import { fromWei, bpsToPercent, dateFromUnix } from "../lib/numbers.js";
@@ -139,8 +140,9 @@ async function getRateHistory({ days, limit }) {
   };
 }
 
-export async function getAnalytics({ type = "time_series", days = 90, limit = 20 } = {}) {
+export async function getAnalytics({ type = "time_series", days = 90, limit = 20, wallet, chainId } = {}) {
   switch (type) {
+    case "wallet_flows": return walletFlows({ wallet, days, limit, chainId });
     case "time_series": return getTimeSeries({ days });
     case "trades": return { trades: await getTrades({ limit }) };
     case "minters": return { minters: await getMinters({ limit }) };
@@ -154,7 +156,7 @@ export async function getDuneStats() {
   const { values, ...health } = await duneMetrics(["zchfHolders", "fpsHolders", "mintingVolume", "savingsTvl"]);
   return {
     ...health,
-    holders: Object.values(health.queries).every((q) => q.status === "unconfigured") ? null : { zchf: values.zchfHolders?.[0] ?? null, fps: values.fpsHolders?.[0] ?? null },
+    holders: Object.values(values).every((v) => v === null) ? null : { zchf: values.zchfHolders?.[0] ?? null, fps: values.fpsHolders?.[0] ?? null },
     minting: values.mintingVolume?.slice(0, 30) ?? null,
     savingsTvl: values.savingsTvl?.slice(0, 30) ?? null,
   };

@@ -1,35 +1,33 @@
 import { duneExecute } from "../upstream/dune.js";
 import { DUNE_QUERIES } from "../lib/constants.js";
 import { observe, availability } from "../lib/provider.js";
+import { freshness } from "../lib/freshness.js";
+import { indexedMetric } from "./indexed-metrics.js";
 
 export async function duneMetrics(names) {
-  const results = await Promise.all(names.map((name) => observe(duneExecute(DUNE_QUERIES[name]), (v) => Array.isArray(v) && v.length > 0)));
-  const unverifiedRows = {};
-  results.forEach((result, i) => {
-    if (result.value === null) return;
-    const name = names[i];
-    const rows = result.value;
-    const objects = rows.filter((r) => r && typeof r === "object" && !Array.isArray(r));
-    // Only the legacy holders column has a supported metric contract here.
-    // Series query column names/units have no captured source schema: do not guess.
-    const isHolders = name === "zchfHolders" || name === "fpsHolders";
+  const unverifiedRows = {}, queries = {}, sources = {}, values = {};
+  await Promise.all(names.map(async (name) => {
+    const result = await observe(duneExecute(DUNE_QUERIES[name]));
+    const data = result.value;
+    const objects = data?.rows?.filter((r) => r && typeof r === "object" && !Array.isArray(r)) ?? [];
+    const isHolders = name.endsWith("Holders");
     const valid = isHolders ? objects.filter((r) => Number.isSafeInteger(r.holders) && r.holders >= 0) : [];
-    result.value = valid.length ? valid : null;
-    if (!valid.length || valid.length !== rows.length) {
-      Object.assign(result.health, {
-        status: valid.length ? "partial" : "unavailable",
-        code: !isHolders && objects.length ? "unverified_metric_schema" : "invalid_metric_rows",
-        validRows: valid.length,
-        rejectedRows: rows.length - valid.length,
-      });
-    }
+    // Series columns/units are unverified. Preserve raw rows separately, never
+    // guess a metric from similarly named columns or silently infer zero.
+    const usable = !data?.truncated && isHolders && valid.length === 1 && data?.rows.length === 1;
+    if (data && !usable) Object.assign(result.health, { status: "unavailable", code: data.truncated ? "truncated_result" : !isHolders && objects.length ? "unverified_metric_schema" : "invalid_metric_rows" });
+    queries[name] = { queryId: DUNE_QUERIES[name], ...result.health, asOf: data?.asOf ?? null, executionId: data?.executionId ?? null, retrievedAt: data?.retrievedAt ?? null };
     if (!isHolders && objects.length) unverifiedRows[name] = objects.slice(0, 30);
-  });
-  const queries = Object.fromEntries(names.map((name, i) => [name, { queryId: DUNE_QUERIES[name], ...results[i].health }]));
-  const values = Object.fromEntries(names.map((name, i) => [name, results[i].value]));
-  const status = availability(queries);
-  return { values, queries, status, unverifiedRows, note: results.every((r) => r.health.status === "unconfigured")
-    ? "Dune API key not configured — metrics unavailable"
-    : status === "available" ? "Dune query results; provider as-of timestamps are not supplied by this client."
-    : "Some or all Dune metrics unavailable; inspect per-query status. unverifiedRows are raw source rows, NOT verified metrics; series columns/units need source-schema confirmation. Not merely delayed data." };
+    if (usable) {
+      values[name] = valid;
+      sources[name] = { status: "available", provider: "Dune", queryId: DUNE_QUERIES[name], asOf: data.asOf, retrievedAt: data.retrievedAt,
+        freshness: freshness(data.asOf, 86400), scope: "Published query result; holder-count scope is defined by the configured Dune query, not independently established by this MCP." };
+    } else {
+      const fallback = await observe(indexedMetric(name));
+      values[name] = fallback.value?.rows ?? null;
+      sources[name] = { ...fallback.health, ...fallback.value?.source, fallbackFor: "Dune" };
+    }
+  }));
+  return { values, queries, sources, status: availability(sources), duneStatus: availability(queries), unverifiedRows,
+    note: "queries reports Dune health; sources identifies the data actually returned, including explicitly scoped Ponder alternatives. Dune results are read, never executed. Availability is not freshness; inspect source evidence. Null means unavailable, not zero." };
 }

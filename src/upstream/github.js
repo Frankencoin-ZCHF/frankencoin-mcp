@@ -13,7 +13,7 @@ import { UpstreamError } from "../lib/errors.js";
 const TTL = 6 * 60 * 60_000; // 6 h
 const SWR = 6 * 60 * 60_000;
 
-async function fetchFile(repo, path) {
+export async function fetchFile(repo, path) {
   try {
     const data = await fetchJson(`${GITHUB_API}/repos/${repo}/contents/${path}?ref=main`, {
       source: "github", timeout: 10_000, retries: 0,

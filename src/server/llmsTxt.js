@@ -44,7 +44,7 @@ export function renderLlmsTxt(tools, baseUrl) {
   p();
   p(
     `- **MCP (Streamable HTTP)** — for AI agents, Claude Desktop, Cursor: \`POST ${baseUrl}/mcp\`. ` +
-      "Run the MCP `initialize` handshake, then `tools/list` / `tools/call`. " +
+      "Use `server/discover` or call tools directly with MCP 2026-07-28. Older clients use `initialize`. " +
       `Legacy SSE clients: \`GET ${baseUrl}/sse\`.`,
   );
   p(

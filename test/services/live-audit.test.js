@@ -199,7 +199,8 @@ test("I10 source failures preserve news sections and disclose unavailable docs",
   assert.equal(out.sources.useCases.status, "unavailable");
   assert.equal(out.useCases, null);
   const knowledge = await dispatchTool("get_knowledge", { topic: "overview" });
-  assert.equal(knowledge.status, "unavailable");
+  assert.equal(knowledge.status, "partial");
+  assert.match(knowledge.gettingStarted, /Save in Swiss francs/);
   assert.equal(knowledge.content, null);
   assert.match(knowledge.note, /unavailable/i);
 });
@@ -256,7 +257,7 @@ test("I01 missing open state is unknown, not a confirmed empty pending set", asy
 });
 
 test("I08 Dune preserves successful zero-valued results beside failing queries", async () => {
-  route = (url) => url.includes("/query/6712642/execute") ? response({ execution_id: "test-execution" }) : url.includes("/execution/test-execution/results") ? response({ state: "QUERY_STATE_COMPLETED", result: { rows: [{ holders: 0 }] } }) : undefined;
+  route = (url) => url.includes("/query/6712642/results") ? response({ state: "QUERY_STATE_COMPLETED", result: { rows: [{ holders: 0 }] } }) : undefined;
   const out = await dispatchTool("get_dune_stats", {});
   assert.equal(out.status, "partial"); assert.equal(out.holders.zchf.holders, 0);
   assert.equal(out.queries.zchfHolders.status, "available");

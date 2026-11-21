@@ -9,12 +9,10 @@
  *   frankencoin ponder '{ mintingHubV2PositionV2s(limit:5){ items { position owner minted } } }'
  */
 
-import { getProtocolSnapshot } from "./services/snapshot.js";
 import { getMarketData } from "./services/market.js";
 import { getSavings } from "./services/savings.js";
-import { getGovernance } from "./services/governance.js";
 import { getPositions, getChallenges, getCollaterals } from "./services/positions.js";
-import { getAnalytics, getDuneStats } from "./services/analytics.js";
+import { getDuneStats } from "./services/analytics.js";
 import { getKnowledge, getNews, getMerch, getCompliance } from "./services/content.js";
 import { getRisk } from "./services/risk.js";
 import { dispatchTool } from "./tools/dispatch.js";
@@ -59,10 +57,10 @@ function section(title) { console.log("\n" + c.bold(c.cyan(`● ${title}`))); }
 const COMMANDS = {
   snapshot: {
     desc: "Protocol snapshot — supply, FCS state, underlying FPS economics, TVL, savings, challenges",
-    help: "frankencoin snapshot [--json]",
+    help: "frankencoin snapshot [--view overview|full] [--includeContext] [--json]",
     async run(flags) {
-      const d = await getProtocolSnapshot();
-      if (flags.json) return console.log(JSON.stringify(d, null, 2));
+      const d = await dispatchTool("get_protocol_snapshot", { view: flags.view, includeContext: flags.includeContext ?? false });
+      if (flags.json || flags.view === "overview") return console.log(JSON.stringify(d, null, 2));
       section("Protocol Snapshot");
       console.log(`  ZCHF Supply     ${c.green(fmtM(d.zchf?.totalSupply))}`);
       console.log(`  TVL             ${c.green(fmtM(d.zchf?.tvl?.chf))} CHF  /  ${fmtM(d.zchf?.tvl?.usd)} USD`);
@@ -118,9 +116,10 @@ const COMMANDS = {
   },
   governance: {
     desc: "Governance — FCS state/context, rate history, minters, underlying FPS trades/holders",
-    help: "frankencoin governance [--type all|fcs|rate_proposals|minters|equity_trades|holders] [--status active|denied|all] [--limit N] [--json]",
+    help: "frankencoin governance [--type all|fcs|rate_proposals|minters|equity_trades|holders] [--status active|denied|all] [--limit N] [--includeContext] [--json]",
     async run(flags) {
-      const d = await getGovernance({
+      const d = await dispatchTool("get_governance", {
+        includeContext: flags.includeContext ?? false,
         type: flags.type ?? "all",
         status: flags.status ?? "all",
         limit: parseInt(flags.limit ?? "20", 10),
@@ -175,9 +174,10 @@ const COMMANDS = {
   },
   analytics: {
     desc: "Historical analytics — time_series, trades, minters, rate_history",
-    help: "frankencoin analytics [--type time_series|trades|minters|rate_history] [--days N] [--limit N] [--json]",
+    help: "frankencoin analytics [--type time_series|trades|minters|rate_history|wallet_flows] [--wallet 0x...] [--days N] [--limit N] [--json]",
     async run(flags) {
-      const d = await getAnalytics({
+      const d = await dispatchTool("get_analytics", {
+        wallet: flags.wallet,
         type: flags.type ?? "time_series",
         days: parseInt(flags.days ?? "90", 10),
         limit: parseInt(flags.limit ?? "20", 10),
@@ -187,9 +187,9 @@ const COMMANDS = {
   },
   assessments: {
     desc: "Collateral assessments, risk framework, schema and templates",
-    help: "frankencoin assessments [--asset WBTC] [--publication all|published|draft|deprecated] [--includeContent] [--document framework|schema|template|overview|validator|workflow]",
+    help: "frankencoin assessments [--asset WBTC] [--publication all|published|draft|deprecated] [--view summary|full] [--limit N] [--offset N] [--includeContent] [--document framework|schema|template|overview|validator|workflow]",
     async run(flags) {
-      const args = Object.fromEntries(["asset", "publication", "includeContent", "document"].filter((key) => flags[key] !== undefined).map((key) => [key, flags[key]]));
+      const args = Object.fromEntries(["asset", "publication", "view", "limit", "offset", "includeContent", "document"].filter((key) => flags[key] !== undefined).map((key) => [key, flags[key]]));
       console.log(JSON.stringify(await dispatchTool("get_collateral_assessments", args), null, 2));
     },
   },
@@ -199,7 +199,9 @@ const COMMANDS = {
     async run(flags) {
       const d = await getKnowledge({ topic: flags.topic ?? "overview", page: flags.page, language: flags.language ?? "en" });
       if (flags.json) return console.log(JSON.stringify(d, null, 2));
+      if (d.gettingStarted) console.log(d.gettingStarted + "\n");
       if (typeof d.content === "string") console.log(d.content);
+      else if (d.gettingStarted) console.log(d.note);
       else console.log(JSON.stringify(d, null, 2));
     },
   },
@@ -260,8 +262,8 @@ const COMMANDS = {
           console.log(c.dim(`  ${d.pharos.note}`));
         } else {
           console.log(`  Overall         ${c.bold(d.pharos.overallGrade)}  (${fmtNum(d.pharos.overallScore, 0)}/100)`);
-          for (const dim of d.pharos.dimensions || []) {
-            console.log(`  ${dim.label.padEnd(26)} ${dim.grade.padEnd(4)} ${dim.score != null ? fmtNum(dim.score, 0) + "/100" : "—"}`);
+          for (const dim of d.pharos.pillars || []) {
+            console.log(`  ${dim.label.padEnd(26)} ${dim.score != null ? fmtNum(dim.score, 0) + "/100" : "—"}`);
           }
         }
       }

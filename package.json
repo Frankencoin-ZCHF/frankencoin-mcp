@@ -1,6 +1,6 @@
 {
   "name": "frankencoin-mcp",
-  "version": "3.2.0",
+  "version": "4.0.0",
   "description": "MCP server for Frankencoin (ZCHF) protocol — read-only data tools for supply, positions, savings, FCS governance and underlying FPS economics, challenges, analytics, risk ratings, insurance products, compliance, and more",
   "main": "src/index.js",
   "type": "module",
@@ -19,9 +19,11 @@
     "test": "node --test"
   },
   "dependencies": {
+    "@modelcontextprotocol/node": "^2.1.2",
     "@modelcontextprotocol/sdk": "^1.10.2",
+    "@modelcontextprotocol/server": "^2.4.0",
     "graphql": "^16.9.0",
-    "zod": "^3.24.2"
+    "zod": "^4.6.7"
   },
   "keywords": [
     "frankencoin",
@@ -35,5 +37,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/Frankencoin-ZCHF/frankencoin-mcp"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.4.0"
   }
 }

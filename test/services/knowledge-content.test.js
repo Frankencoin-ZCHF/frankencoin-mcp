@@ -30,8 +30,9 @@ test('empty Contents bodies retry the same released main file, not a fabricated 
   });
   const result = await dispatchTool('get_knowledge', {topic: 'overview'});
   assert.equal(result.content, doc);
-  assert.equal(result.status, 'available');
-  assert.deepEqual(urls, [
+  assert.equal(result.status, 'partial');
+  assert.equal(result.sources.useCases.status, 'unavailable');
+  assert.deepEqual(urls.filter(url=>url.includes("/gitbook/")), [
     'https://api.github.com/repos/Frankencoin-ZCHF/gitbook/contents/README.md?ref=main',
     'https://raw.githubusercontent.com/Frankencoin-ZCHF/gitbook/main/README.md',
   ]);

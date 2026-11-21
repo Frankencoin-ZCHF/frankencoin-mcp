@@ -14,16 +14,13 @@ function int(name, def) {
   return Number.isFinite(n) ? n : def;
 }
 
-let version = "3.0.0";
-try {
-  version = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version || version;
-} catch {
-  /* keep default */
-}
+const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
 export const config = Object.freeze({
   version,
 
+  host: process.env.HOST || (process.env.RAILWAY_ENVIRONMENT ? "0.0.0.0" : "127.0.0.1"),
+  mcpOriginHosts: (process.env.MCP_ORIGIN_HOSTS || "").split(",").map(s => s.trim()).filter(Boolean),
   port: int("PORT", 3000),
   // Canonical public origin, used in self-describing manifests (/llms.txt, /api).
   publicUrl: (process.env.PUBLIC_URL || "https://mcp.frankencoin.com").replace(/\/+$/, ""),
@@ -50,6 +47,7 @@ export const config = Object.freeze({
   upstreamMaxBytes: int("UPSTREAM_MAX_BYTES", 8 * 1024 * 1024), // 8 MB
   maxRetryAfterMs: int("MAX_RETRY_AFTER_MS", 10_000), // cap honored Retry-After
   cacheMaxEntries: int("CACHE_MAX_ENTRIES", 500),
+  cacheMaxBytes: Math.max(0, int("CACHE_MAX_BYTES", 64 * 1024 * 1024)),
   cacheEnabled: (process.env.CACHE_ENABLED ?? "true") !== "false",
 
   // query_ponder validation bounds (SECURITY §2).

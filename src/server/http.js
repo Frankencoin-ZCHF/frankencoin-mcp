@@ -6,25 +6,39 @@
  */
 
 import http from "node:http";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { AsyncLocalStorage } from "node:async_hooks";
+import { createMcpHandler, isLegacyRequest } from "@modelcontextprotocol/server";
+import { NodeStreamableHTTPServerTransport, originValidation, toNodeHandler, toWebRequest } from "@modelcontextprotocol/node";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 
 import { config } from "../config.js";
 import { TOOLS, TOOL_MAP } from "../tools/registry.js";
 import { dispatchTool } from "../tools/dispatch.js";
 import { restSuccess, restError, pretty } from "../lib/envelope.js";
-import { mapError, sanitizeForLog, NotFoundError } from "../lib/errors.js";
+import { mapError, sanitizeForLog, BusyError, RateLimitError } from "../lib/errors.js";
 import { createMcpServer } from "./mcp.js";
 import { renderLlmsTxt } from "./llmsTxt.js";
 import { deriveClientIp, checkRateLimit } from "./rateLimit.js";
 import {
   mcpSessions, sseSessions, mcpAtCap, sseAtCap, touch,
-  getInitLock, setInitLock, clearInitLock, activeSessionCount, startSweeper,
+  activeSessionCount, startSweeper,
 } from "./sessions.js";
+
+const requestIp = new AsyncLocalStorage();
+function createHttpMcpServer() {
+  return createMcpServer({ dispatch: (tool, args) => runDispatch(requestIp.getStore(), tool, args) });
+}
+
+const modernMcp = createMcpHandler(createHttpMcpServer, { legacy: "reject", maxRequestBodySize: config.maxBodyBytes });
+const serveModern = toNodeHandler(modernMcp, { maxRequestBodySize: config.maxBodyBytes });
+const validateOrigin = originValidation([
+  new URL(config.publicUrl).hostname, "localhost", "127.0.0.1", "[::1]", ...config.mcpOriginHosts,
+]);
 
 const TOOL_NAMES = TOOLS.map((t) => t.name);
 
 // Global + per-IP in-flight tool-dispatch caps (SECURITY §3.4).
+let pendingInitializations = 0;
 let globalInflight = 0;
 const ipInflight = new Map();
 
@@ -38,7 +52,7 @@ function setBaseHeaders(res) {
   // CORS (public, read-only, secret-free API). No Allow-Credentials with "*".
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, mcp-session-id");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, mcp-session-id, MCP-Protocol-Version, Mcp-Method, Mcp-Name");
   res.setHeader("Access-Control-Expose-Headers", "mcp-session-id");
   res.setHeader("Access-Control-Max-Age", "600");
   // Security headers.
@@ -148,13 +162,21 @@ function handleApiIndex(res) {
 }
 
 async function runDispatch(ip, tool, params) {
+  if (tool === "query_ponder") {
+    const limit = checkRateLimit(`${ip}:ponder`, config.rateLimitPonderMax);
+    if (!limit.allowed) {
+      const error = new RateLimitError();
+      error.retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+      throw error;
+    }
+  }
   // In-flight caps.
   if (globalInflight >= config.globalInflightMax) {
-    const e = new Error("busy"); e._status = 503; e._msg = "server busy, retry shortly"; throw e;
+    throw new BusyError();
   }
   const cur = ipInflight.get(ip) || 0;
   if (cur >= config.perIpInflightMax) {
-    const e = new Error("busy"); e._status = 429; e._msg = "rate limit exceeded"; throw e;
+    throw new RateLimitError();
   }
   globalInflight++;
   ipInflight.set(ip, cur + 1);
@@ -228,10 +250,7 @@ async function handleRest(req, res, url, ip) {
     console.error(`[/api/${sanitizeForLog(tool, 40)}] ok`);
     sendJson(res, 200, restSuccess(tool, result));
   } catch (e) {
-    if (e._status) {
-      sendJson(res, e._status, { ok: false, tool, error: e._msg });
-      return;
-    }
+    if (e.retryAfter) res.setHeader("Retry-After", e.retryAfter);
     const { status, code } = mapError(e);
     console.error(`[/api/${sanitizeForLog(tool, 40)}] error ${code} (${status})`);
     sendJson(res, status, restError(tool, e));
@@ -256,11 +275,25 @@ async function handleMcp(req, res) {
 
   try {
     if (method === "POST") {
+      if (mediaType(req) !== "application/json") {
+        sendJson(res, 415, { jsonrpc: "2.0", error: { code: -32000, message: "Expected application/json" } });
+        return;
+      }
+      let body;
+      try {
+        body = JSON.parse(await readCappedBody(req));
+      } catch (error) {
+        sendJson(res, error.tooLarge ? 413 : 400, { jsonrpc: "2.0", error: { code: -32700, message: error.tooLarge ? "Body too large" : "Parse error" } });
+        return;
+      }
+      if (!await isLegacyRequest(await toWebRequest(req, body), body)) {
+        return serveModern(req, res, body);
+      }
       const sessionId = req.headers["mcp-session-id"];
 
       if (sessionId && mcpSessions.has(sessionId)) {
         touch(mcpSessions, sessionId);
-        await mcpSessions.get(sessionId).transport.handleRequest(req, res);
+        await mcpSessions.get(sessionId).transport.handleRequest(req, res, body);
         return;
       }
       if (sessionId && !mcpSessions.has(sessionId)) {
@@ -272,34 +305,19 @@ async function handleMcp(req, res) {
         return;
       }
 
-      // New init — serialize concurrent first-time initializes.
-      const lock = getInitLock();
-      if (lock) {
-        await lock.catch(() => {});
-        if (mcpSessions.size > 0) {
-          res.setHeader("Retry-After", "1");
-          sendJson(res, 503, {
-            jsonrpc: "2.0",
-            error: { code: -32000, message: "Server initializing — please retry initialize" },
-            id: null,
-          });
-          return;
-        }
-      }
-      if (mcpAtCap()) {
+      if (mcpAtCap(pendingInitializations)) {
         res.setHeader("Retry-After", "2");
         sendJson(res, 503, { error: "Server at session capacity, retry shortly" });
         return;
       }
 
-      let resolveLock, rejectLock;
-      setInitLock(new Promise((r, j) => { resolveLock = r; rejectLock = j; }));
+      pendingInitializations++;
       try {
-        const transport = new StreamableHTTPServerTransport({
+        const transport = new NodeStreamableHTTPServerTransport({
           sessionIdGenerator: () => crypto.randomUUID(),
           onsessioninitialized: (id) => {
             mcpSessions.set(id, { transport, createdAt: Date.now(), lastSeenAt: Date.now() });
-            console.error(`[session] new: ${id} (total: ${mcpSessions.size})`);
+            console.error(`[session] opened (total: ${mcpSessions.size})`);
           },
         });
         transport.onclose = () => {
@@ -307,38 +325,28 @@ async function handleMcp(req, res) {
             console.error("[session] closed");
           }
         };
-        const server = createMcpServer();
+        const server = createHttpMcpServer();
         await server.connect(transport);
-        await transport.handleRequest(req, res);
-        resolveLock();
-      } catch (e) {
-        rejectLock(e);
-        throw e;
+        await transport.handleRequest(req, res, body);
       } finally {
-        clearInitLock();
+        pendingInitializations--;
       }
       return;
     }
 
-    if (method === "GET") {
-      const sessionId = req.headers["mcp-session-id"];
-      if (!sessionId || !mcpSessions.has(sessionId)) {
-        sendJson(res, 400, { error: "Missing or invalid mcp-session-id" });
-        return;
-      }
-      touch(mcpSessions, sessionId);
-      await mcpSessions.get(sessionId).transport.handleRequest(req, res);
-      return;
-    }
-
-    // DELETE
     const sessionId = req.headers["mcp-session-id"];
-    if (sessionId && mcpSessions.has(sessionId)) {
-      await mcpSessions.get(sessionId).transport.handleRequest(req, res);
-      mcpSessions.delete(sessionId);
-    } else if (!res.headersSent) {
-      res.writeHead(200); res.end();
+    if (!sessionId) {
+      res.setHeader("Allow", "POST, OPTIONS");
+      sendJson(res, 405, { error: "Use POST for stateless MCP requests" });
+      return;
     }
+    const session = mcpSessions.get(sessionId);
+    if (!session) {
+      sendJson(res, 404, { jsonrpc: "2.0", id: null, error: { code: -32001, message: "Session not found" } });
+      return;
+    }
+    touch(mcpSessions, sessionId);
+    await session.transport.handleRequest(req, res);
   } catch (e) {
     console.error(`[/mcp error] ${sanitizeForLog(e.code || e.name || "error", 40)}`);
     if (!res.headersSent) sendJson(res, 500, { error: "internal server error" });
@@ -352,9 +360,9 @@ async function handleSse(req, res) {
     sendJson(res, 503, { error: "Server at session capacity, retry shortly" });
     return;
   }
-  const sseId = crypto.randomUUID();
-  const transport = new SSEServerTransport(`/messages?sessionId=${sseId}`, res);
-  const server = createMcpServer();
+  const transport = new SSEServerTransport("/messages", res);
+  const sseId = transport.sessionId;
+  const server = createHttpMcpServer();
   sseSessions.set(sseId, { transport, createdAt: Date.now(), lastSeenAt: Date.now() });
   transport.onclose = () => sseSessions.delete(sseId);
   // An unclean TCP drop may not fire transport.onclose — reap on socket close too.
@@ -382,7 +390,7 @@ async function handleMessages(req, res, url) {
 async function handle(req, res) {
   setBaseHeaders(res);
 
-  if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
+
 
   let url;
   try {
@@ -392,10 +400,12 @@ async function handle(req, res) {
     return;
   }
 
-  const ip = deriveClientIp(req);
+  if (["/mcp", "/sse", "/messages"].includes(url.pathname) && !validateOrigin(req, res)) return;
+  if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
+
+  const ip = requestIp.getStore();
 
   // Rate limiting on ALL paths. query_ponder has a tighter sub-limit.
-  const apiTool = url.pathname.startsWith("/api/") ? url.pathname.slice(5) : "";
   const rl = checkRateLimit(ip, config.rateLimitMax);
   res.setHeader("X-RateLimit-Limit", rl.limit);
   res.setHeader("X-RateLimit-Remaining", Math.max(0, rl.limit - rl.count));
@@ -405,15 +415,6 @@ async function handle(req, res) {
     sendJson(res, 429, { ok: false, error: "Rate limit exceeded. Please slow down." });
     return;
   }
-  if (apiTool === "query_ponder") {
-    const sub = checkRateLimit(`${ip}:ponder`, config.rateLimitPonderMax);
-    if (!sub.allowed) {
-      res.setHeader("Retry-After", Math.ceil((sub.resetAt - Date.now()) / 1000));
-      sendJson(res, 429, { ok: false, error: "Rate limit exceeded. Please slow down." });
-      return;
-    }
-  }
-
   const path = url.pathname;
   if (path === "/" || path === "/health") return handleHealth(res);
   if (path === "/llms.txt") return handleLlmsTxt(req, res);
@@ -428,7 +429,7 @@ async function handle(req, res) {
 
 export function createHttpServer() {
   const server = http.createServer((req, res) => {
-    handle(req, res).catch((e) => {
+    requestIp.run(deriveClientIp(req), () => handle(req, res)).catch((e) => {
       console.error(`[http] unhandled ${sanitizeForLog(e?.code || e?.name || "error", 40)}`);
       if (!res.headersSent) sendJson(res, 500, { error: "internal server error" });
     });

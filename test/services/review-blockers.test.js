@@ -89,7 +89,7 @@ test("R2 enrichment checks every requested ID and preserves zero cap", async () 
 });
 
 function duneRoute(rows) {
-  return (url) => url.includes("/execute") ? response({ execution_id: "test" }) : url.includes("/execution/test/results") ? response({ state: "QUERY_STATE_COMPLETED", result: { rows } }) : undefined;
+  return (url) => url.includes("api.dune.com/") ? response({ state: "QUERY_STATE_COMPLETED", result: { rows } }) : undefined;
 }
 
 test("R2 Dune completed null rows contain no metrics", async () => {
@@ -101,16 +101,16 @@ test("R2 Dune completed null rows contain no metrics", async () => {
   assert.equal(out.savingsTvl, null);
 });
 
-test("R2 Dune rejects unrelated columns and preserves usable holder rows with partial coverage", async () => {
+test("R2 Dune rejects mixed holder rows with ambiguous metric coverage", async () => {
   route = duneRoute([{ unrelated: 42 }, { holders: 0 }, null]);
   const out = await dispatchTool("get_dune_stats", {});
-  assert.equal(out.queries.zchfHolders.status, "partial");
-  assert.deepEqual(out.holders.zchf, { holders: 0 });
+  assert.equal(out.queries.zchfHolders.status, "unavailable");
+  assert.equal(out.holders, null);
   assert.notEqual(out.queries.mintingVolume.status, "available");
 });
 
 test("R2 Pharos overall score without dimensions is partial", async () => {
-  route = (url) => url.includes("pharos") ? response({ cards: [{ id: "zchf-frankencoin", overallScore: 75 }] }) : undefined;
+  route = (url) => url.includes("pharos") ? response({ model: "v9", schemaVersion: 9, cards: [{ id: "zchf-frankencoin", score: 75, grade: "B", ratingStatus: "rated" }] }) : undefined;
   const out = await dispatchTool("get_risk", { source: "pharos" });
   assert.equal(out.pharos.status, "partial");
   assert.equal(out.pharos.overallScore, 75);
