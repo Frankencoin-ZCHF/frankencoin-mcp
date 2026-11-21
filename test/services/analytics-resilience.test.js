@@ -377,3 +377,38 @@ test("borrower history accepts string timestamps and reports a signed interval t
   assert.equal(r.updates[0].action, "loan_repayment");
   assert.equal(r.updates[0].secondsBeforeCurrentRecordedExpiry, 10);
 });
+
+test("CEX snapshots coalesce across sizes, sides and chains and retry a failed book at expiry", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.now() });
+  const counts = new Map();
+  setFetchImpl(async (url) => {
+    counts.set(url, (counts.get(url) ?? 0) + 1);
+    if (url.includes("mexc")) {
+      return counts.get(url) === 1
+        ? new Response("", { status: 403 })
+        : Response.json({ asks: [["1", "9"]], bids: [["1", "9"]] });
+    }
+    if (url.includes("kraken")) {
+      const pair = new URL(url).searchParams.get("pair");
+      return Response.json({
+        error: [],
+        result: { [pair]: { asks: [["1.1", "8"]], bids: [["1", "8"]] } },
+      });
+    }
+    return new Response("", { status: 404 });
+  });
+  const quote = (amount, side, chainId) =>
+    dispatchTool("get_liquidity", { asset: "ZCHF", side, chainId, amount });
+  const [a, b] = await Promise.all([
+    quote("1", "sell", 1),
+    quote("2", "buy", 8453),
+  ]);
+  assert.equal(a.venues[1].quoteAmount, "1");
+  assert.equal(b.venues[1].quoteAmount, "2.2");
+  assert.equal(a.venues[1].retrievedAt, b.venues[1].retrievedAt);
+  assert.equal(b.venues[3].status, "unavailable");
+  for (const [url, count] of counts)
+    if (/kraken|mexc/.test(url)) assert.equal(count, 1);
+  t.mock.timers.tick(5001);
+  assert.equal((await quote("1", "buy", 1)).venues[3].status, "quoted");
+});

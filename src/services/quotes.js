@@ -153,59 +153,79 @@ export function walkBook(levels, n, side) {
     worstLevel: worst,
   };
 }
+async function cexQuote(venue, quoteAsset, size, side) {
+  const pair = "ZCHF" + quoteAsset;
+  const isKraken = venue === "Kraken";
+  const url = isKraken
+    ? "https://api.kraken.com/0/public/Depth?pair=" + pair + "&count=500"
+    : "https://api.mexc.com/api/v3/depth?symbol=ZCHFUSDT&limit=1000";
+  // All sizes and chains use the same venue book. Retain the original observation
+  // time, and give a failed book one short retry interval shared by its callers.
+  const observation = await getOrLoad(
+    "book:" + venue + ":" + pair,
+    5000,
+    async () => {
+      try {
+        const reply = await fetchJson(url, {
+          source: venue.toLowerCase(),
+          timeout: 5000,
+          retries: 0,
+        });
+        if (isKraken && reply.error?.length) throw new UpstreamError("kraken");
+        const book = isKraken ? reply.result?.[pair] : reply;
+        if (!Array.isArray(book?.asks) && !Array.isArray(book?.bids))
+          throw new UpstreamError("orderbook");
+        return { book, retrievedAt: new Date().toISOString() };
+      } catch {
+        return null;
+      }
+    },
+  );
+  if (!observation) return { venue, quoteAsset, status: "unavailable" };
+  try {
+    const levels = observation.book[side === "buy" ? "asks" : "bids"];
+    return {
+      venue,
+      quoteAsset,
+      ...walkBook(levels, size, side),
+      retrievedAt: observation.retrievedAt,
+    };
+  } catch {
+    return { venue, quoteAsset, status: "unavailable" };
+  }
+}
+
 export async function liquidity({ asset, chainId, amount, side }) {
   const token = ledgerToken(chainId, asset),
     n = atoms(amount);
-  const sources = [["Velora", "USDC", () => quoteDex(chainId, token, n, side)]];
-  if (asset === "ZCHF") {
-    for (const quote of ["CHF", "USD"])
-      sources.push([
-        "Kraken",
-        quote,
-        async () => {
-          const pair = "ZCHF" + quote;
-          const book = await fetchJson(
-            "https://api.kraken.com/0/public/Depth?pair=" + pair + "&count=500",
-            { source: "kraken", timeout: 5000, retries: 0 },
-          );
-          if (book.error?.length) throw new UpstreamError("kraken");
-          return walkBook(
-            book.result?.[pair]?.[side === "buy" ? "asks" : "bids"],
-            n,
-            side,
-          );
-        },
-      ]);
-    sources.push([
-      "MEXC",
-      "USDT",
-      async () => {
-        const book = await fetchJson(
-          "https://api.mexc.com/api/v3/depth?symbol=ZCHFUSDT&limit=1000",
-          { source: "mexc", timeout: 5000, retries: 0 },
-        );
-        return walkBook(book[side === "buy" ? "asks" : "bids"], n, side);
-      },
-    ]);
-  }
-  const venues = await Promise.all(
-    sources.map(async ([venue, quoteAsset, load]) => {
-      try {
-        const observation = await getOrLoad(
-          "quote:" +
-            [venue, quoteAsset, token, chainId, side, amount].join(":"),
-          5000,
-          async () => ({
-            ...(await load()),
-            retrievedAt: new Date().toISOString(),
-          }),
-        );
-        return { venue, quoteAsset, ...observation };
-      } catch {
-        return { venue, quoteAsset, status: "unavailable" };
-      }
+  const dex = getOrLoad(
+    "quote:Velora:" + [token, chainId, side, n].join(":"),
+    5000,
+    async () => ({
+      ...(await quoteDex(chainId, token, n, side)),
+      retrievedAt: new Date().toISOString(),
     }),
+  ).then(
+    (quote) => ({ venue: "Velora", quoteAsset: "USDC", ...quote }),
+    () => ({ venue: "Velora", quoteAsset: "USDC", status: "unavailable" }),
   );
+  const requests = [dex];
+  if (asset === "ZCHF") {
+    for (const [venue, currency] of [
+      ["Kraken", "CHF"],
+      ["Kraken", "USD"],
+      ["MEXC", "USDT"],
+    ]) {
+      requests.push(
+        cexQuote(venue, currency, n, side).catch(() => ({
+          venue,
+          quoteAsset: currency,
+          status: "unavailable",
+        })),
+      );
+    }
+  }
+  const venues = await Promise.all(requests);
   return {
     chainId,
     asset,

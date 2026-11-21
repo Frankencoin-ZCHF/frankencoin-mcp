@@ -427,8 +427,21 @@ async function handle(req, res) {
   sendJson(res, 404, { error: "Not found", endpoints: ["/mcp", "/api", "/sse", "/health", "/llms.txt"] });
 }
 
+// Measure the application interval up to the first headers, including upstream waits.
+// The client can compare this interval with its own end-to-end request timer.
+class TimedResponse extends http.ServerResponse {
+  startedAt = performance.now();
+
+  writeHead(...args) {
+    if (!this.headersSent) {
+      this.setHeader("Server-Timing", `app;dur=${(performance.now() - this.startedAt).toFixed(1)}`);
+    }
+    return super.writeHead(...args);
+  }
+}
+
 export function createHttpServer() {
-  const server = http.createServer((req, res) => {
+  const server = http.createServer({ ServerResponse: TimedResponse }, (req, res) => {
     requestIp.run(deriveClientIp(req), () => handle(req, res)).catch((e) => {
       console.error(`[http] unhandled ${sanitizeForLog(e?.code || e?.name || "error", 40)}`);
       if (!res.headersSent) sendJson(res, 500, { error: "internal server error" });
