@@ -69,9 +69,9 @@ export const TOOLS = [
   {
     name: "get_protocol_snapshot",
     description:
-      "Frankencoin (ZCHF) protocol snapshot: supply + per-chain breakdown, TVL, underlying FPS Equity price/supply/market cap/reserve/earnings (cumulative all-time), savings rates/proposals and active challenges. Separately returns FCS, the canonical governance and share token wrapping FPS 1:1 on Ethereum: API-reported FCS supply, attributable equity, binding and reference prices, or explicit unavailability. FPS metrics are not relabelled FCS metrics. Monetary figures are { chf, usd } pairs with top-level fx, except FCS totalAssetsZchf and referencePriceZchf in native ZCHF units. Best starting point for protocol questions. Defaults to state, provenance and material warnings; includeContext=true restores full FCS mechanics/reference context.",
-    input: z.object({ includeContext: bool(false) }).strict(),
-    params: [{ name: "includeContext", type: "boolean", required: false, description: "Include full FCS mechanics and references (default false)." }],
+      "Frankencoin (ZCHF) protocol snapshot: supply + per-chain breakdown, TVL, underlying FPS Equity price/supply/market cap/reserve/earnings (cumulative all-time), savings rates/proposals and active challenges. Separately returns FCS, the canonical governance and share token wrapping FPS 1:1 on Ethereum: API-reported FCS supply, attributable equity, binding and reference prices, or explicit unavailability. FPS metrics are not relabelled FCS metrics. Monetary figures are { chf, usd } pairs with top-level fx, except FCS totalAssetsZchf and referencePriceZchf in native ZCHF units. Use view=overview for fast supply and TVL queries. Defaults to state, provenance and material warnings; includeContext=true restores full FCS mechanics/reference context.",
+    input: z.object({ includeContext: bool(false), view: z.enum(["full", "overview"]).default("full") }).strict(),
+    params: [{ name: "view", type: "string", required: false, description: "overview: fast single-source ZCHF supply, TVL and per-chain supply; full: complete snapshot (default)." }, { name: "includeContext", type: "boolean", required: false, description: "Include full FCS mechanics and references (default false)." }],
     handler: (a) => getProtocolSnapshot(a),
   },
   {
@@ -151,18 +151,20 @@ export const TOOLS = [
   {
     name: "get_analytics",
     description:
-      "Historical protocol analytics. Use 'type' to select: 'time_series' (daily equity, savings, FPS price and realized earnings; removed indexer metrics are null — default), 'trades' (FPS equity buy/sell trades), 'minters' (minter application history), 'rate_history' (governance rate change timeline). Historical monetary values are in CHF only — no historical USD is provided (applying today's rate to past rows would be inaccurate); the current CHF/USD rate is exposed in the `fx` block for approximate conversion.",
+      "Historical protocol analytics. wallet_flows with wallet returns Ethereum ZCHF transfer totals and largest counterparties. Use 'type' to select: 'time_series' (daily equity, savings, FPS price and realized earnings; removed indexer metrics are null — default), 'trades' (FPS equity buy/sell trades), 'minters' (minter application history), 'rate_history' (governance rate change timeline). Historical monetary values are in CHF only — no historical USD is provided (applying today's rate to past rows would be inaccurate); the current CHF/USD rate is exposed in the `fx` block for approximate conversion.",
     input: z.object({
-      type: z.enum(["time_series", "trades", "minters", "rate_history"]).default("time_series"),
+      type: z.enum(["time_series", "trades", "minters", "rate_history", "wallet_flows"]).default("time_series"),
+      wallet: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional(),
       days: intClamp(1, 365, 90),
       limit: intClamp(1, 100, 20),
     }).strict(),
     params: [
-      { name: "type", type: "string", required: false, description: "time_series | trades | minters | rate_history (default time_series)." },
-      { name: "days", type: "number", required: false, description: "Days for time_series / rolling rate_history (default 90, max 365)." },
-      { name: "limit", type: "number", required: false, description: "Max items for trades/minters/rate_history (default 20, max 100)." },
+      { name: "type", type: "string", required: false, description: "time_series | trades | minters | rate_history | wallet_flows (default time_series)." },
+      { name: "wallet", type: "string", required: false, description: "Ethereum address required for wallet_flows." },
+      { name: "days", type: "number", required: false, description: "Window in days for time_series, rate_history and wallet_flows (default 90, max 365)." },
+      { name: "limit", type: "number", required: false, description: "Max rows or largest counterparties to return (default 20, max 100)." },
     ],
-    handler: (a) => getAnalytics({ type: a.type, days: a.days, limit: a.limit }),
+    handler: getAnalytics,
   },
   {
     name: "get_knowledge",

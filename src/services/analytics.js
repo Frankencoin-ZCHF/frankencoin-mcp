@@ -6,6 +6,7 @@
  * (the old server threw). Unifies it with get_governance?type=holders.
  */
 
+import { walletFlows } from "./wallet-flows.js";
 import { ponderQuery } from "../upstream/ponder.js";
 import { duneMetrics } from "./dune.js";
 import { fromWei, bpsToPercent, dateFromUnix } from "../lib/numbers.js";
@@ -139,8 +140,9 @@ async function getRateHistory({ days, limit }) {
   };
 }
 
-export async function getAnalytics({ type = "time_series", days = 90, limit = 20 } = {}) {
+export async function getAnalytics({ type = "time_series", days = 90, limit = 20, wallet } = {}) {
   switch (type) {
+    case "wallet_flows": return walletFlows({ wallet, days, limit });
     case "time_series": return getTimeSeries({ days });
     case "trades": return { trades: await getTrades({ limit }) };
     case "minters": return { minters: await getMinters({ limit }) };

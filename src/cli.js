@@ -12,7 +12,7 @@
 import { getMarketData } from "./services/market.js";
 import { getSavings } from "./services/savings.js";
 import { getPositions, getChallenges, getCollaterals } from "./services/positions.js";
-import { getAnalytics, getDuneStats } from "./services/analytics.js";
+import { getDuneStats } from "./services/analytics.js";
 import { getKnowledge, getNews, getMerch, getCompliance } from "./services/content.js";
 import { getRisk } from "./services/risk.js";
 import { dispatchTool } from "./tools/dispatch.js";
@@ -57,10 +57,10 @@ function section(title) { console.log("\n" + c.bold(c.cyan(`● ${title}`))); }
 const COMMANDS = {
   snapshot: {
     desc: "Protocol snapshot — supply, FCS state, underlying FPS economics, TVL, savings, challenges",
-    help: "frankencoin snapshot [--includeContext] [--json]",
+    help: "frankencoin snapshot [--view overview|full] [--includeContext] [--json]",
     async run(flags) {
-      const d = await dispatchTool("get_protocol_snapshot", { includeContext: flags.includeContext ?? false });
-      if (flags.json) return console.log(JSON.stringify(d, null, 2));
+      const d = await dispatchTool("get_protocol_snapshot", { view: flags.view, includeContext: flags.includeContext ?? false });
+      if (flags.json || flags.view === "overview") return console.log(JSON.stringify(d, null, 2));
       section("Protocol Snapshot");
       console.log(`  ZCHF Supply     ${c.green(fmtM(d.zchf?.totalSupply))}`);
       console.log(`  TVL             ${c.green(fmtM(d.zchf?.tvl?.chf))} CHF  /  ${fmtM(d.zchf?.tvl?.usd)} USD`);
@@ -174,9 +174,10 @@ const COMMANDS = {
   },
   analytics: {
     desc: "Historical analytics — time_series, trades, minters, rate_history",
-    help: "frankencoin analytics [--type time_series|trades|minters|rate_history] [--days N] [--limit N] [--json]",
+    help: "frankencoin analytics [--type time_series|trades|minters|rate_history|wallet_flows] [--wallet 0x...] [--days N] [--limit N] [--json]",
     async run(flags) {
-      const d = await getAnalytics({
+      const d = await dispatchTool("get_analytics", {
+        wallet: flags.wallet,
         type: flags.type ?? "time_series",
         days: parseInt(flags.days ?? "90", 10),
         limit: parseInt(flags.limit ?? "20", 10),

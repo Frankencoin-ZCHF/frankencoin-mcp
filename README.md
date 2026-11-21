@@ -25,6 +25,8 @@ over Streamable HTTP and stdio. Modern clients can issue a tool call as their fi
 
 | Agent task | Entry point |
 | --- | --- |
+| Get ZCHF supply, TVL and per-chain supply from one upstream request | `get_protocol_snapshot` with `{"view":"overview"}` |
+| Trace Ethereum ZCHF transfers for an address | `get_analytics` with `type=wallet_flows`, `wallet`, `days` and optional counterparty `limit` |
 | Review supply, reserves, savings and challenges | `protocol_briefing` prompt |
 | Compare a collateral report with live exposure | `collateral_review` prompt |
 | Browse the tool guide | `resources/read` with `frankencoin://docs/guide` |
