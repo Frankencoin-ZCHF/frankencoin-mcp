@@ -17,19 +17,7 @@ import {
   MERCH_BASE, MERCH_STOREFRONT_MCP, MERCH_UCP_MCP,
 } from "../lib/constants.js";
 
-// Short, curated entry points from the official use-case directory. Live rates and
-// account-specific terms belong to the savings tool and the provider interfaces.
-const gettingStarted = [
-  "ZCHF is a digital Swiss franc you can hold in your wallet and send to others.",
-  "",
-  "- **Buy ZCHF.** Buy on [Kraken](https://www.kraken.com/buy/zchf), or transfer CHF to your personal Swiss IBAN through [ether.fi](https://www.ether.fi/app/cash/bank/chf) to receive ZCHF.",
-  "- **Pay with ZCHF.** Spend using the [ether.fi card](https://www.ether.fi/app/cash/bank/chf), or pay a Swiss bill through [Mt Pelerin](https://www.mtpelerin.com/buy-zchf-frankencoin).",
-  "- **Save in Swiss francs.** Deposit ZCHF in [Frankencoin Savings](https://app.frankencoin.com/savings) to earn the variable protocol savings rate.",
-  "- **Borrow ZCHF.** Lock eligible collateral in a [minting position](https://app.frankencoin.com/mint) to borrow against it while retaining exposure to the asset.",
-  `- **Invest in Frankencoin.** With [Frankencoin Shares (FCS)](${FCS_REFERENCE.links.website}), you can participate in governance and share in the reserve’s gains and losses.`,
-  "",
-  `[Explore more use cases](${SITE_ORIGIN}/use-cases)`,
-].join("\n");
+import { readUseCaseDirectory, renderGettingStarted } from "./use-case-directory.js";
 
 export async function getKnowledge({ topic = "overview", page, language = "en" } = {}) {
   if (topic === "index") return { topic, availableTopics: KNOWLEDGE_TOPICS, websitePages: Object.keys(WEBSITE_PAGES) };
@@ -46,20 +34,20 @@ export async function getKnowledge({ topic = "overview", page, language = "en" }
 
   const isOverview = topic === "overview" || topic === "what_is";
   const hasFcsReference = ["fcs", "fcs_migration", "governance", "pool_shares"].includes(topic);
-  const observed = await observe(githubFile(DOCS_REPO, file).then((text) => {
+  const [directory, observed] = await Promise.all([isOverview ? readUseCaseDirectory() : null, observe(githubFile(DOCS_REPO, file).then((text) => {
     // These fixed GitBook files contain Markdown headings. A JSON placeholder or
     // HTML gateway page is not documentation, even when delivered with HTTP 200.
     if (!/^#{1,6}\s+\S/m.test(text) || /^\s*(?:<!doctype html|<html)/i.test(text)) {
       throw new UpstreamError("github");
     }
     return text;
-  }));
+  }))]);
   const content = observed.value;
   return {
     topic,
-    ...(isOverview ? { gettingStarted } : {}),
-    status: content === null ? (isOverview || hasFcsReference ? "partial" : "unavailable") : "available",
-    sources: { github: observed.health },
+    ...(isOverview ? { gettingStarted: renderGettingStarted(directory.data) } : {}),
+    status: content === null ? (isOverview || hasFcsReference ? "partial" : "unavailable") : isOverview && (directory.health.status !== "available" || !directory.data?.mapped) ? "partial" : "available",
+    sources: { github: observed.health, ...(directory ? { useCases: directory.health } : {}) },
     file,
     source: `https://github.com/${DOCS_REPO}/blob/main/${file}`,
     docsUrl: topic === "fcs" ? FCS_REFERENCE.links.mechanics
@@ -67,7 +55,7 @@ export async function getKnowledge({ topic = "overview", page, language = "en" }
       : `https://docs.frankencoin.com/${file.replace(/\.md$/, "").replace(/\/README$/, "")}`,
     content,
     ...(hasFcsReference ? { fcs: FCS_REFERENCE } : {}),
-    ...(content === null ? { note: isOverview ? "Live documentation unavailable. The curated getting-started guide is available." : hasFcsReference ? "Live documentation unavailable; curated FCS reference and official links remain available." : "Live documentation unavailable; official source links are provided, not replacement content." } : {}),
+    ...(content === null ? { note: isOverview ? "Live documentation unavailable. See the getting-started guide and its use-case source status." : hasFcsReference ? "Live documentation unavailable; curated FCS reference and official links remain available." : "Live documentation unavailable; official source links are provided, not replacement content." } : {}),
     availableTopics: KNOWLEDGE_TOPICS,
   };
 }
@@ -113,10 +101,10 @@ async function getLinks() {
   const fetched = await Promise.all([
     githubJson(SITE_REPO, "src/content/en/shared/footer.json"),
     githubJson(SITE_REPO, "src/content/en/exchanges.json"),
-    githubJson(SITE_REPO, "src/content/en/use-cases.json"),
+    readUseCaseDirectory(),
     githubJson(SITE_REPO, "src/content/en/press.json"),
   ].map((request) => request.catch(() => null)));
-  const [footerData, exchangeData, useCaseData, pressData] = fetched.map((data) => data ?? {});
+  const [footerData, exchangeData, directory, pressData] = fetched.map((data) => data ?? {});
 
   const footerLinks = {};
   for (const col of footerData.footer?.columns ?? []) {
@@ -180,7 +168,8 @@ async function getLinks() {
     exchanges: (exchangeData.exchanges ?? []).map((e) => ({
       name: e.name, type: e.type, url: e.link, description: e.description,
     })),
-    useCaseHighlights: (useCaseData.cases ?? []).map((c) => ({
+    useCaseSource: directory.health,
+    useCaseHighlights: (directory.data?.listings ?? []).map((c) => ({
       title: c.title, partner: c.partner, category: c.category, url: c.link,
     })),
     note: "FCS links use the canonical website and official technical references; other links are sourced from the website repository." +
