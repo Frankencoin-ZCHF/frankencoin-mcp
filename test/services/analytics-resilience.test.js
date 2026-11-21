@@ -122,7 +122,7 @@ test("one failed venue leaves other quotes available, preserves partial fills", 
     return new Response("", { status: 403 });
   });
   const r = await dispatchTool("get_liquidity", { side: "sell", amount: "1" });
-  assert.equal(r.venues.filter((v) => v.status === "unavailable").length, 2);
+  assert.equal(r.venues.filter((v) => v.status === "unavailable").length, 1);
   assert.equal(
     r.venues.filter(
       (v) => v.status === "insufficient_depth" && v.quoteAmount === null,
@@ -383,13 +383,9 @@ test("CEX snapshots coalesce across sizes, sides and chains and retry a failed b
   const counts = new Map();
   setFetchImpl(async (url) => {
     counts.set(url, (counts.get(url) ?? 0) + 1);
-    if (url.includes("mexc")) {
-      return counts.get(url) === 1
-        ? new Response("", { status: 403 })
-        : Response.json({ asks: [["1", "9"]], bids: [["1", "9"]] });
-    }
     if (url.includes("kraken")) {
       const pair = new URL(url).searchParams.get("pair");
+      if (pair === "ZCHFUSD" && counts.get(url) === 1) return new Response("", {status: 403});
       return Response.json({
         error: [],
         result: { [pair]: { asks: [["1.1", "8"]], bids: [["1", "8"]] } },
@@ -406,9 +402,11 @@ test("CEX snapshots coalesce across sizes, sides and chains and retry a failed b
   assert.equal(a.venues[1].quoteAmount, "1");
   assert.equal(b.venues[1].quoteAmount, "2.2");
   assert.equal(a.venues[1].retrievedAt, b.venues[1].retrievedAt);
-  assert.equal(b.venues[3].status, "unavailable");
+  assert.deepEqual(b.venues.map(v => [v.venue, v.quoteAsset]), [["Velora","USDC"],["Kraken","CHF"],["Kraken","USD"]]);
+  assert.ok([...counts.keys()].every(url => !url.includes("mexc")));
+  assert.equal(b.venues[2].status, "unavailable");
   for (const [url, count] of counts)
-    if (/kraken|mexc/.test(url)) assert.equal(count, 1);
+    if (url.includes("kraken")) assert.equal(count, 1);
   t.mock.timers.tick(5001);
-  assert.equal((await quote("1", "buy", 1)).venues[3].status, "quoted");
+  assert.equal((await quote("1", "buy", 1)).venues[2].status, "quoted");
 });

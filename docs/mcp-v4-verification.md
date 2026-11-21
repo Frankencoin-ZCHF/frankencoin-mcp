@@ -44,7 +44,7 @@ The five getting-started headings use the English website directory at `src/cont
 
 ## Public release audit, 21 November 2026
 
-The public endpoint advertised v4.0.0 and all 27 tools after the merge of c4705b9. A pinned official client called every tool with representative read-only arguments. All 27 produced structured results; source availability varied. The market, risk, challenge and Dune responses included partial, stale or unavailable datasets. For a 1,000 ZCHF sell, Velora and both Kraken books quoted; MEXC was unavailable. The knowledge directory returned the corrected Plusplus listing and omitted Zeal.
+The public endpoint advertised v4.0.0 and all 27 tools after the merge of c4705b9. A pinned official client called every tool with representative read-only arguments. All 27 produced structured results; source availability varied. The market, risk, challenge and Dune responses included partial, stale or unavailable datasets. For a 1,000 ZCHF sell, Velora and both Kraken books quoted; v4.0.0 also queried a hardcoded, obsolete MEXC pair. That row was a listing error and was removed in v4.0.1. The knowledge directory returned the corrected Plusplus listing and omitted Zeal.
 
 ### Response times
 

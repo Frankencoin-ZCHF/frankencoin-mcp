@@ -153,12 +153,10 @@ export function walkBook(levels, n, side) {
     worstLevel: worst,
   };
 }
-async function cexQuote(venue, quoteAsset, size, side) {
+async function krakenQuote(quoteAsset, size, side) {
+  const venue = "Kraken";
   const pair = "ZCHF" + quoteAsset;
-  const isKraken = venue === "Kraken";
-  const url = isKraken
-    ? "https://api.kraken.com/0/public/Depth?pair=" + pair + "&count=500"
-    : "https://api.mexc.com/api/v3/depth?symbol=ZCHFUSDT&limit=1000";
+  const url = "https://api.kraken.com/0/public/Depth?pair=" + pair + "&count=500";
   // All sizes and chains use the same venue book. Retain the original observation
   // time, and give a failed book one short retry interval shared by its callers.
   const observation = await getOrLoad(
@@ -171,8 +169,8 @@ async function cexQuote(venue, quoteAsset, size, side) {
           timeout: 5000,
           retries: 0,
         });
-        if (isKraken && reply.error?.length) throw new UpstreamError("kraken");
-        const book = isKraken ? reply.result?.[pair] : reply;
+        if (reply.error?.length) throw new UpstreamError("kraken");
+        const book = reply.result?.[pair];
         if (!Array.isArray(book?.asks) && !Array.isArray(book?.bids))
           throw new UpstreamError("orderbook");
         return { book, retrievedAt: new Date().toISOString() };
@@ -211,14 +209,10 @@ export async function liquidity({ asset, chainId, amount, side }) {
   );
   const requests = [dex];
   if (asset === "ZCHF") {
-    for (const [venue, currency] of [
-      ["Kraken", "CHF"],
-      ["Kraken", "USD"],
-      ["MEXC", "USDT"],
-    ]) {
+    for (const currency of ["CHF", "USD"]) {
       requests.push(
-        cexQuote(venue, currency, n, side).catch(() => ({
-          venue,
+        krakenQuote(currency, n, side).catch(() => ({
+          venue: "Kraken",
           quoteAsset: currency,
           status: "unavailable",
         })),
