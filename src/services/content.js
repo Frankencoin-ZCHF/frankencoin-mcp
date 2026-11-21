@@ -13,11 +13,12 @@ import { UpstreamError } from "../lib/errors.js";
 import { FCS_REFERENCE } from "../lib/fcs.js";
 import { getWebsiteContent, siteAbs, absoluteContent } from "./website.js";
 import {
-  SITE_REPO, SITE_ORIGIN, DOCS_REPO, DOC_FILES, KNOWLEDGE_TOPICS, FPS_CONTRACT,
+  SITE_REPO, SITE_ORIGIN, DOCS_REPO, DOC_FILES, KNOWLEDGE_TOPICS, WEBSITE_PAGES, FPS_CONTRACT,
   MERCH_BASE, MERCH_STOREFRONT_MCP, MERCH_UCP_MCP,
 } from "../lib/constants.js";
 
 export async function getKnowledge({ topic = "overview", page, language = "en" } = {}) {
+  if (topic === "index") return { topic, availableTopics: KNOWLEDGE_TOPICS, websitePages: Object.keys(WEBSITE_PAGES) };
   if (topic === "website") return getWebsiteContent({ page, language });
   if (topic === "token_addresses") return getTokenAddresses();
   if (topic === "compliance") return getCompliance();

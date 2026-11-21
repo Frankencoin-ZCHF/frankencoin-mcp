@@ -14,16 +14,13 @@ function int(name, def) {
   return Number.isFinite(n) ? n : def;
 }
 
-let version = "3.0.0";
-try {
-  version = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version || version;
-} catch {
-  /* keep default */
-}
+const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
 export const config = Object.freeze({
   version,
 
+  host: process.env.HOST || (process.env.RAILWAY_ENVIRONMENT ? "0.0.0.0" : "127.0.0.1"),
+  mcpOriginHosts: (process.env.MCP_ORIGIN_HOSTS || "").split(",").map(s => s.trim()).filter(Boolean),
   port: int("PORT", 3000),
   // Canonical public origin, used in self-describing manifests (/llms.txt, /api).
   publicUrl: (process.env.PUBLIC_URL || "https://mcp.frankencoin.com").replace(/\/+$/, ""),

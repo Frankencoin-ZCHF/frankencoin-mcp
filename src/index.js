@@ -10,7 +10,7 @@
  * degrade two tools — the server never hard-fails on their absence.
  */
 
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { config } from "./config.js";
 import { createMcpServer } from "./server/mcp.js";
 import { createHttpServer } from "./server/http.js";
@@ -30,13 +30,12 @@ const useHttp = process.argv.includes("--http");
 
 if (!useHttp) {
   // ── stdio mode ──
-  const server = createMcpServer();
-  await server.connect(new StdioServerTransport());
+  serveStdio(createMcpServer);
   console.error("Frankencoin MCP server running on stdio");
 } else {
   // ── HTTP mode ──
   const httpServer = createHttpServer();
-  httpServer.listen(config.port, () => {
+  httpServer.listen(config.port, config.host, () => {
     console.error(`Frankencoin MCP server listening on port ${config.port}`);
     console.error(`  MCP (streamable): http://localhost:${config.port}/mcp`);
     console.error(`  REST API        : http://localhost:${config.port}/api/<tool>`);

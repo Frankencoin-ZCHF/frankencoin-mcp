@@ -132,7 +132,7 @@ export const DOC_FILES = {
 export const KNOWLEDGE_TOPICS = [
   "overview", "what_is", "faq", "savings", "governance", "minting",
   "opening_positions", "auctions", "risks", "reserve", "pool_shares", "fcs", "fcs_migration",
-  "api", "compliance", "frontends", "token_addresses", "links", "website",
+  "api", "compliance", "frontends", "token_addresses", "links", "website", "index",
 ];
 
 // Fixed content catalogue, independent of caller-supplied paths. Existing GitBook

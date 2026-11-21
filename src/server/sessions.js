@@ -2,8 +2,8 @@
  * Session stores for MCP Streamable HTTP (/mcp) and legacy SSE (/sse).
  *
  * Hardening (SECURITY §3.5): hard caps per map (refuse, never evict a live user),
- * idle-TTL + absolute-lifetime sweep, and an init lock that serializes first-time
- * initializes. Records track { transport, createdAt, lastSeenAt }.
+ * idle-TTL + absolute-lifetime sweep, and a capacity reservation for concurrent
+ * initializations. Records track { transport, createdAt, lastSeenAt }.
  */
 
 import { config } from "../config.js";
@@ -11,12 +11,7 @@ import { config } from "../config.js";
 export const mcpSessions = new Map();
 export const sseSessions = new Map();
 
-let initLockPromise = null;
-export function getInitLock() { return initLockPromise; }
-export function setInitLock(p) { initLockPromise = p; }
-export function clearInitLock() { initLockPromise = null; }
-
-export function mcpAtCap() { return mcpSessions.size >= config.maxSessions; }
+export function mcpAtCap(pending) { return pending + mcpSessions.size >= config.maxSessions; }
 export function sseAtCap() { return sseSessions.size >= config.maxSseSessions; }
 
 export function touch(map, id) {

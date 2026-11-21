@@ -16,6 +16,29 @@ No authentication. No API key required. Read-only.
 
 ---
 
+## Version 4
+
+The server implements [MCP 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28)
+over Streamable HTTP and stdio. Modern clients can issue a tool call as their first request.
+`server/discover` returns the server identity and capabilities. Clients using the earlier
+`initialize` handshake can keep their existing URL and session flow.
+
+| Agent task | Entry point |
+| --- | --- |
+| Review supply, reserves, savings and challenges | `protocol_briefing` prompt |
+| Compare a collateral report with live exposure | `collateral_review` prompt |
+| Browse the tool guide | `resources/read` with `frankencoin://docs/guide` |
+| Discover permitted GraphQL root fields | `resources/read` with `frankencoin://indexer/entities` |
+| Find knowledge topics and website pages | `get_knowledge` with `{"topic":"index"}` |
+
+The static discovery catalogue advertises a five-minute cache lifetime. Live tool calls retain
+their individual provider timestamps and cache policies. For example, a report's publication date
+and a position's observation time describe different points in time.
+
+Local HTTP starts on loopback. Set `HOST=0.0.0.0` for a container that needs an external bind.
+Railway sets this automatically through environment detection. Use `PUBLIC_URL` for the public
+origin and `MCP_ORIGIN_HOSTS` for additional trusted browser client hostnames.
+
 ## Quick start
 
 ### MCP (Claude Desktop / Cursor)

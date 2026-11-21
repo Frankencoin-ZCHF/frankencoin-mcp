@@ -65,9 +65,9 @@ Both MCP (`server/mcp.js`) and REST (`server/http.js`) call the same `dispatchTo
 
 ### Key design decisions
 
-**One McpServer instance per session.** The SDK's `McpServer` is stateful and binds to
-one transport. HTTP mode calls `createMcpServer()` per session, not once globally.
-Intentional — do not refactor to a shared singleton.
+**MCP lifecycle.** The official v2 SDK creates a server per modern HTTP request,
+per legacy session and per stdio connection. Both protocol generations share the
+tool, prompt and resource registrations in `src/server/mcp.js`.
 
 **No auth.** Public read-only API. Do not add auth unless explicitly requested.
 
