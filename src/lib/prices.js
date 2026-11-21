@@ -1,3 +1,4 @@
+import { config } from "../config.js";
 // Public feed timestamps are milliseconds. This is a freshness policy, not an execution guarantee.
 export function priceQuality(row, now = Date.now()) {
   const timestamp = row?.timestamp;
@@ -9,6 +10,6 @@ export function priceQuality(row, now = Date.now()) {
     ...row,
     price: { chf: usable && validPrice(row.price?.chf) ? row.price.chf : null, usd: usable && validPrice(row.price?.usd) ? row.price.usd : null },
     updatedAt: validTime ? new Date(timestamp).toISOString() : null,
-    freshness: { status: !usable ? "unavailable" : ageSeconds > 86400 ? "stale" : "fresh", ageSeconds, staleAfterSeconds: 86400, sourceAvailable: !!row.source },
+    freshness: { status: !usable ? "unavailable" : ageSeconds > config.priceStaleSeconds ? "stale" : "fresh", ageSeconds, staleAfterSeconds: config.priceStaleSeconds, sourceAvailable: !!row.source },
   };
 }

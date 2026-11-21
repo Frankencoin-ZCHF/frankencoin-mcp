@@ -73,9 +73,9 @@ test("links use redesigned press assets, current whitepaper and complete exchang
   assert.ok(out.exchanges.some((e) => e.name === "Kraken"));
 });
 
-test("website discovery has no I/O and complete English/German pages preserve structured content", async () => {
+test("website discovery retains named pages during an index outage and complete English/German pages preserve structured content", async () => {
   const catalogue = await dispatchTool("get_knowledge", { topic: "website" });
-  assert.equal(calls.length, 0);
+  assert.equal(catalogue.sources.discovery.status, "unavailable");
   assert.ok(catalogue.pages.length >= 30);
   for (const page of ["association", "press", "security", "integrate", "collateral", "referral", "glossary"]) assert.ok(catalogue.pages.some((p) => p.page === page));
   for (const language of ["en", "de"]) {

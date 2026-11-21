@@ -31,7 +31,7 @@ export async function getFcs({ includeContext = false } = {}) {
   const status = fields.every((v) => v !== null) ? "available"
     : fields.some((v) => v !== null) ? "partial" : "unavailable";
   return {
-    ...fcsContext(includeContext),
+    ...await fcsContext(includeContext),
     state: {
       status,
       totalSupply,

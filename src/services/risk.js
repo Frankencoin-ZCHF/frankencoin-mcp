@@ -1,7 +1,7 @@
 import { pharosReportCards } from "../upstream/pharos.js";
 import { xerberusRegistryScores } from "../upstream/xerberus.js";
 import { freshness, sourceTime } from "../lib/freshness.js";
-import { PHAROS_STABLECOIN_ID, PHAROS_PILLARS, XERBERUS_FC_ENTITIES } from "../lib/constants.js";
+import { PHAROS_STABLECOIN_ID } from "../lib/constants.js";
 import { providerFailure, availability } from "../lib/provider.js";
 import { MissingSecretError } from "../lib/errors.js";
 
@@ -27,7 +27,8 @@ function parsePharos(observation, publicOnly) {
   if (!card || !["rated", "not-rated", "pipeline-gap"].includes(card.ratingStatus)) return null;
   const score = num(card.score);
   if (card.ratingStatus === "rated" && (score === null || score < 0 || score > 100 || !str(card.grade))) return null;
-  const pillars = publicOnly ? null : PHAROS_PILLARS.map(({ key, label }) => {
+  const pillars = publicOnly ? null : Object.keys(card.pillars ?? {}).map((key) => {
+    const label = key.charAt(0).toUpperCase() + key.slice(1);
     const p = card.pillars?.[key];
     const n = num(p?.score);
     return { key, label, score: n !== null && n >= 0 && n <= 100 ? n : null,
@@ -37,7 +38,7 @@ function parsePharos(observation, publicOnly) {
   const publicationStatus = publicOnly ? body.publicationStatus : body.publicationHealth?.status;
   const quality = freshness(body.asOfSec, 7200);
   if (publicationStatus === "held") quality.status = "held";
-  const complete = !publicOnly && pillars.every((p) => p.score !== null) && !card.partialEvidence && publicationStatus === "current" && quality.status === "fresh";
+  const complete = !publicOnly && pillars.length > 0 && pillars.every((p) => p.score !== null) && !card.partialEvidence && publicationStatus === "current" && quality.status === "fresh";
   return {
     provider: "Pharos", providerUrl: "https://pharos.watch", name: "Frankencoin", symbol: "ZCHF",
     status: card.ratingStatus === "pipeline-gap" ? "unavailable" : complete ? "available" : "partial",
@@ -74,18 +75,14 @@ async function getPharosSection() {
 
 function parseXerberus(body) {
   const data = isRecord(body) && Array.isArray(body.data) ? body.data : [];
-  const byKey = new Map(
-    data.filter(isRecord).map((r) => [`${r.type}:${r.id}`, r]),
-  );
-
-  return XERBERUS_FC_ENTITIES.map((e) => {
-    const r = byKey.get(`${e.type}:${e.id}`) ?? {};
+  return data.filter((r) => isRecord(r) && ["protocol", "organisation", "pool"].includes(r.type) &&
+    /^frankencoin(?:-|$)/.test(r.id)).map((r) => {
     const score = num(r.score);
     return {
-      entity: e.name,
-      subtitle: e.subtitle,
-      type: e.type,
-      id: e.id,
+      entity: str(r.name) ?? r.id,
+      subtitle: str(r.subtitle),
+      type: r.type,
+      id: r.id,
       score,
       band: scoreBand(score),
       platform: str(r.platform),
@@ -98,14 +95,14 @@ async function getXerberusSection() {
   try {
     const ratings = parseXerberus(await xerberusRegistryScores());
     return {
-      status: ratings.every((r) => r.score !== null) ? "available" : ratings.some((r) => r.score !== null) ? "partial" : "unavailable",
+      status: ratings.length && ratings.every((r) => r.score !== null) ? "available" : ratings.some((r) => r.score !== null) ? "partial" : "unavailable",
       asOf: null,
       checkedAt: new Date().toISOString(),
       freshnessNote: "Provider as-of timestamp not supplied by the registry response contract; checkedAt is an assessment time, not rating freshness.",
       provider: "Xerberus",
       providerUrl: "https://xerberus.io",
       ratings,
-      note: "Composite on-chain risk scores (0–100; higher is safer). Covers the Frankencoin protocol, DAO, and Ethereum savings vault.",
+      note: "Composite on-chain risk scores (0–100; higher is safer). Includes indexed Frankencoin protocol, organisation and pool entries.",
     };
   } catch (e) {
     if (e instanceof MissingSecretError) {

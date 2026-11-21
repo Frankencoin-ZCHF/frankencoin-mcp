@@ -1,3 +1,4 @@
+import { contentIndex } from "../upstream/content-index.js";
 /**
  * get_knowledge (Tool 9), get_news (Tool 10), get_merch (Tool 11).
  *
@@ -10,7 +11,7 @@ import { githubFile, githubJson } from "../upstream/github.js";
 import { merchProducts, merchMetadata } from "../upstream/merch.js";
 import { observe, availability } from "../lib/provider.js";
 import { UpstreamError } from "../lib/errors.js";
-import { FCS_REFERENCE } from "../lib/fcs.js";
+import { FCS_REFERENCE, fcsContext } from "../lib/fcs.js";
 import { getWebsiteContent, siteAbs, absoluteContent } from "./website.js";
 import {
   SITE_REPO, SITE_ORIGIN, DOCS_REPO, DOC_FILES, KNOWLEDGE_TOPICS, WEBSITE_PAGES, FPS_CONTRACT,
@@ -20,14 +21,20 @@ import {
 import { readUseCaseDirectory, renderGettingStarted } from "./use-case-directory.js";
 
 export async function getKnowledge({ topic = "overview", page, language = "en" } = {}) {
-  if (topic === "index") return { topic, availableTopics: KNOWLEDGE_TOPICS, websitePages: Object.keys(WEBSITE_PAGES) };
+  if (topic === "index") {
+    const [docs, site] = await Promise.all([observe(contentIndex(false)), observe(contentIndex(true))]);
+    return { topic, availableTopics: [...KNOWLEDGE_TOPICS, ...Object.keys(docs.value ?? {})],
+      websitePages: [...Object.keys(WEBSITE_PAGES), ...Object.keys(site.value ?? {})],
+      sources: { documentIndex: docs.health, websiteIndex: site.health } };
+  }
   if (topic === "website") return getWebsiteContent({ page, language });
   if (topic === "token_addresses") return getTokenAddresses();
   if (topic === "compliance") return getCompliance();
   if (topic === "frontends") return getFrontends();
   if (topic === "links") return getLinks();
 
-  const file = Object.hasOwn(DOC_FILES, topic) ? DOC_FILES[topic] : null;
+  const files = topic.startsWith("doc:") ? await contentIndex(false) : DOC_FILES;
+  const file = Object.hasOwn(files, topic) ? files[topic] : null;
   if (!file) {
     return { error: `Unknown topic: "${topic}"`, availableTopics: KNOWLEDGE_TOPICS };
   }
@@ -54,8 +61,8 @@ export async function getKnowledge({ topic = "overview", page, language = "en" }
       : topic === "fcs_migration" ? FCS_REFERENCE.links.migration
       : `https://docs.frankencoin.com/${file.replace(/\.md$/, "").replace(/\/README$/, "")}`,
     content,
-    ...(hasFcsReference ? { fcs: FCS_REFERENCE } : {}),
-    ...(content === null ? { note: isOverview ? "Live documentation unavailable. See the getting-started guide and its use-case source status." : hasFcsReference ? "Live documentation unavailable; curated FCS reference and official links remain available." : "Live documentation unavailable; official source links are provided, not replacement content." } : {}),
+    ...(hasFcsReference ? { fcs: await fcsContext(true) } : {}),
+    ...(content === null ? { note: isOverview ? "Live documentation unavailable. See the getting-started guide and its use-case source status." : hasFcsReference ? "This documentation source is unavailable. See the FCS source status and official links." : "Live documentation unavailable; official source links are provided, not replacement content." } : {}),
     availableTopics: KNOWLEDGE_TOPICS,
   };
 }
@@ -77,7 +84,7 @@ async function getTokenAddresses() {
       description: data.tokens?.subtitle ?? "Swiss franc ERC-20 stablecoin",
       chains: mapChains(data.tokens?.chains),
     },
-    fcs: FCS_REFERENCE,
+    fcs: await fcsContext(true),
     fps: {
       name: "Frankencoin Pool Shares",
       symbol: "FPS",
@@ -103,6 +110,7 @@ async function getLinks() {
     githubJson(SITE_REPO, "src/content/en/exchanges.json"),
     readUseCaseDirectory(),
     githubJson(SITE_REPO, "src/content/en/press.json"),
+    ...["shared/nav", "governance", "transparency", "token"].map((file) => githubJson(SITE_REPO, `src/content/en/${file}.json`)),
   ].map((request) => request.catch(() => null)));
   const [footerData, exchangeData, directory, pressData] = fetched.map((data) => data ?? {});
 
@@ -119,7 +127,27 @@ async function getLinks() {
     }));
   }
 
+  const app = { main: null, mint: null, savings: null, equity: null, governance: null, monitoring: null, bridge: null };
+  const appPaths = { "/": "main", "/mint": "mint", "/savings": "savings", "/equity": "equity", "/governance": "governance", "/monitoring": "monitoring", "/transfer": "bridge" };
+  function collectAppLinks(value) {
+    if (!value || typeof value !== "object") return;
+    for (const [key, item] of Object.entries(value)) {
+      if (typeof item === "object") collectAppLinks(item);
+      if (!["href", "link", "url"].includes(key) || typeof item !== "string") continue;
+      const safe = siteAbs(item);
+      if (!safe) continue;
+      const url = new URL(safe);
+      if (url.origin !== "https://app.frankencoin.com") continue;
+      const field = appPaths[url.pathname];
+      if (field && app[field] === null) {
+        // Publish the general app entry point even if the source preselects a network.
+        app[field] = url.origin + url.pathname;
+      }
+    }
+  }
+  collectAppLinks(fetched);
   const allFooterLinks = Object.values(footerLinks).flat();
+  const footerUrl = (label) => allFooterLinks.find((link) => link.label.toLowerCase() === label)?.url ?? null;
   const communityLinks = footerLinks.community ?? [];
   const findUrl = (label) =>
     communityLinks.find((l) => l.label.toLowerCase().includes(label.toLowerCase()))?.url ?? null;
@@ -127,16 +155,8 @@ async function getLinks() {
   return {
     topic: "links",
     sourceRepository: SITE_REPO,
-    fcs: FCS_REFERENCE,
-    app: {
-      main: "https://app.frankencoin.com",
-      mint: "https://app.frankencoin.com/mint",
-      savings: "https://app.frankencoin.com/savings",
-      equity: "https://app.frankencoin.com/equity",
-      governance: "https://app.frankencoin.com/governance",
-      monitoring: "https://app.frankencoin.com/monitoring/collateral",
-      bridge: "https://app.frankencoin.com/transfer",
-    },
+    fcs: await fcsContext(true),
+    app,
     website: "https://frankencoin.com",
     community: {
       twitter: findUrl("twitter"),
@@ -148,15 +168,15 @@ async function getLinks() {
       merch: findUrl("merch"),
     },
     developers: {
-      docs: "https://docs.frankencoin.com",
-      api: "https://api.frankencoin.com",
+      docs: footerUrl("documentation"),
+      api: footerUrl("api"),
       whitepaper: allFooterLinks.find((link) => /whitepaper/i.test(link.label))?.url ?? null,
-      github: "https://github.com/Frankencoin-ZCHF",
+      github: footerUrl("github"),
     },
     analytics: {
-      defillama: "https://defillama.com/protocol/frankencoin",
-      coingecko: "https://www.coingecko.com/en/coins/frankencoin",
-      dune: "https://dune.com/frankencoin",
+      defillama: footerUrl("defillama"),
+      coingecko: footerUrl("coingecko"),
+      dune: footerUrl("dune dashboard"),
     },
     brand: {
       page: `${SITE_ORIGIN}/press`,
@@ -383,17 +403,18 @@ export async function getNews() {
 export async function getInsuranceProducts() {
   const observed = await observe(githubJson(SITE_REPO, "src/content/en/insurance.json"), (v) => Array.isArray(v?.products) && v.products.every((p) => typeof p.title === "string" && typeof p.cta?.href === "string"));
   const products = observed.value?.products.map((p) => {
-    const openCover = p.cta.href === "https://opencover.com/frankencoin";
+    const operator = p.highlights?.find((h) => h.label === "Sold through")?.value ?? p.provider;
+    const openCover = operator === "OpenCover" && /depeg/i.test(p.title);
     return {
       id: openCover ? "opencover-zchf-depeg" : p.cta.href,
-      name: p.title, provider: openCover ? "OpenCover" : p.provider,
+      name: p.title, provider: operator,
       type: openCover ? "fixed_term_depeg_cover" : null,
       category: openCover ? "Depeg cover" : null, asset: "ZCHF", url: siteAbs(p.cta.href),
       status: "listed", riskCovered: p.description,
       pricing: { premiumRate: null, premiumPayment: null, note: "The provider quotes the premium for the selected amount and term; the website does not publish a current fixed rate." },
       capacity: { underwritingCapacityUsd: null },
-      purchaseFlow: { summary: p.howItWorks?.steps?.map((step) => step.body).join(" ") ?? null, requiresWallet: openCover ? true : null },
-      roles: { operator: openCover ? "OpenCover" : p.provider, issuerOrUnderwriter: p.highlights?.find((h) => h.label === "Underwriter")?.value ?? null, frankencoinAssociation: "ecosystem listing/reference only — not issuer, underwriter, broker, or guarantor" },
+      purchaseFlow: { summary: p.howItWorks?.steps?.map((step) => step.body).join(" ") ?? null, requiresWallet: p.requiresWallet ?? null },
+      roles: { operator: operator, issuerOrUnderwriter: p.highlights?.find((h) => h.label === "Underwriter")?.value ?? null, frankencoinAssociation: "ecosystem listing/reference only — not issuer, underwriter, broker, or guarantor" },
       details: absoluteContent(p),
     };
   }) ?? null;

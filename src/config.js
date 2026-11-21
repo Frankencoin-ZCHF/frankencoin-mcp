@@ -16,8 +16,15 @@ function int(name, def) {
 
 const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
+const warningBps = Number(process.env.PEG_WARNING_BPS ?? 50);
+const criticalBps = Number(process.env.PEG_CRITICAL_BPS ?? 100);
+const validBands = Number.isFinite(criticalBps) && warningBps > 0 && warningBps < criticalBps;
+
 export const config = Object.freeze({
   version,
+  pegWarningBps: validBands ? warningBps : 50,
+  pegCriticalBps: validBands ? criticalBps : 100,
+  priceStaleSeconds: Math.max(1, int("PRICE_STALE_SECONDS", 86400)),
 
   host: process.env.HOST || (process.env.RAILWAY_ENVIRONMENT ? "0.0.0.0" : "127.0.0.1"),
   mcpOriginHosts: (process.env.MCP_ORIGIN_HOSTS || "").split(",").map(s => s.trim()).filter(Boolean),

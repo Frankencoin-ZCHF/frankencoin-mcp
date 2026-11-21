@@ -1,7 +1,7 @@
 import { getOrLoad } from "../cache.js";
 import { fetchJson } from "../upstream/client.js";
 import { UpstreamError, ValidationError } from "../lib/errors.js";
-import { ledgerToken } from "./ledgers.js";
+import { ledgerToken } from "./token-directory.js";
 
 export function bridgeMessage({ messageId }) {
   return getOrLoad("ccip:" + messageId, 15_000, async () => {
@@ -11,8 +11,8 @@ export function bridgeMessage({ messageId }) {
     );
     const sourceChain = Number(r?.sourceNetworkInfo?.chainId),
       destinationChain = Number(r?.destNetworkInfo?.chainId);
-    const sourceToken = ledgerToken(sourceChain, "ZCHF"),
-      destinationToken = ledgerToken(destinationChain, "ZCHF");
+    const sourceToken = await ledgerToken(sourceChain, "ZCHF"),
+      destinationToken = await ledgerToken(destinationChain, "ZCHF");
     if (
       r.messageId?.toLowerCase() !== messageId ||
       !Array.isArray(r.tokenAmounts)
@@ -66,7 +66,7 @@ export function bridgeMessage({ messageId }) {
 }
 
 export async function bridgeList({ chainId, after, limit }) {
-  const token = ledgerToken(chainId, "ZCHF");
+  const token = await ledgerToken(chainId, "ZCHF");
   const params = new URLSearchParams({
     sourceTokenAddress: token,
     limit: String(limit),

@@ -74,6 +74,7 @@ function post(method, version = revision, extra = {}, params = {}) {
 test("direct invocation needs no handshake or session", async () => {
   const reply = await post("tools/list");
   assert.equal(reply.status, 200);
+  assert.match(reply.headers.get("server-timing"), /^app;dur=\d+\.\d$/);
   assert.equal(reply.headers.get("mcp-session-id"), null);
   assert.equal((await reply.json()).result.tools.length, TOOLS.length);
 });

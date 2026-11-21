@@ -145,18 +145,14 @@ test("curated FCS reference and links survive unavailable GitHub without fabrica
 
 test("FCS knowledge topics expose exact mechanics and released canonical links", async () => {
   const calls = [];
-  setFetchImpl(async (url) => { calls.push(url); return github("# Official documentation"); });
+  setFetchImpl(async (url) => { calls.push(url); return github("# Official documentation\n## Binding\nUpdated binding rule"); });
   const mechanics = await dispatchTool("get_knowledge", { topic: "fcs" });
   assert.equal(mechanics.docsUrl, "https://docs.frankencoin.com/pool-shares/fcs");
   assert.ok(calls.some((url) => url.endsWith("/contents/fcs.md?ref=main")));
-  assert.match(mechanics.fcs.mechanics.qualification, /shared quorum of more than 1%/);
-  assert.match(mechanics.fcs.mechanics.binding, /more than two thirds.*underlying FPS votes/);
-  assert.match(mechanics.fcs.mechanics.delegation, /non-subtractive and transitive/);
-  assert.match(mechanics.fcs.mechanics.exit, /binding.*wrapper.*90-day/);
-  assert.match(mechanics.fcs.mechanics.exit, /at least.*average.*either binding state/);
+  assert.equal(mechanics.fcs.mechanics.binding, "Updated binding rule");
+  assert.equal(mechanics.fcs.mechanics.exit, null);
   assert.equal(mechanics.fcs.sources.website.repository, "Frankencoin-ZCHF/frankencoin-site-redesign");
   assert.equal(mechanics.fcs.sources.website.branch, "main");
-  assert.equal(mechanics.fcs.sources.website.commit, "fe507a1f6cc9f35f90ae70c3d5aff405ea81a52a");
   assert.equal(mechanics.fcs.sources.mechanics.commit, "c1f229e3b26050367aafcb55da294342b4cae382");
   assert.ok(mechanics.fcs.links.explorer.endsWith(FCS));
   assert.equal(mechanics.fcs.links.mechanics, mechanics.docsUrl);
@@ -186,6 +182,6 @@ test("token addresses distinguish canonical FCS from underlying FPS despite stal
   assert.equal(out.fcs.underlying.wrapRatio, "1 FPS : 1 FCS");
   assert.equal(out.fps.address, FPS);
   assert.match(out.fps.description, /underlying Equity token/);
-  assert.match(out.fcs.mechanics.entry, /not.*1:1.*ZCHF/);
-  assert.match(out.fcs.mechanics.crossChain, /vote snapshots, not.*tokens/);
+  assert.equal(out.fcs.mechanics, null);
+  assert.equal(out.fcs.mechanicsSource.status, "unavailable");
 });

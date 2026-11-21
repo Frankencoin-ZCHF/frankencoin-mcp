@@ -14,7 +14,7 @@ let sourceDown = false;
 const outbound = [];
 setFetchImpl(async (url) => {
   outbound.push(url);
-  if (url.includes("api.github.com/")) return response({ content: Buffer.from("{}").toString("base64") });
+  if (url.includes("api.github.com/")) return response({ content: Buffer.from(url.includes("fcs.md") ? "# Current mechanics" : "{}").toString("base64") });
   if (url.endsWith("/fcs/info")) return sourceDown ? new Response("down", { status: 404 }) : response({
     erc20: { decimals: 18 }, chain: { chainId: 1, address: FCS_REFERENCE.address },
     token: { totalSupply: 200, totalAssets: 80000, ask: 1200, bid: 1200, isBinding: false },
@@ -62,7 +62,8 @@ test("REST knowledge, governance and snapshot agree on FCS identity, links and u
   for (const topic of ["token_addresses", "links", "fcs", "fcs_migration", "governance", "pool_shares"]) {
     const j = await get(`/api/get_knowledge?topic=${topic}`);
     assert.equal(j.ok, true);
-    assert.deepEqual(j.result.fcs, FCS_REFERENCE);
+    assert.equal(j.result.fcs.address, FCS_REFERENCE.address);
+    assert.equal(j.result.fcs.mechanics.document, "# Current mechanics");
   }
   for (const suffix of ["get_governance", "get_governance?type=fcs", "get_protocol_snapshot"]) {
     const j = await get(`/api/${suffix}`);
@@ -71,7 +72,7 @@ test("REST knowledge, governance and snapshot agree on FCS identity, links and u
     assert.equal(j.result.fcs.state.isBinding, false);
     assert.equal(j.result.fcs.mechanics, undefined);
     const full = await get(`/api/${suffix}${suffix.includes("?") ? "&" : "?"}includeContext=true`);
-    assert.deepEqual(full.result.fcs.mechanics, FCS_REFERENCE.mechanics);
+    assert.equal(full.result.fcs.mechanics.document, "# Current mechanics");
     assert.equal(full.result.fcs.state.totalSupply, j.result.fcs.state.totalSupply);
   }
   sourceDown = true;

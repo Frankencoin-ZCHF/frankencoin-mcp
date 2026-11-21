@@ -1,3 +1,4 @@
+import { contentIndex } from "../upstream/content-index.js";
 import { githubJson } from "../upstream/github.js";
 import { SITE_REPO, SITE_ORIGIN, WEBSITE_PAGES } from "../lib/constants.js";
 import { observe, availability } from "../lib/provider.js";
@@ -29,13 +30,16 @@ export async function getWebsiteContent({ page, language = "en" } = {}) {
   const pages = Object.entries(WEBSITE_PAGES).map(([id, p]) => ({ page: id, url: pageUrl(p.route, language) }));
   const base = { topic: "website", repository: SITE_REPO, branch: "main", language, supportedLanguages: ["en", "de"] };
   if (!["en", "de"].includes(language)) return { ...base, error: "Unsupported language" };
-  if (page == null) return { ...base, pages, note: "Choose a page to retrieve its full website content. Technical documentation remains available through the existing knowledge topics." };
-  if (!Object.hasOwn(WEBSITE_PAGES, page)) return { ...base, error: `Unknown website page: "${page}"`, pages };
-  const definition = WEBSITE_PAGES[page];
+  const discovered = page == null || page.startsWith("page:") ? await observe(contentIndex(true)) : null;
+  if (page == null) return { ...base, sources: { discovery: discovered.health },
+    pages: [...pages, ...Object.keys(discovered.value ?? {}).map((id) => ({ page: id, url: null }))], note: "Choose a page to retrieve its full website content. Technical documentation remains available through the existing knowledge topics." };
+  const indexed = Object.hasOwn(discovered?.value ?? {}, page);
+  if (!indexed && !Object.hasOwn(WEBSITE_PAGES, page)) return { ...base, error: `Unknown website page: "${page}"`, pages };
+  const definition = indexed ? { file: discovered.value[page], route: null } : WEBSITE_PAGES[page];
   const sources = {}, sourceFiles = [], fallbackToEnglish = [];
   const load = async (name, file, shared = false) => {
     const paths = shared ? [`src/content/shared/${file}.json`] : [`src/content/en/${file}.json`, ...(language === "de" ? [`src/content/de/${file}.json`] : [])];
-    const results = await Promise.all(paths.map((path) => observe(githubJson(SITE_REPO, path), usable)));
+    const results = await Promise.all(paths.map((path) => observe(githubJson(SITE_REPO, path), indexed ? (v) => v && typeof v === "object" && Object.keys(v).length > 0 : usable)));
     paths.forEach((path, i) => {
       sources[`${name}:${shared ? "shared" : i === 0 ? "en" : "de"}`] = results[i].health;
       sourceFiles.push({ section: name, path, url: source(path) });

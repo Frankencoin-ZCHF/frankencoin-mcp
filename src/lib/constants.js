@@ -39,39 +39,22 @@ export const ASSESSMENT_DOCUMENTS = {
   workflow: ".github/workflows/validate.yml",
 };
 
-export const CHAIN_NAMES = {
-  1: "Ethereum",
-  10: "Optimism",
-  100: "Gnosis",
-  137: "Polygon",
-  146: "Sonic",
-  8453: "Base",
-  42161: "Arbitrum",
-  43114: "Avalanche",
+// Provider-specific identifiers are reviewed adapter routes. Indexed token
+// deployments come independently from /godeye/tokens, including new chains.
+export const CHAIN_ADAPTERS = {
+  1: { name: "Ethereum", dex: "ethereum", rpc: "ethereum" },
+  10: { name: "Optimism", dex: "optimism", rpc: "optimism" },
+  100: { name: "Gnosis", dex: "gnosischain", rpc: "gnosis" },
+  137: { name: "Polygon", dex: "polygon", rpc: "polygon-bor" },
+  146: { name: "Sonic", dex: "sonic", rpc: "sonic" },
+  8453: { name: "Base", dex: "base", rpc: "base" },
+  42161: { name: "Arbitrum", dex: "arbitrum", rpc: "arbitrum-one" },
+  43114: { name: "Avalanche", dex: "avalanche", rpc: "avalanche-c-chain" },
 };
 
 export function chainName(id) {
-  return CHAIN_NAMES[id] || `Chain ${id}`;
+  return CHAIN_ADAPTERS[id]?.name ?? `Chain ${id}`;
 }
-
-// CoinGecko ids for Frankencoin collateral tokens (keyed by lowercase ETH address).
-export const COINGECKO_IDS = {
-  "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": "weth",
-  "0x8c1bed5b9a0928467c9b1341da1d7bd5e10b6549": "liquid-staked-ethereum", // LsETH
-  "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": "wrapped-bitcoin", // WBTC
-  "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984": "uniswap",
-  "0x6810e776880c02933d47db1b9fc05908e5386b96": "gnosis",
-  "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0": "wrapped-steth", // wstETH
-  "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf": "coinbase-wrapped-btc", // cbBTC
-  "0xd533a949740bb3306d119cc777fa900ba034cd52": "curve-dao-token",
-  "0x45804880de22913dafe09f4980848ece6ecbaf78": "pax-gold",
-  "0x68749665ff8d2d112fa859aa293f07a622782f38": "tether-gold",
-  "0x79d4f0232a66c4c91b89c76362016a1707cfbf4f": "vnx-franc",
-  "0xfedc5f4a6c38211c1338aa411018dfaf26612c08": "spdr-sp-500-etf-ondo",
-  // AAPLx: no verified CoinGecko contract mapping. The DeFiChain Apple token
-  // is a different asset; retain the Frankencoin API price instead.
-  // FPS (0x1bA26…) is deliberately absent — not listed on CoinGecko.
-};
 
 // AllUnity CHFAU contract on Ethereum (6 decimals).
 export const CHFAU_CONTRACT = "0xbd4dfc058eb95b8de5ceaf39966a1a70f5556f78";
@@ -85,19 +68,6 @@ export const FPS_CONTRACT = "0x1bA26788dfDe592fec8bcB0Eaff472a42BE341B2";
 
 // Pharos v9 uses three pillars; do not map legacy v8 dimensions onto them.
 export const PHAROS_STABLECOIN_ID = "zchf-frankencoin";
-export const PHAROS_PILLARS = [
-  { key: "backing", label: "Backing" },
-  { key: "exit", label: "Exit" },
-  { key: "control", label: "Control" },
-];
-
-// The Frankencoin entities the site surfaces from Xerberus' bulk registry/scores feed.
-export const XERBERUS_FC_ENTITIES = [
-  { type: "protocol", id: "frankencoin", name: "Frankencoin", subtitle: "Protocol" },
-  { type: "organisation", id: "frankencoin-dao", name: "Frankencoin", subtitle: "DAO" },
-  { type: "pool", id: "frankencoin-savings-eth", name: "Frankencoin Savings", subtitle: "Ethereum Vault" },
-];
-
 // Dune query ids for the Frankencoin dashboards.
 export const DUNE_QUERIES = {
   zchfHolders: 6712642,

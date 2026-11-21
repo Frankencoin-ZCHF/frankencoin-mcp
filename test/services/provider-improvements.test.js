@@ -135,7 +135,7 @@ test("FCS differentiates verified upstream block time, fetch time and retrieval;
   assert.equal(out.state.source.blockNumber, "291"); assert.equal(out.state.source.freshness.status, "fresh"); assert.ok(out.state.source.retrievedAt);
   assert.equal(out.mechanics, undefined); assert.equal(out.context.included, false);
   const full = (await dispatchTool("get_governance", { type: "fcs", includeContext: "true" })).fcs;
-  assert.match(full.mechanics.qualification, /shared quorum/);
+  assert.equal(full.mechanics, null);
 });
 for (const mode of ["legacy", "stale", "future", "invalid-block", "bid-failed"]) test(`FCS ${mode} provenance is explicit`, async () => {
   const data = fcsInfo();

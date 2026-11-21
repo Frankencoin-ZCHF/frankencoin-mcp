@@ -1,0 +1,52 @@
+[
+  {
+    "chainId": 1,
+    "symbol": "ZCHF",
+    "token": "0xb58e61c3098d85632df34eecfb899a1ed80921cb"
+  },
+  {
+    "chainId": 100,
+    "symbol": "ZCHF",
+    "token": "0xd4dd9e2f021bb459d5a5f6c24c12fe09c5d45553"
+  },
+  {
+    "chainId": 8453,
+    "symbol": "ZCHF",
+    "token": "0xd4dd9e2f021bb459d5a5f6c24c12fe09c5d45553"
+  },
+  {
+    "chainId": 10,
+    "symbol": "ZCHF",
+    "token": "0xd4dd9e2f021bb459d5a5f6c24c12fe09c5d45553"
+  },
+  {
+    "chainId": 1,
+    "symbol": "FPS",
+    "token": "0x1ba26788dfde592fec8bcb0eaff472a42be341b2"
+  },
+  {
+    "chainId": 42161,
+    "symbol": "ZCHF",
+    "token": "0xd4dd9e2f021bb459d5a5f6c24c12fe09c5d45553"
+  },
+  {
+    "chainId": 1,
+    "symbol": "FCS",
+    "token": "0xdb861830d9ae2d1fcf99fa0cfd3973de382b0b5b"
+  },
+  {
+    "chainId": 137,
+    "symbol": "ZCHF",
+    "token": "0xd4dd9e2f021bb459d5a5f6c24c12fe09c5d45553"
+  },
+  {
+    "chainId": 43114,
+    "symbol": "ZCHF",
+    "token": "0xd4dd9e2f021bb459d5a5f6c24c12fe09c5d45553"
+  },
+  {
+    "chainId": 146,
+    "symbol": "ZCHF",
+    "token": "0xd4dd9e2f021bb459d5a5f6c24c12fe09c5d45553"
+  }
+]

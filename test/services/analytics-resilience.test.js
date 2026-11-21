@@ -1,11 +1,11 @@
 import { afterEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { clear } from "../../src/cache.js";
-import { setFetchImpl } from "../../src/upstream/client.js";
+import { setFetchImpl, ledgerToken } from "../fixtures/catalogue-fetch.js";
 import { dispatchTool } from "../../src/tools/dispatch.js";
 import { Semaphore } from "../../src/lib/concurrency.js";
 import { walkBook, atoms } from "../../src/services/quotes.js";
-import { ledgerToken } from "../../src/services/ledgers.js";
+
 
 const wallet = "0x" + "1".repeat(40);
 const tx = "0x" + "2".repeat(64);
@@ -112,6 +112,14 @@ test("sized book fills correctly and flags insufficient and unordered depth", ()
 });
 test("one failed venue leaves other quotes available, preserves partial fills", async () => {
   setFetchImpl(async (url) => {
+    if (url.endsWith("/AssetPairs"))
+      return Response.json({
+        error: [],
+        result: {
+          ZCHFUSD: { base: "ZCHF", wsname: "ZCHF/USD", status: "online" },
+          ZCHFCHF: { base: "ZCHF", wsname: "ZCHF/CHF", status: "online" },
+        },
+      });
     if (url.includes("kraken")) {
       const pair = new URL(url).searchParams.get("pair");
       return Response.json({
@@ -122,7 +130,7 @@ test("one failed venue leaves other quotes available, preserves partial fills", 
     return new Response("", { status: 403 });
   });
   const r = await dispatchTool("get_liquidity", { side: "sell", amount: "1" });
-  assert.equal(r.venues.filter((v) => v.status === "unavailable").length, 2);
+  assert.equal(r.venues.filter((v) => v.status === "unavailable").length, 1);
   assert.equal(
     r.venues.filter(
       (v) => v.status === "insufficient_depth" && v.quoteAmount === null,
@@ -282,7 +290,7 @@ test("reorganised receipt is discarded while independent indexed results survive
 });
 test("peg monitoring excludes in-progress trades and empty candles", async () => {
   const row = (t, high, n) => [t, "1", high, "0.99", "1", "1", "1", n];
-  setFetchImpl(async () =>
+  setFetchImpl(async (url) => url.endsWith("AssetPairs") ? Response.json({ error: [], result: { ZCHFCHF: { base: "ZCHF", status: "online", wsname: "ZCHF/CHF" } } }) :
     Response.json({
       error: [],
       result: {
@@ -376,4 +384,122 @@ test("borrower history accepts string timestamps and reports a signed interval t
   });
   assert.equal(r.updates[0].action, "loan_repayment");
   assert.equal(r.updates[0].secondsBeforeCurrentRecordedExpiry, 10);
+});
+
+test("CEX snapshots coalesce across sizes, sides and chains and retry a failed book at expiry", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.now() });
+  const counts = new Map();
+  setFetchImpl(async (url) => {
+    counts.set(url, (counts.get(url) ?? 0) + 1);
+    if (url.endsWith("/AssetPairs"))
+      return Response.json({
+        error: [],
+        result: {
+          ZCHFUSD: { base: "ZCHF", wsname: "ZCHF/USD", status: "online" },
+          ZCHFCHF: { base: "ZCHF", wsname: "ZCHF/CHF", status: "online" },
+        },
+      });
+    if (url.includes("kraken")) {
+      const pair = new URL(url).searchParams.get("pair");
+      if (pair === "ZCHFUSD" && counts.get(url) === 1)
+        return new Response("", { status: 403 });
+      return Response.json({
+        error: [],
+        result: { [pair]: { asks: [["1.1", "8"]], bids: [["1", "8"]] } },
+      });
+    }
+    return new Response("", { status: 404 });
+  });
+  const quote = (amount, side, chainId) =>
+    dispatchTool("get_liquidity", { asset: "ZCHF", side, chainId, amount });
+  const [a, b] = await Promise.all([
+    quote("1", "sell", 1),
+    quote("2", "buy", 8453),
+  ]);
+  assert.equal(a.venues[1].quoteAmount, "1");
+  assert.equal(b.venues[1].quoteAmount, "2.2");
+  assert.equal(a.venues[1].retrievedAt, b.venues[1].retrievedAt);
+  assert.deepEqual(
+    b.venues.map((v) => [v.venue, v.quoteAsset]),
+    [
+      ["Velora", "USDC"],
+      ["Kraken", "CHF"],
+      ["Kraken", "USD"],
+    ],
+  );
+  assert.ok([...counts.keys()].every((url) => !url.includes("mexc")));
+  assert.equal(b.venues[2].status, "unavailable");
+  for (const [url, count] of counts)
+    if (url.includes("kraken")) assert.equal(count, 1);
+  t.mock.timers.tick(5001);
+  assert.equal((await quote("1", "buy", 1)).venues[2].status, "quoted");
+});
+
+test("market discovery refreshes renamed books, picks up new venues, and distinguishes an outage from an empty listing", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.now() });
+  let stage = 0;
+  const requested = [];
+  setFetchImpl(async (url) => {
+    requested.push(url);
+    if (url.includes("/AssetPairs")) {
+      if (stage === 2) return new Response("", { status: 403 });
+      const result = {
+        BTCUSD: { base: "XXBT", wsname: "XBT/USD", status: "online" },
+      };
+      if (stage < 2)
+        result[stage === 0 ? "OLDKEY" : "NEWKEY"] = {
+          base: "ZCHF",
+          wsname: stage === 0 ? "ZCHF/CHF" : "ZCHF/EUR",
+          status: "online",
+        };
+      return Response.json({ error: [], result });
+    }
+    if (url.includes("/tickers"))
+      return Response.json({
+        tickers: [
+          {
+            market: { identifier: "new_venue" },
+            base: "ZCHF",
+            target: "EUR",
+            coin_id: "frankencoin",
+            is_anomaly: false,
+            is_stale: false,
+          },
+        ],
+      });
+    if (url.includes("/Depth")) {
+      const key = new URL(url).searchParams.get("pair");
+      return Response.json({
+        error: [],
+        result: { [key]: { bids: [["1", "5"]] } },
+      });
+    }
+    return new Response("", { status: 404 });
+  });
+  const read = () =>
+    dispatchTool("get_liquidity", { side: "sell", amount: "1" });
+  const a = await read();
+  assert.equal(a.venues[1].quoteAsset, "CHF");
+  assert.equal(a.discovery.indexed.markets[0].exchange, "new_venue");
+  await read();
+  assert.equal(requested.filter((u) => u.endsWith("/AssetPairs")).length, 1);
+  for (stage = 1; stage <= 3; stage++) {
+    t.mock.timers.tick(600001);
+    const b = await read();
+    if (stage === 1) {
+      assert.deepEqual(
+        b.venues.map((v) => v.quoteAsset),
+        ["USDC", "EUR"],
+      );
+      assert.ok(requested.some((u) => u.includes("pair=NEWKEY")));
+    }
+    if (stage === 2) {
+      assert.equal(b.discovery.kraken.status, "unavailable");
+      assert.equal(b.discovery.kraken.markets, null);
+    }
+    if (stage === 3) {
+      assert.equal(b.discovery.kraken.status, "available");
+      assert.deepEqual(b.discovery.kraken.markets, []);
+    }
+  }
 });

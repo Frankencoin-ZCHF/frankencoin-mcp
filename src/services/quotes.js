@@ -1,9 +1,10 @@
+import { krakenMarkets, indexedMarkets } from "./market-directory.js";
 import { getOrLoad } from "../cache.js";
 import { ValidationError, UpstreamError } from "../lib/errors.js";
 import { FCS_CONTRACT } from "../lib/constants.js";
 import { fetchJson } from "../upstream/client.js";
 import { ethReadBatch } from "../upstream/eth.js";
-import { ledgerToken } from "./ledgers.js";
+import { ledgerToken } from "./token-directory.js";
 
 const unit = 10n ** 18n;
 export function atoms(amount, decimals = 18) {
@@ -17,6 +18,7 @@ export function atoms(amount, decimals = 18) {
   return value;
 }
 function decimal(value, decimals = 18) {
+  if (decimals === 0) return value.toString();
   const digits = value.toString().padStart(decimals + 1, "0");
   return (digits.slice(0, -decimals) + "." + digits.slice(-decimals)).replace(
     /\.?0+$/,
@@ -81,25 +83,28 @@ export async function previewFcs({
   return result;
 }
 
-const usdc = {
-  1: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-  10: "0x0b2c639c533813f4aa9d7837caf62653d097ff85",
-  137: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
-  8453: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
-  42161: "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
-  43114: "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
-};
-async function quoteDex(chainId, token, n, side) {
-  if (!usdc[chainId]) return { status: "unsupported" };
+async function quoteDex(chainId, token, n, side, quoteToken) {
+  const tokens = await getOrLoad("velora-tokens:" + chainId, 600_000, async () => {
+    const data = await fetchJson("https://api.velora.xyz/tokens/" + chainId,
+      { source: "velora", timeout: 5000, retries: 0 });
+    if (!Array.isArray(data?.tokens)) throw new UpstreamError("velora");
+    return data.tokens.filter((t) => t?.network === chainId && /^0x[0-9a-f]{40}$/i.test(t.address) &&
+      typeof t.symbol === "string" && Number.isInteger(t.decimals) && t.decimals >= 0 && t.decimals <= 36)
+      .map((t) => ({ symbol: t.symbol, address: t.address.toLowerCase(), decimals: t.decimals }));
+  });
+  const matches = tokens.filter((t) => quoteToken ? t.address === quoteToken : t.symbol === "USDC");
+  if (!matches.length) return { status: "unsupported" };
+  if (matches.length !== 1) throw new UpstreamError("velora");
+  const [counter] = matches;
   const buy = side === "buy";
-  const srcToken = buy ? usdc[chainId] : token;
-  const destToken = buy ? token : usdc[chainId];
+  const srcToken = buy ? counter.address : token;
+  const destToken = buy ? token : counter.address;
   const params = new URLSearchParams({
     network: String(chainId),
     srcToken,
     destToken,
-    srcDecimals: buy ? "6" : "18",
-    destDecimals: buy ? "18" : "6",
+    srcDecimals: buy ? String(counter.decimals) : "18",
+    destDecimals: buy ? "18" : String(counter.decimals),
     version: "6.2",
     side: side.toUpperCase(),
     amount: String(n),
@@ -118,7 +123,8 @@ async function quoteDex(chainId, token, n, side) {
     throw new UpstreamError("velora");
   return {
     status: "quoted",
-    quoteAmount: decimal(BigInt(r[buy ? "srcAmount" : "destAmount"]), 6),
+    quoteAsset: counter.symbol, quoteToken: counter.address,
+    quoteAmount: decimal(BigInt(r[buy ? "srcAmount" : "destAmount"]), counter.decimals),
     blockNumber: Number.isSafeInteger(r.blockNumber) ? r.blockNumber : null,
   };
 }
@@ -153,65 +159,91 @@ export function walkBook(levels, n, side) {
     worstLevel: worst,
   };
 }
-export async function liquidity({ asset, chainId, amount, side }) {
-  const token = ledgerToken(chainId, asset),
-    n = atoms(amount);
-  const sources = [["Velora", "USDC", () => quoteDex(chainId, token, n, side)]];
-  if (asset === "ZCHF") {
-    for (const quote of ["CHF", "USD"])
-      sources.push([
-        "Kraken",
-        quote,
-        async () => {
-          const pair = "ZCHF" + quote;
-          const book = await fetchJson(
-            "https://api.kraken.com/0/public/Depth?pair=" + pair + "&count=500",
-            { source: "kraken", timeout: 5000, retries: 0 },
-          );
-          if (book.error?.length) throw new UpstreamError("kraken");
-          return walkBook(
-            book.result?.[pair]?.[side === "buy" ? "asks" : "bids"],
-            n,
-            side,
-          );
-        },
-      ]);
-    sources.push([
-      "MEXC",
-      "USDT",
-      async () => {
-        const book = await fetchJson(
-          "https://api.mexc.com/api/v3/depth?symbol=ZCHFUSDT&limit=1000",
-          { source: "mexc", timeout: 5000, retries: 0 },
-        );
-        return walkBook(book[side === "buy" ? "asks" : "bids"], n, side);
-      },
-    ]);
-  }
-  const venues = await Promise.all(
-    sources.map(async ([venue, quoteAsset, load]) => {
+async function krakenQuote({ pair, quote: quoteAsset }, size, side) {
+  const venue = "Kraken";
+  const url =
+    "https://api.kraken.com/0/public/Depth?pair=" + pair + "&count=500";
+  // All sizes and chains use the same venue book. Retain the original observation
+  // time, and give a failed book one short retry interval shared by its callers.
+  const observation = await getOrLoad(
+    "book:" + venue + ":" + pair,
+    5000,
+    async () => {
       try {
-        const observation = await getOrLoad(
-          "quote:" +
-            [venue, quoteAsset, token, chainId, side, amount].join(":"),
-          5000,
-          async () => ({
-            ...(await load()),
-            retrievedAt: new Date().toISOString(),
-          }),
-        );
-        return { venue, quoteAsset, ...observation };
+        const reply = await fetchJson(url, {
+          source: venue.toLowerCase(),
+          timeout: 5000,
+          retries: 0,
+        });
+        if (reply.error?.length) throw new UpstreamError("kraken");
+        const book = reply.result?.[pair];
+        if (!Array.isArray(book?.asks) && !Array.isArray(book?.bids))
+          throw new UpstreamError("orderbook");
+        return { book, retrievedAt: new Date().toISOString() };
       } catch {
-        return { venue, quoteAsset, status: "unavailable" };
+        return null;
       }
-    }),
+    },
   );
+  if (!observation) return { venue, quoteAsset, status: "unavailable" };
+  try {
+    const levels = observation.book[side === "buy" ? "asks" : "bids"];
+    return {
+      venue,
+      quoteAsset,
+      ...walkBook(levels, size, side),
+      retrievedAt: observation.retrievedAt,
+    };
+  } catch {
+    return { venue, quoteAsset, status: "unavailable" };
+  }
+}
+
+export async function liquidity({ asset, chainId, amount, side, quoteToken }) {
+  const n = atoms(amount);
+  const dex = getOrLoad(
+    "quote:Velora:" + [asset, chainId, side, n, quoteToken].join(":"),
+    5000,
+    async () => ({
+      ...(await quoteDex(chainId, await ledgerToken(chainId, asset), n, side, quoteToken)),
+      retrievedAt: new Date().toISOString(),
+    }),
+  ).then(
+    (quote) => ({ venue: "Velora", quoteAsset: quoteToken ? null : "USDC", quoteToken, ...quote }),
+    () => ({ venue: "Velora", quoteAsset: quoteToken ? null : "USDC", quoteToken, status: "unavailable" }),
+  );
+  const books = async () => {
+    if (asset !== "ZCHF") return { catalogue: null, quotes: [] };
+    const catalogue = await krakenMarkets();
+    const quotes = await Promise.all(
+      (catalogue.markets ?? []).map((market) =>
+        krakenQuote(market, n, side).catch(() => ({
+          venue: "Kraken",
+          quoteAsset: market.quote,
+          status: "unavailable",
+        })),
+      ),
+    );
+    return { catalogue, quotes };
+  };
+  const [dexQuote, { catalogue, quotes }, indexed] = await Promise.all([
+    dex,
+    books(),
+    indexedMarkets(asset),
+  ]);
+  const venues = [dexQuote, ...quotes];
   return {
     chainId,
     asset,
     amount,
     side,
     venues,
+    discovery: {
+      kraken: catalogue,
+      indexed,
+      scope:
+        "Indexed tickers are reported markets. Sized fills require a supported book or routing adapter.",
+    },
     scope:
       "Indicative quotes. CEX books are venue-wide. Fees, gas and settlement costs are excluded from book fills. Quote currencies are distinct.",
   };

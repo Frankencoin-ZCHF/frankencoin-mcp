@@ -7,6 +7,8 @@ import { fromWei, bpsToPercent, isoFromUnix, money } from "../lib/numbers.js";
 import { chainName } from "../lib/constants.js";
 import { getChfUsdRate, fxBlock } from "./fx.js";
 
+const amount = (v) => v == null || !/^\d+$/.test(String(v)) ? null : fromWei(v);
+
 export async function getSavings() {
   const [rateData, coreData, rate] = await Promise.all([
     apiFetch("/savings/leadrate/info"),
@@ -21,8 +23,8 @@ export async function getSavings() {
         chainId: Number(chainId),
         chainName: chainName(chainId),
         module: moduleAddr,
-        ratePercent: bpsToPercent(m.approvedRate),
-        rateBps: m.approvedRate / 100,
+        ratePercent: m.approvedRate == null ? null : bpsToPercent(m.approvedRate),
+        rateBps: m.approvedRate == null ? null : m.approvedRate / 100,
         ratePpm: m.approvedRate,
         appliedAt: isoFromUnix(m.created),
         voteCount: m.count,
@@ -37,8 +39,8 @@ export async function getSavings() {
         chainId: Number(chainId),
         chainName: chainName(chainId),
         module: moduleAddr,
-        proposedRatePercent: bpsToPercent(m.nextRate),
-        proposedRateBps: m.nextRate / 100,
+        proposedRatePercent: m.nextRate == null ? null : bpsToPercent(m.nextRate),
+        proposedRateBps: m.nextRate == null ? null : m.nextRate / 100,
         proposedRatePpm: m.nextRate,
         proposer: m.proposer,
         effectiveAt: isoFromUnix(m.nextChange),
@@ -50,17 +52,17 @@ export async function getSavings() {
   const stats = [];
   for (const [chainId, modules] of Object.entries(coreData.status || {})) {
     for (const [moduleAddr, m] of Object.entries(modules)) {
-      const balanceChf = fromWei(m.balance);
-      const interestChf = fromWei(m.interest);
+      const balanceChf = amount(m.balance);
+      const interestChf = amount(m.interest);
       stats.push({
         chainId: Number(chainId),
         chainName: chainName(chainId),
         module: moduleAddr,
         balance: money(balanceChf, rate),
         totalInterestPaid: money(interestChf, rate),
-        totalSaved: money(fromWei(m.save), rate),
-        totalWithdrawn: money(fromWei(m.withdraw), rate),
-        ratePercent: bpsToPercent(m.rate),
+        totalSaved: money(amount(m.save), rate),
+        totalWithdrawn: money(amount(m.withdraw), rate),
+        ratePercent: m.rate == null ? null : bpsToPercent(m.rate),
         updatedAt: isoFromUnix(m.updated),
         events: {
           interestPayments: m.counter?.interest,
@@ -72,8 +74,10 @@ export async function getSavings() {
     }
   }
 
-  const totalDepositedChf = stats.reduce((sum, s) => sum + (s.balance.chf ?? 0), 0);
-  const totalInterestPaidChf = stats.reduce((sum, s) => sum + (s.totalInterestPaid.chf ?? 0), 0);
+  const sum = (field) => stats.length && stats.every((s) => Number.isFinite(s[field].chf))
+    ? stats.reduce((total, s) => total + s[field].chf, 0) : null;
+  const totalDepositedChf = sum("balance");
+  const totalInterestPaidChf = sum("totalInterestPaid");
 
   return {
     rates: { approved, proposed, pendingStatus: rateData.open && typeof rateData.open === "object" && !Array.isArray(rateData.open) ? "available" : "unavailable" },

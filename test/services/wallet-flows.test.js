@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 process.env.CACHE_ENABLED = "false";
 const { dispatchTool } = await import("../../src/tools/dispatch.js");
-const { setFetchImpl } = await import("../../src/upstream/client.js");
+const { setFetchImpl } = await import("../fixtures/catalogue-fetch.js");
 const wallet = "0x" + "1".repeat(40);
 const peer = "0x" + "2".repeat(40);
 const zero = "0x" + "0".repeat(40);
