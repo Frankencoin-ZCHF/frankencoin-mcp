@@ -35,7 +35,7 @@ export function createMcpServer({ dispatch = dispatchTool } = {}) {
       prompts: { listChanged: false },
     },
     cacheHints,
-    instructions: "For supply, TVL or per-chain supply use get_protocol_snapshot with view=overview. For broader protocol state use its default full view. Use get_knowledge for mechanics. Preserve source timestamps and distinguish unavailable data from zero.",
+    instructions: "For supply, TVL or per-chain supply use get_protocol_snapshot with view=overview. For broader protocol state use its default full view. For a newcomer asking what they can do with Frankencoin, use gettingStarted from the default get_knowledge overview. Use its topic guides for mechanics. Preserve source timestamps and distinguish unavailable data from zero.",
   });
 
   for (const { def, inputSchema } of toolSchemas) {

@@ -17,6 +17,20 @@ import {
   MERCH_BASE, MERCH_STOREFRONT_MCP, MERCH_UCP_MCP,
 } from "../lib/constants.js";
 
+// Short, curated entry points from the official use-case directory. Live rates and
+// account-specific terms belong to the savings tool and the provider interfaces.
+const gettingStarted = [
+  "ZCHF is a digital Swiss franc you can hold in your wallet and send to others.",
+  "",
+  "- **Buy ZCHF.** Buy on [Kraken](https://www.kraken.com/buy/zchf), or transfer CHF to your personal Swiss IBAN through [ether.fi](https://www.ether.fi/app/cash/bank/chf) to receive ZCHF.",
+  "- **Pay with ZCHF.** Spend using the [ether.fi card](https://www.ether.fi/app/cash/bank/chf), or pay a Swiss bill through [Mt Pelerin](https://www.mtpelerin.com/buy-zchf-frankencoin).",
+  "- **Save in Swiss francs.** Deposit ZCHF in [Frankencoin Savings](https://app.frankencoin.com/savings) to earn the variable protocol savings rate.",
+  "- **Borrow ZCHF.** Lock eligible collateral in a [minting position](https://app.frankencoin.com/mint) to borrow against it while retaining exposure to the asset.",
+  `- **Invest in Frankencoin.** With [Frankencoin Shares (FCS)](${FCS_REFERENCE.links.website}), you can participate in governance and share in the reserve’s gains and losses.`,
+  "",
+  `[Explore more use cases](${SITE_ORIGIN}/use-cases)`,
+].join("\n");
+
 export async function getKnowledge({ topic = "overview", page, language = "en" } = {}) {
   if (topic === "index") return { topic, availableTopics: KNOWLEDGE_TOPICS, websitePages: Object.keys(WEBSITE_PAGES) };
   if (topic === "website") return getWebsiteContent({ page, language });
@@ -30,6 +44,7 @@ export async function getKnowledge({ topic = "overview", page, language = "en" }
     return { error: `Unknown topic: "${topic}"`, availableTopics: KNOWLEDGE_TOPICS };
   }
 
+  const isOverview = topic === "overview" || topic === "what_is";
   const hasFcsReference = ["fcs", "fcs_migration", "governance", "pool_shares"].includes(topic);
   const observed = await observe(githubFile(DOCS_REPO, file).then((text) => {
     // These fixed GitBook files contain Markdown headings. A JSON placeholder or
@@ -42,7 +57,8 @@ export async function getKnowledge({ topic = "overview", page, language = "en" }
   const content = observed.value;
   return {
     topic,
-    status: content === null ? (hasFcsReference ? "partial" : "unavailable") : "available",
+    ...(isOverview ? { gettingStarted } : {}),
+    status: content === null ? (isOverview || hasFcsReference ? "partial" : "unavailable") : "available",
     sources: { github: observed.health },
     file,
     source: `https://github.com/${DOCS_REPO}/blob/main/${file}`,
@@ -51,7 +67,7 @@ export async function getKnowledge({ topic = "overview", page, language = "en" }
       : `https://docs.frankencoin.com/${file.replace(/\.md$/, "").replace(/\/README$/, "")}`,
     content,
     ...(hasFcsReference ? { fcs: FCS_REFERENCE } : {}),
-    ...(content === null ? { note: hasFcsReference ? "Live documentation unavailable; curated FCS reference and official links remain available." : "Live documentation unavailable; official source links are provided, not replacement content." } : {}),
+    ...(content === null ? { note: isOverview ? "Live documentation unavailable. The curated getting-started guide is available." : hasFcsReference ? "Live documentation unavailable; curated FCS reference and official links remain available." : "Live documentation unavailable; official source links are provided, not replacement content." } : {}),
     availableTopics: KNOWLEDGE_TOPICS,
   };
 }

@@ -199,7 +199,9 @@ const COMMANDS = {
     async run(flags) {
       const d = await getKnowledge({ topic: flags.topic ?? "overview", page: flags.page, language: flags.language ?? "en" });
       if (flags.json) return console.log(JSON.stringify(d, null, 2));
+      if (d.gettingStarted) console.log(d.gettingStarted + "\n");
       if (typeof d.content === "string") console.log(d.content);
+      else if (d.gettingStarted) console.log(d.note);
       else console.log(JSON.stringify(d, null, 2));
     },
   },

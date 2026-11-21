@@ -199,7 +199,8 @@ test("I10 source failures preserve news sections and disclose unavailable docs",
   assert.equal(out.sources.useCases.status, "unavailable");
   assert.equal(out.useCases, null);
   const knowledge = await dispatchTool("get_knowledge", { topic: "overview" });
-  assert.equal(knowledge.status, "unavailable");
+  assert.equal(knowledge.status, "partial");
+  assert.match(knowledge.gettingStarted, /Frankencoin Savings/);
   assert.equal(knowledge.content, null);
   assert.match(knowledge.note, /unavailable/i);
 });
