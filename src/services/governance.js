@@ -105,7 +105,7 @@ async function getHolderStats() {
 
 export async function getGovernance({ type = "all", status = "all", limit = 20, includeContext = false } = {}) {
   const result = {
-    fcs: type === "all" || type === "fcs" ? await getFcs({ includeContext }) : fcsContext(includeContext),
+    fcs: type === "all" || type === "fcs" ? await getFcs({ includeContext }) : await fcsContext(includeContext),
     activityNote: "Indexed rate/minter activity and underlying FPS Equity trades, not a complete FCS governance or secondary-market trade history. A wrapper trader label identifies the contract, not the initiating holder. FCS API state is fetched for type=all or type=fcs; other filters include static FCS context only.",
   };
   if (type === "all" || type === "rate_proposals") {

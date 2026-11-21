@@ -242,7 +242,7 @@ test("I02 partial successful providers do not claim complete market coverage", a
 });
 
 test("I11 empty provider scores are unavailable, partial scores remain partial", async () => {
-  route = (url) => url.includes("pharos") ? response({ cards: [{ id: "zchf-frankencoin" }] }) : url.includes("xerberus") ? response({ data: [{ type: "protocol", id: "frankencoin", score: 77 }] }) : undefined;
+  route = (url) => url.includes("pharos") ? response({ cards: [{ id: "zchf-frankencoin" }] }) : url.includes("xerberus") ? response({ data: [{ type: "protocol", id: "frankencoin", score: 77 }, { type: "pool", id: "frankencoin-new-pool", score: null }] }) : undefined;
   const out = await dispatchTool("get_risk", {});
   assert.equal(out.pharos.status, "unavailable");
   assert.equal(out.xerberus.status, "partial");

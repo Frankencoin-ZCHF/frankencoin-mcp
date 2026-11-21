@@ -79,7 +79,7 @@ export const TOOLS = [
   {
     name: "get_market_data",
     description:
-      "Live market data: ZCHF peg health (price vs CHF, deviation, status), FPS price, all ecosystem token prices (collateral + ZCHF + FPS), CHF stablecoin comparison (ZCHF vs VCHF vs CHFAU — peg, market cap, volume, supply), macro context (BTC, ETH prices + 24h changes), and accepted collateral token prices with 24h changes. Every price/market-cap/volume is a { chf, usd } pair (the side a source omits is derived at the current CHF/USD rate; see the `fx` block). One call for everything price/market related.",
+      "Live market data: ZCHF peg health (price vs CHF, deviation, status), FPS price, all ecosystem token prices (collateral + ZCHF + FPS), CHF stablecoin comparison (CoinGecko CHF stablecoin category — peg, market cap, volume, supply), macro context (BTC, ETH prices + 24h changes), and accepted collateral token prices with 24h changes. Every price/market-cap/volume is a { chf, usd } pair (the side a source omits is derived at the current CHF/USD rate; see the `fx` block). One call for everything price/market related.",
     input: empty,
     params: [],
     handler: () => getMarketData(),
@@ -176,10 +176,10 @@ export const TOOLS = [
       "For “What can I do with Frankencoin?”, call this tool with its default overview and lead with gettingStarted (buy, pay, save, borrow and invest). Topics: overview (default), what_is, faq, savings, governance (FCS vetoes/delegation and cross-chain vote snapshots), fcs (FCS mechanics and underlying FPS distinction), fcs_migration (FPS/WFPS migration), pool_shares (FCS investing and underlying FPS economics), minting, opening_positions, auctions, risks, reserve, api, compliance, frontends, token_addresses (including Ethereum-only FCS contract), links (official docs, CoW Swap and legacy FPS page). FCS references survive unavailable live docs. Use topic=website to list redesign pages, then page=<page id> and language=en|de for complete website content including association, press, security, glossary and integrations. The canonical FCS website is https://frankencoin.com/fcs; current official documentation takes precedence over historical audit summaries.",
     // topic is a permissive string: an unknown topic returns { error, availableTopics }
     // from the handler (NOT a 400) and never builds a path from the raw value (SPEC/T28).
-    input: z.object({ topic: z.string().max(64).default("overview"), page: z.string().max(64).optional(), language: z.enum(["en", "de"]).default("en") }).strict(),
+    input: z.object({ topic: z.string().max(256).default("overview"), page: z.string().max(256).optional(), language: z.enum(["en", "de"]).default("en") }).strict(),
     params: [
-      { name: "topic", type: "string", required: false, description: KNOWLEDGE_TOPICS.join(" | ") + " (default overview)." },
-      { name: "page", type: "string", required: false, description: "For topic=website only; omit to list pages. " + Object.keys(WEBSITE_PAGES).join(" | ") },
+      { name: "topic", type: "string", required: false, description: KNOWLEDGE_TOPICS.join(" | ") + " (default overview). Use index for discovered doc: selectors." },
+      { name: "page", type: "string", required: false, description: "For topic=website only; omit to list all discovered page: selectors and named views. " + Object.keys(WEBSITE_PAGES).join(" | ") },
       { name: "language", type: "string", required: false, description: "Website content language: en (default) | de. GitBook documentation remains in its source language." },
     ],
     handler: (a) => getKnowledge(a),

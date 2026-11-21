@@ -92,7 +92,7 @@ export async function getProtocolSnapshot({ includeContext = false, view = "full
         window: "cumulative",
         profit: money(fpsData.earnings?.profit, rate),
         loss: money(fpsData.earnings?.loss, rate),
-        net: money((fpsData.earnings?.profit || 0) - (fpsData.earnings?.loss || 0), rate),
+        net: money(Number.isFinite(fpsData.earnings?.profit) && Number.isFinite(fpsData.earnings?.loss) ? fpsData.earnings.profit - fpsData.earnings.loss : null, rate),
         note: "All-time totals accrued to the FPS reserve since inception. For annual/daily windows use get_analytics.",
       },
       reserve: {

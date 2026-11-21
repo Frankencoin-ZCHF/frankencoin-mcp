@@ -17,13 +17,13 @@ const hash = z
   .regex(/^0x[\da-f]{64}$/i)
   .toLowerCase();
 const integer = (min, max) => z.coerce.number().int().min(min).max(max);
-const chainId = integer(1, 43114)
+const chainId = integer(1, Number.MAX_SAFE_INTEGER)
   .default(1)
   .describe("EVM chain ID. Defaults to Ethereum.");
 const asset = z
   .enum(["ZCHF", "FCS", "FPS"])
   .default("ZCHF")
-  .describe("Token. FPS and FCS are Ethereum-only.");
+  .describe("Token in the Frankencoin ledger catalogue.");
 const wallet = address.optional().describe("Pseudonymous EVM address.");
 const amount = z
   .string()
@@ -140,6 +140,7 @@ export const analysisTools = [
     {
       chainId,
       asset,
+      quoteToken: address.optional().describe("DEX counter-token contract on the requested chain. Defaults to the router-listed USDC."),
       side: z
         .enum(["buy", "sell"])
         .describe("Side from the token holder's perspective."),

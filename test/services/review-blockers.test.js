@@ -25,10 +25,12 @@ test("R1 lock dependency artifact version agrees with resolved tarball, root bum
 
 function marketRoute(mode) {
   return (url) => {
+    if (url.endsWith("/ecosystem/collateral/list")) return response({ list: [{ chainId: 1, address: "0x" + "1".repeat(40), symbol: "NEW" }] });
     if (!url.includes("coingecko")) return url.includes("ethereum") ? response({ result: "0x0" }) : undefined;
     if (url.includes("/global")) return response({ data: { total_market_cap: { usd: 0 } } });
-    const ids = new URL(url).searchParams.get("ids").split(",");
-    if (url.includes("/coins/markets")) return response(ids.map((id) => mode === "prices" ? { id, current_price: 1 } : { id, current_price: 0, market_cap: 0, total_volume: 0, price_change_percentage_24h: 0, circulating_supply: 0 }));
+    const params = new URL(url).searchParams;
+    const ids = (params.get("ids") ?? params.get("contract_addresses") ?? "new-chf").split(",");
+    if (url.includes("/coins/markets")) return response(ids.map((id) => mode === "prices" ? { id, name: id, symbol: id, current_price: 1 } : { id, name: id, symbol: id, current_price: 0, market_cap: 0, total_volume: 0, price_change_percentage_24h: 0, circulating_supply: 0 }));
     return response(Object.fromEntries(ids.map((id) => [id, mode === "prices" ? { usd: 2 } : mode === "invalid" ? { usd: "2", chf: false, usd_market_cap: "Infinity", usd_24h_change: {}, usd_24h_vol: null } : { usd: 0, chf: 0, usd_market_cap: 0, usd_24h_change: 0, usd_24h_vol: 0 }])));
   };
 }
@@ -73,7 +75,7 @@ function positionRoute(data, two = false) {
 }
 
 test("R2 empty CoinGecko enrichment is unavailable for positions and challenges", async () => {
-  route = positionRoute({ "wrapped-bitcoin": {} });
+  route = positionRoute({ "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": {} });
   for (const [name, args] of [["get_positions", { detail: true }], ["get_challenges", {}]]) {
     const out = await dispatchTool(name, args);
     assert.equal(out.sources.coingecko.status, "unavailable");
@@ -81,7 +83,7 @@ test("R2 empty CoinGecko enrichment is unavailable for positions and challenges"
 });
 
 test("R2 enrichment checks every requested ID and preserves zero cap", async () => {
-  route = positionRoute({ "wrapped-bitcoin": { usd_market_cap: 0, usd_24h_change: 0 } }, true);
+  route = positionRoute({ "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": { usd_market_cap: 0, usd_24h_change: 0 } }, true);
   const out = await dispatchTool("get_positions", { detail: true });
   assert.equal(out.sources.coingecko.status, "partial");
   assert.equal(out.positions[0].collateral.marketCapUsd, 0);

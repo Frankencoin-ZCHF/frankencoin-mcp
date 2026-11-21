@@ -1,11 +1,11 @@
 import { afterEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { clear } from "../../src/cache.js";
-import { setFetchImpl } from "../../src/upstream/client.js";
+import { setFetchImpl, ledgerToken } from "../fixtures/catalogue-fetch.js";
 import { dispatchTool } from "../../src/tools/dispatch.js";
 import { Semaphore } from "../../src/lib/concurrency.js";
 import { walkBook, atoms } from "../../src/services/quotes.js";
-import { ledgerToken } from "../../src/services/ledgers.js";
+
 
 const wallet = "0x" + "1".repeat(40);
 const tx = "0x" + "2".repeat(64);
@@ -290,7 +290,7 @@ test("reorganised receipt is discarded while independent indexed results survive
 });
 test("peg monitoring excludes in-progress trades and empty candles", async () => {
   const row = (t, high, n) => [t, "1", high, "0.99", "1", "1", "1", n];
-  setFetchImpl(async () =>
+  setFetchImpl(async (url) => url.endsWith("AssetPairs") ? Response.json({ error: [], result: { ZCHFCHF: { base: "ZCHF", status: "online", wsname: "ZCHF/CHF" } } }) :
     Response.json({
       error: [],
       result: {

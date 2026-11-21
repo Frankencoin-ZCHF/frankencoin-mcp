@@ -1,19 +1,10 @@
+import { CHAIN_ADAPTERS } from "../lib/constants.js";
 import { getOrLoad } from "../cache.js";
 import { fetchJson } from "../upstream/client.js";
 import { UpstreamError } from "../lib/errors.js";
 import { pools } from "./pools.js";
-import { ledgerToken } from "./ledgers.js";
+import { ledgerToken } from "./token-directory.js";
 
-const hosts = {
-  1: "ethereum",
-  10: "optimism",
-  100: "gnosis",
-  137: "polygon-bor",
-  146: "sonic",
-  8453: "base",
-  42161: "arbitrum-one",
-  43114: "avalanche-c-chain",
-};
 const addr = /^0x[\da-f]{40}$/i,
   hash = /^0x[\da-f]{64}$/i,
   uint = /^0x[\da-f]+$/i;
@@ -25,10 +16,11 @@ const transfer =
   "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
 export async function transactionReceipt({ chainId, asset, txHash }) {
-  const token = ledgerToken(chainId, asset);
+  if (!Object.hasOwn(CHAIN_ADAPTERS, chainId)) throw new UpstreamError("receipt");
+  const token = await ledgerToken(chainId, asset);
   const rpc = async (method, params) => {
     const json = await fetchJson(
-      "https://" + hosts[chainId] + "-rpc.publicnode.com",
+      "https://" + CHAIN_ADAPTERS[chainId].rpc + "-rpc.publicnode.com",
       {
         method: "POST",
         source: "receipt",

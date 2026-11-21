@@ -1,24 +1,16 @@
+import { CHAIN_ADAPTERS } from "../lib/constants.js";
 import { getOrLoad } from "../cache.js";
 import { fetchJson } from "../upstream/client.js";
 import { UpstreamError } from "../lib/errors.js";
-import { ledgerToken } from "./ledgers.js";
+import { ledgerToken } from "./token-directory.js";
 
-const networks = {
-  1: "ethereum",
-  10: "optimism",
-  100: "gnosischain",
-  137: "polygon",
-  146: "sonic",
-  8453: "base",
-  42161: "arbitrum",
-  43114: "avalanche",
-};
 const addr = /^0x[\da-f]{40}$/i;
 const identifier = /^0x(?:[\da-f]{40}|[\da-f]{64})$/i;
 const metric = (v) => (Number.isFinite(v) && v >= 0 ? v : null);
-export function pools({ chainId, asset }) {
-  const token = ledgerToken(chainId, asset),
-    network = networks[chainId];
+export async function pools({ chainId, asset }) {
+  if (!Object.hasOwn(CHAIN_ADAPTERS, chainId)) throw new UpstreamError("dexscreener");
+  const token = await ledgerToken(chainId, asset),
+    network = CHAIN_ADAPTERS[chainId].dex;
   return getOrLoad("dex-pools:" + network + ":" + token, 30_000, async () => {
     const rows = await fetchJson(
       "https://api.dexscreener.com/token-pairs/v1/" + network + "/" + token,

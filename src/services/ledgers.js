@@ -1,26 +1,11 @@
-import {
-  API_BASE,
-  CHAIN_NAMES,
-  FCS_CONTRACT,
-  FPS_CONTRACT,
-} from "../lib/constants.js";
+import { API_BASE } from "../lib/constants.js";
+import { ledgerToken, ledgerDeployments } from "./token-directory.js";
 import { fetchJson } from "../upstream/client.js";
 import { getOrLoad } from "../cache.js";
 import { ValidationError, UpstreamError } from "../lib/errors.js";
 
-export const ZCHF_MAIN = "0xb58e61c3098d85632df34eecfb899a1ed80921cb";
-const ZCHF_BRIDGED = "0xd4dd9e2f021bb459d5a5f6c24c12fe09c5d45553";
 const address = /^0x[\da-f]{40}$/i;
 const hash = /^0x[\da-f]{64}$/i;
-export function ledgerToken(chainId, asset) {
-  if (!Object.hasOwn(CHAIN_NAMES, chainId))
-    throw new ValidationError("Unknown chain ID");
-  if (asset === "ZCHF") return chainId === 1 ? ZCHF_MAIN : ZCHF_BRIDGED;
-  if (chainId !== 1 || !["FPS", "FCS"].includes(asset))
-    throw new ValidationError("FCS and FPS ledgers are Ethereum only");
-  return (asset === "FCS" ? FCS_CONTRACT : FPS_CONTRACT).toLowerCase();
-}
-
 // Positive field and value selection: upstream records can include identity annotations at every level.
 function numbers(row, fields) {
   return Object.fromEntries(
@@ -61,12 +46,11 @@ export async function ledgerReport({
   limit,
   offset,
 }) {
-  const token = ledgerToken(chainId, asset);
   if (["wallet", "transfers", "journey", "portfolio"].includes(view) && !wallet)
     throw new ValidationError("A wallet address is required");
   if (view === "portfolio") {
     const chains =
-      asset === "ZCHF" ? Object.keys(CHAIN_NAMES).map(Number) : [1];
+      (await ledgerDeployments()).filter((d) => d.symbol === asset).map((d) => d.chainId);
     const balances = await Promise.all(
       chains.map(async (id) => {
         try {
@@ -93,11 +77,12 @@ export async function ledgerReport({
       wallet,
       asset,
       balances,
-      total: balances.every((b) => Number.isFinite(b.balance))
+      total: balances.length > 0 && balances.every((b) => Number.isFinite(b.balance))
         ? balances.reduce((s, b) => s + b.balance, 0)
         : null,
     };
   }
+  const token = await ledgerToken(chainId, asset);
   const params = new URLSearchParams({ chainId: String(chainId), token });
   const walletPath = "/godeye/address/" + wallet;
   const paths = {

@@ -12,7 +12,7 @@ const LONG_TTL = { ttl: 60 * 60_000, swr: 15 * 60_000 };
 const SHORT_TTL = { ttl: 30_000, swr: 0 };
 
 function ttlFor(path) {
-  return path === "/ecosystem/collateral/list" ? LONG_TTL : SHORT_TTL;
+  return ["/ecosystem/collateral/list", "/godeye/tokens"].includes(path) ? LONG_TTL : SHORT_TTL;
 }
 
 export function apiObservation(path) {

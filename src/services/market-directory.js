@@ -1,7 +1,7 @@
 import { getOrLoad } from "../cache.js";
 import { fetchJson } from "../upstream/client.js";
 import { UpstreamError } from "../lib/errors.js";
-import { ledgerToken } from "./ledgers.js";
+import { ledgerToken } from "./token-directory.js";
 
 const tenMinutes = 600_000;
 const options = (source) => ({ source, timeout: 6000, retries: 0 });
@@ -62,7 +62,7 @@ export function indexedMarkets(asset) {
     const api = "https://api.coingecko.com/api/v3";
     let id = "frankencoin";
     if (asset !== "ZCHF") {
-      const token = ledgerToken(1, asset);
+      const token = await ledgerToken(1, asset);
       const coin = await fetchJson(
         api + "/coins/ethereum/contract/" + token,
         options("coingecko-public"),

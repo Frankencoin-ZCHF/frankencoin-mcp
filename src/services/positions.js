@@ -9,21 +9,18 @@
 
 import { apiFetch } from "../upstream/frankencoin.js";
 import { ponderQuery } from "../upstream/ponder.js";
-import { observeMetrics } from "../lib/metric-coverage.js";
+import { collateralPrices } from "./collateral-prices.js";
 import { priceQuality } from "../lib/prices.js";
-import { cgFetch } from "../upstream/coingecko.js";
 import { fromWei, ppmToPercent, round, isoFromUnix } from "../lib/numbers.js";
-import { COINGECKO_IDS, chainName } from "../lib/constants.js";
+import { chainName } from "../lib/constants.js";
 
-/** Optional enrichment retains provider availability separately from missing values. */
-async function cgEnrich(addresses) {
-  const cgIds = [...new Set(addresses.map((a) => COINGECKO_IDS[a]).filter(Boolean))];
-  if (cgIds.length === 0) return { value: {}, health: { status: "not_requested", asOf: null } };
-  return observeMetrics(cgFetch(
-    `/simple/price?ids=${cgIds.join(",")}&vs_currencies=usd,chf&include_24hr_change=true&include_market_cap=true`,
-  ), cgIds, ["usd_24h_change", "usd_market_cap"]);
+function units(raw, decimals = 18) {
+  if (raw == null || !/^\d+$/.test(String(raw)) || !Number.isInteger(decimals) || decimals < 0 || decimals > 255) return null;
+  return fromWei(raw, decimals);
 }
-
+function numberOrNull(value) {
+  return value != null && /^\d+$/.test(String(value)) && Number.isFinite(Number(value)) ? Number(value) : null;
+}
 export async function getPositions({ detail = false, limit, activeOnly, collateral = null } = {}) {
   if (!detail) {
     const effectiveLimit = limit ?? 50;
@@ -65,13 +62,13 @@ export async function getPositions({ detail = false, limit, activeOnly, collater
   ]);
 
   const priceMap = {};
-  for (const p of prices) priceMap[p.address.toLowerCase()] = priceQuality(p);
+  for (const p of prices) if (p.chainId === 1) priceMap[p.address.toLowerCase()] = priceQuality(p);
 
   const decimalsMap = {};
-  for (const c of collateralList.list || []) decimalsMap[c.address.toLowerCase()] = c.decimals;
+  for (const c of collateralList.list || []) if (c.chainId === 1) decimalsMap[c.address.toLowerCase()] = c.decimals;
 
   const items = pData.mintingHubV2PositionV2s?.items || [];
-  const enrichment = await cgEnrich(items.map((p) => p.collateral?.toLowerCase()).filter(Boolean));
+  const enrichment = await collateralPrices(items.map((p) => p.collateral?.toLowerCase()).filter(Boolean));
 
   return {
     sources: { coingecko: enrichment.health },
@@ -83,14 +80,14 @@ export async function getPositions({ detail = false, limit, activeOnly, collater
     positions: items.map((p) => {
       const collateralAddr = p.collateral?.toLowerCase();
       const priceEntry = priceMap[collateralAddr];
-      const cg = enrichment.value?.[COINGECKO_IDS[collateralAddr]] ?? null;
-      const decimals = decimalsMap[collateralAddr] ?? p.collateralDecimals ?? 18;
+      const cg = enrichment.value?.[collateralAddr] ?? null;
+      const decimals = numberOrNull(decimalsMap[collateralAddr] ?? p.collateralDecimals);
 
-      const collateralBalance = fromWei(p.collateralBalance, decimals);
-      const minted = fromWei(p.minted);
+      const collateralBalance = units(p.collateralBalance, decimals);
+      const minted = units(p.minted);
       const currentPriceChf = priceEntry?.price?.chf;
-      const valueChf = currentPriceChf ? collateralBalance * currentPriceChf : null;
-      const collateralRatio = valueChf == null
+      const valueChf = currentPriceChf != null && collateralBalance != null ? collateralBalance * currentPriceChf : null;
+      const collateralRatio = valueChf == null || minted == null
         ? null
         : minted === 0 ? "N/A" : round((valueChf / minted) * 100, 1);
 
@@ -105,7 +102,7 @@ export async function getPositions({ detail = false, limit, activeOnly, collater
           symbol: p.collateralSymbol,
           decimals,
           balance: collateralBalance,
-          minimumRequired: fromWei(p.minimumCollateral, decimals),
+          minimumRequired: units(p.minimumCollateral, decimals),
           freshness: priceEntry?.freshness ?? null,
           priceChf: currentPriceChf ?? null,
           priceUsd: priceEntry?.price?.usd ?? null,
@@ -114,14 +111,14 @@ export async function getPositions({ detail = false, limit, activeOnly, collater
           valueChf: valueChf != null ? round(valueChf, 2) : null,
         },
         minted,
-        availableForMinting: fromWei(p.availableForMinting),
-        availableForMintingNominal: fromWei(p.availableForMinting),
+        availableForMinting: units(p.availableForMinting),
+        availableForMintingNominal: units(p.availableForMinting),
         executableMintingCapacity: null,
         collateralRatioPercent: collateralRatio,
-        liquidationPriceZchf: fromWei(p.price, 36 - decimals),
-        riskPremiumPercent: ppmToPercent(p.riskPremiumPPM || 0),
-        reserveContributionPercent: ppmToPercent(p.reserveContribution || 0),
-        challengePeriodSeconds: Number(p.challengePeriod || 0),
+        liquidationPriceZchf: units(p.price, decimals == null ? null : 36 - decimals),
+        riskPremiumPercent: p.riskPremiumPPM == null ? null : ppmToPercent(p.riskPremiumPPM),
+        reserveContributionPercent: p.reserveContribution == null ? null : ppmToPercent(p.reserveContribution),
+        challengePeriodSeconds: numberOrNull(p.challengePeriod),
         cooldownUntil: p.cooldown ? isoFromUnix(p.cooldown) : null,
         expiresAt: p.expiration ? isoFromUnix(p.expiration) : null,
         startedAt: p.start ? isoFromUnix(p.start) : null,
@@ -168,12 +165,12 @@ export async function getChallenges({ limit = 20, activeOnly = false } = {}) {
   const sliced = list.slice(0, limit);
 
   const priceMap = {};
-  for (const p of prices) priceMap[p.address.toLowerCase()] = priceQuality(p);
+  for (const p of prices) if (p.chainId === 1) priceMap[p.address.toLowerCase()] = priceQuality(p);
 
   const uniquePositions = [...new Set(sliced.map((c) => c.position.toLowerCase()))];
   const positionMap = await loadPositionContext(uniquePositions);
 
-  const enrichment = await cgEnrich(
+  const enrichment = await collateralPrices(
     Object.values(positionMap).map((p) => p.collateral?.toLowerCase()).filter(Boolean),
   );
 
@@ -185,15 +182,15 @@ export async function getChallenges({ limit = 20, activeOnly = false } = {}) {
     active: (data.list || []).filter((c) => c.status !== "Success").length,
     challenges: sliced.map((c) => {
       const pos = positionMap[c.position.toLowerCase()];
-      const collateralDecimals = pos?.collateralDecimals ?? 18;
+      const collateralDecimals = numberOrNull(pos?.collateralDecimals);
       const collateralAddr = pos?.collateral?.toLowerCase();
       const priceEntry = collateralAddr ? priceMap[collateralAddr] : null;
-      const cg = collateralAddr ? enrichment.value?.[COINGECKO_IDS[collateralAddr]] : null;
+      const cg = collateralAddr ? enrichment.value?.[collateralAddr] : null;
 
-      const liqPriceZchf = fromWei(c.liqPrice, 36 - collateralDecimals);
-      const sizeHuman = fromWei(c.size, collateralDecimals);
-      const filledHuman = fromWei(c.filledSize, collateralDecimals);
-      const acquiredHuman = fromWei(c.acquiredCollateral, collateralDecimals);
+      const liqPriceZchf = units(c.liqPrice, collateralDecimals == null ? null : 36 - collateralDecimals);
+      const sizeHuman = units(c.size, collateralDecimals);
+      const filledHuman = units(c.filledSize, collateralDecimals);
+      const acquiredHuman = units(c.acquiredCollateral, collateralDecimals);
       const priceChf = priceEntry?.price?.chf;
 
       return {
@@ -222,16 +219,16 @@ export async function getChallenges({ limit = 20, activeOnly = false } = {}) {
         size: sizeHuman,
         filledSize: filledHuman,
         acquiredCollateral: acquiredHuman,
-        fillPercent: sizeHuman > 0 ? round((filledHuman / sizeHuman) * 100, 1) : 0,
+        fillPercent: sizeHuman > 0 && filledHuman != null ? round((filledHuman / sizeHuman) * 100, 1) : null,
         liquidationPriceZchf: liqPriceZchf,
         marketVsLiqPremiumPercent: (priceChf && liqPriceZchf)
           ? round(((priceChf - liqPriceZchf) / liqPriceZchf) * 100, 2)
           : null,
-        challengeValueZchf: sizeHuman > 0 ? round(sizeHuman * liqPriceZchf, 2) : null,
+        challengeValueZchf: sizeHuman != null && liqPriceZchf != null ? round(sizeHuman * liqPriceZchf, 2) : null,
         positionOwner: pos?.owner ?? null,
-        positionMintedZchf: pos ? fromWei(pos.minted) : null,
-        positionCollateralBalance: pos ? fromWei(pos.collateralBalance, collateralDecimals) : null,
-        positionRiskPremiumPercent: pos ? ppmToPercent(pos.riskPremiumPPM) : null,
+        positionMintedZchf: pos ? units(pos.minted) : null,
+        positionCollateralBalance: pos ? units(pos.collateralBalance, collateralDecimals) : null,
+        positionRiskPremiumPercent: pos?.riskPremiumPPM != null ? ppmToPercent(pos.riskPremiumPPM) : null,
       };
     }),
   };

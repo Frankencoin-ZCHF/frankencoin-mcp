@@ -1,8 +1,7 @@
 import { transactionReceipt } from "./receipt.js";
 import { ponderObservation } from "../upstream/ponder.js";
-import { CHAIN_NAMES } from "../lib/constants.js";
 import { UpstreamError, ValidationError } from "../lib/errors.js";
-import { ledgerToken } from "./ledgers.js";
+import { ledgerToken } from "./token-directory.js";
 
 const ZERO = "0x" + "0".repeat(40);
 // Each entry names a verified indexer table and the fields required to interpret one event.
@@ -118,8 +117,6 @@ export async function activity({
   limit,
   after,
 }) {
-  if (!Object.hasOwn(CHAIN_NAMES, chainId))
-    throw new ValidationError("Unknown chain ID");
   if (view === "transaction" && !txHash)
     throw new ValidationError("Supply txHash");
   if (after && view === "changes")
@@ -132,6 +129,7 @@ export async function activity({
     view === "events" || (view === "transaction" && after)
       ? [kind]
       : activityKinds.filter((k) => chainId === 1 || feeds[k][2]);
+  const token = names.includes("transfers") ? await ledgerToken(chainId, asset) : null;
   const parts = names.map((name) => {
     const [table, fields, multichain] = feeds[name];
     if (!multichain && chainId !== 1)
@@ -142,7 +140,7 @@ export async function activity({
         : [`created_gte:"${from}",created_lt:"${to}"`];
     if (multichain) where.push(`chainId:${chainId}`);
     if (name === "transfers")
-      where.push(`token:"${ledgerToken(chainId, asset)}"`);
+      where.push(`token:"${token}"`);
     const order =
       view !== "transaction" && name === "transfers" ? "amount" : "created";
     return `${name}:${table}(where:{${where.join(",")}},limit:${limit},orderBy:"${order}",orderDirection:"desc"${after ? ",after:" + JSON.stringify(after) : ""}){items{created txHash ${fields}} pageInfo{hasNextPage endCursor}}`;
@@ -177,7 +175,7 @@ export async function activity({
                     row.txHash.toLowerCase() !== txHash) ||
                   (row.chainId != null && Number(row.chainId) !== chainId) ||
                   (name === "transfers" &&
-                    row.token.toLowerCase() !== ledgerToken(chainId, asset)) ||
+                    row.token.toLowerCase() !== token) ||
                   (view !== "transaction" &&
                     (Number(row.created) < from || Number(row.created) >= to))
                 )
@@ -226,6 +224,7 @@ export async function activity({
     retrievedAt,
     receipt,
     indexStatus: "available",
+    coveredFeeds: names,
     sections,
     scope:
       "Indexed event evidence. Amounts are raw contract units. Several logs may describe the same action. Transfers do not establish a trade. Changes ranks transfers by amount and other feeds by time; paginated sections are not totals.",

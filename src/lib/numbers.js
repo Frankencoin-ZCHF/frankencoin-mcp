@@ -1,3 +1,4 @@
+import { config } from "../config.js";
 /**
  * Number encoding helpers — the single source of truth for unit conversion and
  * peg logic. Pure, no I/O.
@@ -41,8 +42,8 @@ export function pegDeviation(priceChf) {
 export function pegStatus(priceChf) {
   if (priceChf == null) return "unknown";
   const dev = Math.abs(priceChf - 1) * 100;
-  if (dev < 0.5) return "healthy";
-  if (dev < 1.0) return "warning";
+  if (dev < config.pegWarningBps / 100) return "healthy";
+  if (dev < config.pegCriticalBps / 100) return "warning";
   return "critical";
 }
 

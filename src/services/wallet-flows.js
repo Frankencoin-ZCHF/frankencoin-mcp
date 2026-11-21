@@ -2,7 +2,7 @@ import { ponderObservation } from "../upstream/ponder.js";
 import { PONDER_BASE } from "../lib/constants.js";
 import { UpstreamError, ValidationError } from "../lib/errors.js";
 
-import { ledgerToken } from "./ledgers.js";
+import { ledgerToken } from "./token-directory.js";
 const ZERO = "0x0000000000000000000000000000000000000000";
 const ADDRESS = /^0x[0-9a-f]{40}$/i;
 const UNIT = 10n ** 18n;
@@ -17,7 +17,7 @@ export async function walletFlows({ wallet, days, limit, chainId=1 }) {
   if (typeof wallet !== "string" || !ADDRESS.test(wallet) || wallet === ZERO) {
     throw new ValidationError("wallet_flows requires a nonzero EVM wallet address");
   }
-  const ZCHF=ledgerToken(chainId,"ZCHF");
+  const ZCHF=await ledgerToken(chainId,"ZCHF");
   wallet = wallet.toLowerCase();
   const end = Math.floor(Date.now() / 60000) * 60;
   const start = end - days * 86400;

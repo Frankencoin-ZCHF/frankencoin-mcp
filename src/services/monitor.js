@@ -1,3 +1,4 @@
+import { krakenMarkets } from "./market-directory.js";
 import { fetchJson } from "../upstream/client.js";
 import { apiObservation } from "../upstream/frankencoin.js";
 import { getOrLoad } from "../cache.js";
@@ -7,8 +8,12 @@ import { UpstreamError, ValidationError } from "../lib/errors.js";
 export async function pegHistory({ from, to, interval, thresholdBps, limit }) {
   if (from == null || to == null || from >= to)
     throw new ValidationError("Supply a closed-candle time window");
+  const catalogue = await krakenMarkets();
+  if (!catalogue.markets) throw new UpstreamError("kraken");
+  const market = catalogue.markets.find((m) => m.quote === "CHF");
+  if (!market) throw new ValidationError("No active CHF benchmark market on Kraken");
   const url =
-    "https://api.kraken.com/0/public/OHLC?pair=ZCHFCHF&interval=" +
+    "https://api.kraken.com/0/public/OHLC?pair=" + market.pair + "&interval=" +
     interval +
     "&since=" +
     Math.max(0, from - interval * 60);
@@ -18,10 +23,10 @@ export async function pegHistory({ from, to, interval, thresholdBps, limit }) {
       timeout: 6000,
       retries: 0,
     });
-    if (json?.error?.length || !Array.isArray(json?.result?.ZCHFCHF))
+    if (json?.error?.length || !Array.isArray(json?.result?.[market.pair]))
       throw new UpstreamError("kraken");
     return {
-      rows: json.result.ZCHFCHF.slice(0, -1),
+      rows: json.result[market.pair].slice(0, -1),
       retrievedAt: new Date().toISOString(),
     };
   });

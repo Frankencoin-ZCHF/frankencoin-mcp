@@ -77,12 +77,7 @@ export function renderLlmsTxt(tools, baseUrl) {
   p("## FCS and underlying FPS");
   p();
   p(`FCS is Ethereum-only: ${FCS_REFERENCE.address}. FPS price/supply/reserve/earnings remain underlying Equity metrics, not FCS supply or guaranteed market quotes.`);
-  p(FCS_REFERENCE.mechanics.entry);
-  p(FCS_REFERENCE.mechanics.qualification);
-  p(FCS_REFERENCE.mechanics.binding);
-  p(FCS_REFERENCE.mechanics.delegation);
-  p(FCS_REFERENCE.mechanics.crossChain);
-  p(FCS_REFERENCE.mechanics.exit);
+  p("Read get_knowledge with topic=fcs for current entry, voting, binding and redemption mechanics.");
   p("Use get_governance type=fcs for API-reported wrapper state with explicit source/availability notes; use get_knowledge topics fcs and fcs_migration for official technical documentation.");
   for (const [label, url] of Object.entries(FCS_REFERENCE.links)) p(`- ${label}: ${url}`);
 
