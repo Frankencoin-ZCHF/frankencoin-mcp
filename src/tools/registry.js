@@ -8,6 +8,7 @@
  */
 
 import { z } from "zod";
+import { analysisTools } from "./analysis.js";
 import { KNOWLEDGE_TOPICS, WEBSITE_PAGES, ASSESSMENT_DOCUMENTS } from "../lib/constants.js";
 import { getCollateralAssessments } from "../services/assessments.js";
 import { getProtocolSnapshot } from "../services/snapshot.js";
@@ -43,6 +44,7 @@ const empty = z.object({}).strict();
 // ── registry ─────────────────────────────────────────────────────────────────
 
 export const TOOLS = [
+  ...analysisTools,
   {
     name: "get_collateral_assessments",
     description: "Collateral risk research from frankencoin-collateral-assessments: discovers all published, draft and deprecated reports. Defaults to a compact 10-report page with identity, author/date, proposed parameters and summary. Use view=full for all structured risk metadata, limit/offset to page, and pageInfo.nextOffset to continue. Set asset to a catalogued filename ticker (case-insensitive) for the full assessment, or includeContent=true for every selected full report. document selects the complete framework, schema, template, repository overview or validation sources. Publication status is not on-chain approval; use get_collaterals/get_positions for live protocol state.",
@@ -151,8 +153,9 @@ export const TOOLS = [
   {
     name: "get_analytics",
     description:
-      "Historical protocol analytics. wallet_flows with wallet returns Ethereum ZCHF transfer totals and largest counterparties. Use 'type' to select: 'time_series' (daily equity, savings, FPS price and realized earnings; removed indexer metrics are null — default), 'trades' (FPS equity buy/sell trades), 'minters' (minter application history), 'rate_history' (governance rate change timeline). Historical monetary values are in CHF only — no historical USD is provided (applying today's rate to past rows would be inaccurate); the current CHF/USD rate is exposed in the `fx` block for approximate conversion.",
+      "Historical protocol analytics. wallet_flows with wallet and optional chainId returns chain-specific ZCHF transfer totals and largest counterparties. Use 'type' to select: 'time_series' (daily equity, savings, FPS price and realized earnings; removed indexer metrics are null — default), 'trades' (FPS equity buy/sell trades), 'minters' (minter application history), 'rate_history' (governance rate change timeline). Historical monetary values are in CHF only — no historical USD is provided (applying today's rate to past rows would be inaccurate); the current CHF/USD rate is exposed in the `fx` block for approximate conversion.",
     input: z.object({
+      chainId: z.coerce.number().int().positive().optional(),
       type: z.enum(["time_series", "trades", "minters", "rate_history", "wallet_flows"]).default("time_series"),
       wallet: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional(),
       days: intClamp(1, 365, 90),
@@ -160,6 +163,7 @@ export const TOOLS = [
     }).strict(),
     params: [
       { name: "type", type: "string", required: false, description: "time_series | trades | minters | rate_history | wallet_flows (default time_series)." },
+      { name:"chainId", type:"number",required:false,description:"Chain for wallet flows (default Ethereum)."},
       { name: "wallet", type: "string", required: false, description: "Ethereum address required for wallet_flows." },
       { name: "days", type: "number", required: false, description: "Window in days for time_series, rate_history and wallet_flows (default 90, max 365)." },
       { name: "limit", type: "number", required: false, description: "Max rows or largest counterparties to return (default 20, max 100)." },

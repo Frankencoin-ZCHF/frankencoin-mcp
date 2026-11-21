@@ -26,8 +26,17 @@ over Streamable HTTP and stdio. Modern clients can issue a tool call as their fi
 | Agent task | Entry point |
 | --- | --- |
 | Get ZCHF supply, TVL and per-chain supply from one upstream request | `get_protocol_snapshot` with `{"view":"overview"}` |
-| Trace Ethereum ZCHF transfers for an address | `get_analytics` with `type=wallet_flows`, `wallet`, `days` and optional counterparty `limit` |
+| Trace ZCHF transfers for an address on a selected chain | `get_analytics` with `type=wallet_flows`, `wallet`, `days` and optional counterparty `limit` and `chainId` |
 | Review supply, reserves, savings and challenges | `protocol_briefing` prompt |
+| Inspect holders, concentration, counterparty graphs, wallet history and multichain balances | `get_token_ledger` |
+| Explain a transaction or find large transfers, repayments and share activity in a time window | `get_protocol_activity` |
+| Read borrower lifecycle, amplifier positions, referrals, revenue, collateral exposure or bridge lanes | `get_protocol_report` |
+| Discover pools and compare size-specific DEX routes and CEX book fills | `get_dex_pools` and `get_liquidity` |
+| Check closed CHF market candles against a peg threshold | `get_peg_history` |
+| Model collateral price declines and aggregate coverage | `stress_collateral` |
+| Preview deposit/redemption, account maximum and primary/secondary funding scenarios | `preview_fcs` |
+| Read total and address-level FCS voting data at a canonical Ethereum block | `get_fcs_votes` |
+| Discover outbound ZCHF CCIP transfers and reconcile both legs | `get_bridge_message` |
 | Compare a collateral report with live exposure | `collateral_review` prompt |
 | Browse the tool guide | `resources/read` with `frankencoin://docs/guide` |
 | Discover permitted GraphQL root fields | `resources/read` with `frankencoin://indexer/entities` |

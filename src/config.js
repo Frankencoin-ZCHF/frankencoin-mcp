@@ -47,6 +47,7 @@ export const config = Object.freeze({
   upstreamMaxBytes: int("UPSTREAM_MAX_BYTES", 8 * 1024 * 1024), // 8 MB
   maxRetryAfterMs: int("MAX_RETRY_AFTER_MS", 10_000), // cap honored Retry-After
   cacheMaxEntries: int("CACHE_MAX_ENTRIES", 500),
+  cacheMaxBytes: Math.max(0, int("CACHE_MAX_BYTES", 64 * 1024 * 1024)),
   cacheEnabled: (process.env.CACHE_ENABLED ?? "true") !== "false",
 
   // query_ponder validation bounds (SECURITY §2).

@@ -6,6 +6,7 @@
  * and typed errors that never leak upstream detail (ARCHITECTURE §C, SECURITY §7).
  */
 
+import { ProviderCircuits } from "./circuit.js";
 import { config } from "../config.js";
 import { Semaphore } from "../lib/concurrency.js";
 import { TimeoutError, UpstreamError } from "../lib/errors.js";
@@ -46,6 +47,7 @@ async function readBounded(res, source) {
   const cap = config.upstreamMaxBytes;
   const lenHeader = Number(res.headers.get("content-length"));
   if (Number.isFinite(lenHeader) && lenHeader > cap) {
+    await res.body?.cancel?.().catch(() => {});
     throw new UpstreamError(source, res.status);
   }
   if (!res.body) return await res.text();
@@ -84,7 +86,12 @@ function isRetryableStatus(status) {
  * @param {string} [opts.redirect="follow"] use "error" for secret-bearing hosts
  * @param {boolean} [opts.expectJson=true]
  */
-export async function fetchJson(url, {
+const circuits = new ProviderCircuits();
+export function fetchJson(url, options) {
+  return circuits.run(new URL(url).origin, options.source, () => requestJson(url, options));
+}
+
+async function requestJson(url, {
   source,
   timeout,
   retries = 2,
@@ -98,10 +105,14 @@ export async function fetchJson(url, {
   const canRetry = idempotent ?? (method === "GET");
   const payload = body != null && typeof body !== "string" ? JSON.stringify(body) : body;
 
+  // One wall-clock budget covers queueing, retries, headers and body consumption.
+  const deadline = performance.now() + Math.min(20_000, timeout * (canRetry ? retries + 1 : 1));
   let attempt = 0;
   for (;;) {
     try {
       return await outbound.run(async () => {
+        const remaining = Math.ceil(deadline - performance.now());
+        if (remaining <= 0) throw new TimeoutError(source);
         let res;
         try {
           res = await _fetch(url, {
@@ -109,7 +120,7 @@ export async function fetchJson(url, {
             headers,
             body: payload,
             redirect,
-            signal: AbortSignal.timeout(timeout),
+            signal: AbortSignal.timeout(Math.min(remaining,timeout)),
           });
         } catch (e) {
           // AbortSignal.timeout → TimeoutError; anything else → generic upstream.
@@ -126,14 +137,20 @@ export async function fetchJson(url, {
           throw err;
         }
 
-        const text = await readBounded(res, source);
+        let text;
+        try { text = await readBounded(res, source); }
+        catch (e) {
+          if (e instanceof UpstreamError) throw e;
+          if (e?.name === "TimeoutError" || e?.name === "AbortError") throw new TimeoutError(source);
+          throw new UpstreamError(source);
+        }
         if (!expectJson) return text;
         try {
           return JSON.parse(text);
         } catch {
           throw new UpstreamError(source, res.status);
         }
-      });
+      }, Math.max(0, deadline - performance.now()));
     } catch (err) {
       const retryable =
         canRetry &&
@@ -149,6 +166,7 @@ export async function fetchJson(url, {
         // large Retry-After must not be able to stall a request for minutes.
         delay = Math.max(delay, Math.min(err.retryAfter * 1000, config.maxRetryAfterMs));
       }
+      if (performance.now() + delay >= deadline) throw new TimeoutError(source);
       attempt++;
       await sleep(delay);
     }

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Frankencoin MCP Server — 15 read-only data tools.
+ * Frankencoin MCP Server — read-only data tools.
  *
  *   node src/index.js            # stdio mode (Claude Desktop / Cursor / CLI)
  *   node src/index.js --http     # HTTP mode (public deployment)

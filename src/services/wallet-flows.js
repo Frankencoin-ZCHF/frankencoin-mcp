@@ -2,7 +2,7 @@ import { ponderObservation } from "../upstream/ponder.js";
 import { PONDER_BASE } from "../lib/constants.js";
 import { UpstreamError, ValidationError } from "../lib/errors.js";
 
-const ZCHF = "0xb58e61c3098d85632df34eecfb899a1ed80921cb";
+import { ledgerToken } from "./ledgers.js";
 const ZERO = "0x0000000000000000000000000000000000000000";
 const ADDRESS = /^0x[0-9a-f]{40}$/i;
 const UNIT = 10n ** 18n;
@@ -13,14 +13,15 @@ function units(amount) {
   return (amount < 0n ? "-" : "") + (absolute / UNIT) + (fraction ? "." + fraction : "");
 }
 
-export async function walletFlows({ wallet, days, limit }) {
+export async function walletFlows({ wallet, days, limit, chainId=1 }) {
   if (typeof wallet !== "string" || !ADDRESS.test(wallet) || wallet === ZERO) {
-    throw new ValidationError("wallet_flows requires a nonzero Ethereum wallet address");
+    throw new ValidationError("wallet_flows requires a nonzero EVM wallet address");
   }
+  const ZCHF=ledgerToken(chainId,"ZCHF");
   wallet = wallet.toLowerCase();
   const end = Math.floor(Date.now() / 60000) * 60;
   const start = end - days * 86400;
-  const filters = `chainId:1,token:"${ZCHF}",amount_gt:"0",created_gte:"${start}",created_lt:"${end}"`;
+  const filters = `chainId:${chainId},token:"${ZCHF}",amount_gt:"0",created_gte:"${start}",created_lt:"${end}"`;
   const peers = new Map();
   const directions = [
     { name: "incoming", match: "to", peer: "from", total: 0n, count: 0 },
@@ -65,7 +66,7 @@ export async function walletFlows({ wallet, days, limit }) {
     return diff === 0n ? a.localeCompare(b) : diff > 0n ? 1 : -1;
   });
   return {
-    wallet, chainId: 1, token: ZCHF, unit: "ZCHF", fromInclusive: new Date(start * 1000).toISOString(),
+    wallet, chainId, token: ZCHF, unit: "ZCHF", fromInclusive: new Date(start * 1000).toISOString(),
     untilExclusive: new Date(end * 1000).toISOString(), incomingZchf: units(incoming.total),
     outgoingZchf: units(outgoing.total), netZchf: units(incoming.total - outgoing.total),
     incomingTransfers: incoming.count, outgoingTransfers: outgoing.count,

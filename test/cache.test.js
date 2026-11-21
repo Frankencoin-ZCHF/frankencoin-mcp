@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 // Configure the cache before importing it (config reads env once at import).
 process.env.CACHE_ENABLED = "true";
 process.env.CACHE_MAX_ENTRIES = "3";
+process.env.CACHE_MAX_BYTES = "64";
 const { getOrLoad, clear, size, invalidate } = await import("../src/cache.js");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -64,4 +65,39 @@ test("invalidate removes an entry", async () => {
   invalidate("k5");
   await getOrLoad("k5", 1000, load);
   assert.equal(calls, 2);
+});
+
+test("in-flight cache entries cannot be displaced by unrelated misses", async () => {
+  clear();
+  let release;
+  const pending = new Promise(resolve => { release=resolve; });
+  const first = ["a","b","c"].map(key=>getOrLoad(key,1000,()=>pending));
+  await assert.rejects(getOrLoad("d",1000,async()=>4),{code:"busy"});
+  const again=getOrLoad("a",1000,()=>assert.fail("duplicate"));
+  release(1);
+  assert.deepEqual(await Promise.all([...first,again]),[1,1,1,1]);
+  assert.equal(await getOrLoad("d",1000,async()=>4),4);
+});
+
+test("all callers receive eligible stale data while the single refresh is pending", async () => {
+  clear();
+  const opts={swrMs:10000};
+  await getOrLoad("stale",0,async()=>1,opts);
+  let release;
+  const pending=new Promise(r=>{release=r});
+  const a=getOrLoad("stale",100,()=>pending,opts);
+  const b=getOrLoad("stale",100,()=>assert.fail("duplicate refresh"),opts);
+  assert.deepEqual(await Promise.all([a,b]),[1,1]);
+  release(2);
+  await new Promise(r=>setImmediate(r));
+  assert.equal(await getOrLoad("stale",100,()=>assert.fail("cache miss"),opts),2);
+});
+
+test("oversized entries are returned but do not consume the cache budget", async()=>{
+  clear();
+  let calls=0;
+  const load=async()=>{calls++;return "x".repeat(100);};
+  for(let i=0;i<2;i++)assert.equal((await getOrLoad("large",1000,load)).length,100);
+  assert.equal(calls,2);
+  assert.equal(size(),0);
 });

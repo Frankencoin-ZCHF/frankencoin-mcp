@@ -140,9 +140,9 @@ async function getRateHistory({ days, limit }) {
   };
 }
 
-export async function getAnalytics({ type = "time_series", days = 90, limit = 20, wallet } = {}) {
+export async function getAnalytics({ type = "time_series", days = 90, limit = 20, wallet, chainId } = {}) {
   switch (type) {
-    case "wallet_flows": return walletFlows({ wallet, days, limit });
+    case "wallet_flows": return walletFlows({ wallet, days, limit, chainId });
     case "time_series": return getTimeSeries({ days });
     case "trades": return { trades: await getTrades({ limit }) };
     case "minters": return { minters: await getMinters({ limit }) };

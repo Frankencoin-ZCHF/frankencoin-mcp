@@ -39,9 +39,9 @@ async function get(path) {
 }
 
 test("REST manifest and llms discover FCS without adding a tool or relabeling FPS", async () => {
-  assert.equal((await get("/health")).toolCount, 17);
+  assert.equal((await get("/health")).toolCount, 27);
   const manifest = await get("/api");
-  assert.equal(manifest.tools.length, 17);
+  assert.equal(manifest.tools.length, 27);
   for (const name of ["get_governance", "get_protocol_snapshot", "get_knowledge"]) {
     assert.match(manifest.tools.find((t) => t.name === name).description, /FCS/);
   }
@@ -126,7 +126,7 @@ test("MCP snapshot discovery and calls support lean and expanded context", async
   try {
     await client.connect(new StreamableHTTPClientTransport(new URL(base + "/mcp")));
     const manifest = await client.listTools();
-    assert.equal(manifest.tools.length, 17);
+    assert.equal(manifest.tools.length, 27);
     assert.ok(manifest.tools.find((t) => t.name === "get_protocol_snapshot").inputSchema.properties.includeContext);
     for (const includeContext of [false, true]) {
       const result = await client.callTool({ name: "get_protocol_snapshot", arguments: { includeContext } });

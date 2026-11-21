@@ -27,3 +27,15 @@ Node 22 served local Streamable HTTP endpoints with real upstream providers. The
 | v4 overview | 4.45 s | 3.13 ms | 3,043 |
 
 The full snapshot now requests enrichment for active challenges only. The gain depends on the challenge population and upstream latency. The overview reads one Frankencoin endpoint. Measurements describe this local client and these live upstreams, with public-server traffic, client internet latency and LLM processing outside the measurement.
+
+## Analytics and availability verification
+
+The expanded catalogue contains 27 tools. Account analysis uses chain IDs, addresses and contract evidence. No address book, name resolution or wallet ownership enrichment is configured. Financial results identify their units, source scope and observation time. A missing chain balance suppresses the portfolio total. A missing CEX book or DEX route has an explicit status. Chainlink lookups verify the chain and token on each leg. FCS scenario reads use a single canonical Ethereum block hash.
+
+The outbound pool admits eight active requests by default and queues up to 128 additional requests for at most two seconds. Transient failures on an origin open a ten-second circuit after three failed logical reads. A single probe checks recovery. Retries, timeouts, response byte limits and a shared request budget bound each upstream read. A tool that calls providers in sequence can take longer. Cached reads coalesce by key. The cache bounds both entry count and serialized data volume (64 MiB by default, configurable with `CACHE_MAX_BYTES`). This is a serialized-value budget, not a process RSS limit.
+
+Run `npm test` on Node 22. Fault-injection cases cover provider rate limits, oversized and interrupted bodies, queue saturation and recovery, cache pressure, provider isolation, RPC reorganisation, partial receipts and indexer outages, incomplete balances, mismatched quote assets, insufficient order-book depth, and removal of upstream wallet labels.
+
+For a deployment check, run the real MCP client over the public endpoint, request the new tools list, run one cold and several warm data reads, and inspect provider-level availability in each result. HTTP liveness alone does not establish data availability. Public RPCs, indexers and exchange APIs have independent latency, availability and indexing lag. Instances maintain separate caches and rate counters.
+
+On 21 November 2026 the expanded application passed 217 tests on Node 22. Live reads exercised all 21 accounting modes, an FCS contract preview, protocol events and receipts, Base pool discovery, peg candles, and both legs of an Ethereum-to-Optimism ZCHF transfer. A local HTTP holder-page read with live upstream data took 3.98 seconds cold. The next 50 reads in groups of five all returned HTTP 200, with 3 ms median and 7 ms p95. The earlier transport conformance run used the initial v4 catalogue and fixtures described above.
