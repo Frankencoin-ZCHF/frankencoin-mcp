@@ -130,7 +130,7 @@ export async function getMarketData() {
     },
     fps: {
       price: moneyPair(fps?.price?.chf ?? null, fps?.price?.usd ?? null),
-      note: "FPS is not listed on CoinGecko — price sourced from Frankencoin API",
+      note: "FPS price sourced from the Frankencoin API",
     },
     prices,
     collateral,

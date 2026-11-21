@@ -1,3 +1,4 @@
+import { krakenMarkets, indexedMarkets } from "./market-directory.js";
 import { getOrLoad } from "../cache.js";
 import { ValidationError, UpstreamError } from "../lib/errors.js";
 import { FCS_CONTRACT } from "../lib/constants.js";
@@ -153,10 +154,10 @@ export function walkBook(levels, n, side) {
     worstLevel: worst,
   };
 }
-async function krakenQuote(quoteAsset, size, side) {
+async function krakenQuote({ pair, quote: quoteAsset }, size, side) {
   const venue = "Kraken";
-  const pair = "ZCHF" + quoteAsset;
-  const url = "https://api.kraken.com/0/public/Depth?pair=" + pair + "&count=500";
+  const url =
+    "https://api.kraken.com/0/public/Depth?pair=" + pair + "&count=500";
   // All sizes and chains use the same venue book. Retain the original observation
   // time, and give a failed book one short retry interval shared by its callers.
   const observation = await getOrLoad(
@@ -207,25 +208,38 @@ export async function liquidity({ asset, chainId, amount, side }) {
     (quote) => ({ venue: "Velora", quoteAsset: "USDC", ...quote }),
     () => ({ venue: "Velora", quoteAsset: "USDC", status: "unavailable" }),
   );
-  const requests = [dex];
-  if (asset === "ZCHF") {
-    for (const currency of ["CHF", "USD"]) {
-      requests.push(
-        krakenQuote(currency, n, side).catch(() => ({
+  const books = async () => {
+    if (asset !== "ZCHF") return { catalogue: null, quotes: [] };
+    const catalogue = await krakenMarkets();
+    const quotes = await Promise.all(
+      (catalogue.markets ?? []).map((market) =>
+        krakenQuote(market, n, side).catch(() => ({
           venue: "Kraken",
-          quoteAsset: currency,
+          quoteAsset: market.quote,
           status: "unavailable",
         })),
-      );
-    }
-  }
-  const venues = await Promise.all(requests);
+      ),
+    );
+    return { catalogue, quotes };
+  };
+  const [dexQuote, { catalogue, quotes }, indexed] = await Promise.all([
+    dex,
+    books(),
+    indexedMarkets(asset),
+  ]);
+  const venues = [dexQuote, ...quotes];
   return {
     chainId,
     asset,
     amount,
     side,
     venues,
+    discovery: {
+      kraken: catalogue,
+      indexed,
+      scope:
+        "Indexed tickers are reported markets. Sized fills require a supported book or routing adapter.",
+    },
     scope:
       "Indicative quotes. CEX books are venue-wide. Fees, gas and settlement costs are excluded from book fills. Quote currencies are distinct.",
   };

@@ -112,6 +112,14 @@ test("sized book fills correctly and flags insufficient and unordered depth", ()
 });
 test("one failed venue leaves other quotes available, preserves partial fills", async () => {
   setFetchImpl(async (url) => {
+    if (url.endsWith("/AssetPairs"))
+      return Response.json({
+        error: [],
+        result: {
+          ZCHFUSD: { base: "ZCHF", wsname: "ZCHF/USD", status: "online" },
+          ZCHFCHF: { base: "ZCHF", wsname: "ZCHF/CHF", status: "online" },
+        },
+      });
     if (url.includes("kraken")) {
       const pair = new URL(url).searchParams.get("pair");
       return Response.json({
@@ -383,9 +391,18 @@ test("CEX snapshots coalesce across sizes, sides and chains and retry a failed b
   const counts = new Map();
   setFetchImpl(async (url) => {
     counts.set(url, (counts.get(url) ?? 0) + 1);
+    if (url.endsWith("/AssetPairs"))
+      return Response.json({
+        error: [],
+        result: {
+          ZCHFUSD: { base: "ZCHF", wsname: "ZCHF/USD", status: "online" },
+          ZCHFCHF: { base: "ZCHF", wsname: "ZCHF/CHF", status: "online" },
+        },
+      });
     if (url.includes("kraken")) {
       const pair = new URL(url).searchParams.get("pair");
-      if (pair === "ZCHFUSD" && counts.get(url) === 1) return new Response("", {status: 403});
+      if (pair === "ZCHFUSD" && counts.get(url) === 1)
+        return new Response("", { status: 403 });
       return Response.json({
         error: [],
         result: { [pair]: { asks: [["1.1", "8"]], bids: [["1", "8"]] } },
@@ -402,11 +419,87 @@ test("CEX snapshots coalesce across sizes, sides and chains and retry a failed b
   assert.equal(a.venues[1].quoteAmount, "1");
   assert.equal(b.venues[1].quoteAmount, "2.2");
   assert.equal(a.venues[1].retrievedAt, b.venues[1].retrievedAt);
-  assert.deepEqual(b.venues.map(v => [v.venue, v.quoteAsset]), [["Velora","USDC"],["Kraken","CHF"],["Kraken","USD"]]);
-  assert.ok([...counts.keys()].every(url => !url.includes("mexc")));
+  assert.deepEqual(
+    b.venues.map((v) => [v.venue, v.quoteAsset]),
+    [
+      ["Velora", "USDC"],
+      ["Kraken", "CHF"],
+      ["Kraken", "USD"],
+    ],
+  );
+  assert.ok([...counts.keys()].every((url) => !url.includes("mexc")));
   assert.equal(b.venues[2].status, "unavailable");
   for (const [url, count] of counts)
     if (url.includes("kraken")) assert.equal(count, 1);
   t.mock.timers.tick(5001);
   assert.equal((await quote("1", "buy", 1)).venues[2].status, "quoted");
+});
+
+test("market discovery refreshes renamed books, picks up new venues, and distinguishes an outage from an empty listing", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.now() });
+  let stage = 0;
+  const requested = [];
+  setFetchImpl(async (url) => {
+    requested.push(url);
+    if (url.includes("/AssetPairs")) {
+      if (stage === 2) return new Response("", { status: 403 });
+      const result = {
+        BTCUSD: { base: "XXBT", wsname: "XBT/USD", status: "online" },
+      };
+      if (stage < 2)
+        result[stage === 0 ? "OLDKEY" : "NEWKEY"] = {
+          base: "ZCHF",
+          wsname: stage === 0 ? "ZCHF/CHF" : "ZCHF/EUR",
+          status: "online",
+        };
+      return Response.json({ error: [], result });
+    }
+    if (url.includes("/tickers"))
+      return Response.json({
+        tickers: [
+          {
+            market: { identifier: "new_venue" },
+            base: "ZCHF",
+            target: "EUR",
+            coin_id: "frankencoin",
+            is_anomaly: false,
+            is_stale: false,
+          },
+        ],
+      });
+    if (url.includes("/Depth")) {
+      const key = new URL(url).searchParams.get("pair");
+      return Response.json({
+        error: [],
+        result: { [key]: { bids: [["1", "5"]] } },
+      });
+    }
+    return new Response("", { status: 404 });
+  });
+  const read = () =>
+    dispatchTool("get_liquidity", { side: "sell", amount: "1" });
+  const a = await read();
+  assert.equal(a.venues[1].quoteAsset, "CHF");
+  assert.equal(a.discovery.indexed.markets[0].exchange, "new_venue");
+  await read();
+  assert.equal(requested.filter((u) => u.endsWith("/AssetPairs")).length, 1);
+  for (stage = 1; stage <= 3; stage++) {
+    t.mock.timers.tick(600001);
+    const b = await read();
+    if (stage === 1) {
+      assert.deepEqual(
+        b.venues.map((v) => v.quoteAsset),
+        ["USDC", "EUR"],
+      );
+      assert.ok(requested.some((u) => u.includes("pair=NEWKEY")));
+    }
+    if (stage === 2) {
+      assert.equal(b.discovery.kraken.status, "unavailable");
+      assert.equal(b.discovery.kraken.markets, null);
+    }
+    if (stage === 3) {
+      assert.equal(b.discovery.kraken.status, "available");
+      assert.deepEqual(b.discovery.kraken.markets, []);
+    }
+  }
 });
